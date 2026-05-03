@@ -2,47 +2,36 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
+import * as dotenv from "dotenv";
 
-// Enable WebSocket for Node.js runtime (not needed in Edge runtime)
-neonConfig.webSocketConstructor = ws;
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __prismaPool: PrismaClient | undefined;
+// Load environment variables for non-Next.js environments (like CLI or scripts)
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config({ path: ".env.local" });
 }
 
-export function getDb(): PrismaClient {
-  if (global.__prismaPool) return global.__prismaPool;
-
-  const rawUrl = process.env.DATABASE_URL;
-  if (!rawUrl) throw new Error("DATABASE_URL is not set.");
-
-  // Strip channel_binding=require — unsupported by @neondatabase/serverless Pool
-  const url = rawUrl.replace(/&?channel_binding=require/g, "");
-
-  // PrismaNeon creates its own Pool internally; pass the config object directly
-  const adapter = new PrismaNeon({ connectionString: url });
-  const client = new PrismaClient({ adapter });
-
-  if (process.env.NODE_ENV !== "production") global.__prismaPool = client;
-  return client;
+// Enable WebSocket for Node.js runtime
+if (typeof window === "undefined") {
+  neonConfig.webSocketConstructor = ws;
 }
 
-// Convenience alias — every property accessor defers to getDb() so the
-// client is only constructed after Next.js has loaded .env.local.
-export const db = {
-  get user() { return getDb().user; },
-  get post() { return getDb().post; },
-  get comment() { return getDb().comment; },
-  get activityLog() { return getDb().activityLog; },
-  get shop() { return getDb().shop; },
-  get product() { return getDb().product; },
-  get expertService() { return getDb().expertService; },
-  get neighbourConnection() { return getDb().neighbourConnection; },
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
 };
 
+const createPrismaClient = () => {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    console.warn("DATABASE_URL is not set. Creating PrismaClient without adapter.");
+    return new PrismaClient();
+  }
 
+  // Strip channel_binding=require — unsupported by @neondatabase/serverless Pool
+  const url = connectionString.replace(/&?channel_binding=require/g, "");
+  const adapter = new PrismaNeon({ connectionString: url });
+  
+  return new PrismaClient({ adapter });
+};
 
+export const db = globalForPrisma.prisma ?? createPrismaClient();
 
-
-
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;

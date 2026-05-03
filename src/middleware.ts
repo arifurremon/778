@@ -1,6 +1,5 @@
+import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
 
 // ---------------------------------------------------------------------------
 // Routes that require a valid session
@@ -26,29 +25,16 @@ const PROTECTED_PATHS: string[] = [
 // ---------------------------------------------------------------------------
 const ADMIN_PATHS: string[] = ["/admin"];
 
-export async function middleware(req: NextRequest) {
+export default auth((req) => {
   const { nextUrl } = req;
-  // Use NEXTAUTH_SECRET to match auth.ts
-  const secureCookie = process.env.NODE_ENV === "production" || nextUrl.protocol === "https:";
-  const cookieName = secureCookie ? "__Secure-authjs.session-token" : "authjs.session-token";
-  
-  const token = await getToken({ 
-    req, 
-    secret: process.env.NEXTAUTH_SECRET,
-    salt: cookieName,
-    secureCookie
-  });
+  const isLoggedIn = !!req.auth;
 
   const isProtected = PROTECTED_PATHS.some((path) =>
     nextUrl.pathname.startsWith(path)
   );
 
-  if (!isProtected) {
-    return NextResponse.next();
-  }
-
   // Unauthenticated → /
-  if (!token) {
+  if (isProtected && !isLoggedIn) {
     const signInUrl = new URL("/", nextUrl.origin);
     signInUrl.searchParams.set("callbackUrl", nextUrl.pathname);
     return NextResponse.redirect(signInUrl);
@@ -59,21 +45,20 @@ export async function middleware(req: NextRequest) {
     nextUrl.pathname.startsWith(path)
   );
 
-  if (isAdminRoute && !token.isAdmin) {
+  if (isAdminRoute && isLoggedIn && !req.auth?.user?.isAdmin) {
     const dashboardUrl = new URL("/dashboard", nextUrl.origin);
     dashboardUrl.searchParams.set("error", "unauthorized");
     return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();
-}
+});
 
-// ---------------------------------------------------------------------------
-// Matcher — covers all protected paths, excluding Next.js internals,
-// static files, and the NextAuth API itself.
-// ---------------------------------------------------------------------------
 export const config = {
   matcher: [
+    /*
+     * Match all protected paths explicitly to avoid overhead on public pages
+     */
     "/dashboard/:path*",
     "/profile/:path*",
     "/settings/:path*",
@@ -87,11 +72,5 @@ export const config = {
     "/register-shop/:path*",
     "/register-service/:path*",
     "/sos/:path*",
-    /*
-     * Explicitly exclude:
-     *  - /_next/ (static assets, HMR, etc.)
-     *  - /api/auth (NextAuth endpoints — must be publicly reachable)
-     *  - /favicon.ico, image files, etc.
-     */
   ],
 };
