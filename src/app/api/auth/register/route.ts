@@ -120,10 +120,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { success: true, message: "Account created." },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("[POST /api/auth/register]", error);
+  } catch (error: any) {
+    console.error("[POST /api/auth/register] CRITICAL ERROR:", error);
+    
+    // Provide a slightly more descriptive message for debugging
+    const errorMessage = process.env.NODE_ENV === "development" 
+      ? `Registration failed: ${error.message}`
+      : "Internal server error. Please try again later.";
+
     return NextResponse.json(
-      { success: false, message: "Internal server error. Please try again later." },
+      { success: false, message: errorMessage },
       { status: 500 }
     );
   }
