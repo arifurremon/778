@@ -1,0 +1,17 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "logo",
+      "description": "The Chattala Official Logo",
+      "imageUrl": "/logo.png",
+      "imageHint": "luxury logo"
+    },
+    {
+      "id": "city-background",
+      "description": "Architectural city sketch wireframe",
+      "imageUrl": "/city_background.png",
+      "imageHint": "city sketch"
+    }
+  ]
+}

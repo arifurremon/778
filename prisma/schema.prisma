@@ -1,0 +1,182 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  username             String               @unique
+  password             String
+  name                 String?
+  preferredName        String?
+  mobile               String?
+  location             String?
+  dob                  String?
+  profileImage         String?
+  nameChangeCount      Int                  @default(0)
+  joinDate             String?
+  isAdmin              Boolean              @default(false)
+  
+  // Status Flags
+  isVerified           Boolean              @default(false)
+  isSeller             Boolean              @default(false)
+  isServiceProvider    Boolean              @default(false)
+  
+  // Registration States
+  registrationStatus         RegistrationStatus @default(NONE)
+  serviceRegistrationStatus  RegistrationStatus @default(NONE)
+  verificationRequestStatus  RegistrationStatus @default(NONE)
+  verificationReason         String?
+
+  // UI / Privacy Settings
+  showShopBadge        Boolean              @default(true)
+  showExpertBadge      Boolean              @default(true)
+  showFullAge          Boolean              @default(false)
+  showBirthdayOnly     Boolean              @default(true)
+  privacySettings      Json?                // Stores { mobile: 'Private', email: 'Neighbours', ... }
+
+  // Relationships
+  posts                Post[]
+  comments             Comment[]
+  activityLogs         ActivityLog[]
+  shop                 Shop?
+  expertService        ExpertService?
+  
+  // Social Trust
+  sentRequests         NeighbourConnection[] @relation("Sender")
+  receivedRequests     NeighbourConnection[] @relation("Receiver")
+
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+}
+
+model NeighbourConnection {
+  id          String           @id @default(uuid())
+  senderId    String
+  sender      User             @relation("Sender", fields: [senderId], references: [id])
+  receiverId  String
+  receiver    User             @relation("Receiver", fields: [receiverId], references: [id])
+  status      ConnectionStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([senderId, receiverId])
+}
+
+model Post {
+  id               String       @id @default(uuid())
+  authorId         String
+  author           User         @relation(fields: [authorId], references: [id])
+  content          String
+  images           String[]
+  checkInLocation  String?
+  visibility       PrivacyLevel @default(PUBLIC)
+  helpfulCount     Int          @default(0)
+  notHelpfulCount  Int          @default(0)
+  comments         Comment[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  postId      String
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  text        String
+  likes       Int      @default(0)
+  unlikes     Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model ActivityLog {
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  type        ActivityType
+  description String
+  contextUrl  String?
+  isRead      Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+}
+
+model Shop {
+  id                String             @id @default(uuid())
+  userId            String             @unique
+  user              User               @relation(fields: [userId], references: [id])
+  name              String
+  description       String
+  category          String
+  location          String
+  trustScore        Int                @default(100)
+  rating            Float              @default(5.0)
+  isVerified        Boolean            @default(false)
+  products          Product[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model Product {
+  id             String   @id @default(uuid())
+  shopId         String
+  shop           Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name           String
+  description    String
+  price          String
+  originalPrice  String?
+  images         String[]
+  inStock        Boolean  @default(true)
+  category       String
+  createdAt      DateTime @default(now())
+}
+
+model ExpertService {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  profession      String
+  category        String
+  location        String
+  experienceYears Int      @default(0)
+  fee             String
+  bio             String
+  qualifications  String[]
+  rating          Float    @default(5.0)
+  createdAt       DateTime @default(now())
+}
+
+enum RegistrationStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PrivacyLevel {
+  PUBLIC
+  NEIGHBOURS
+  PRIVATE
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum ActivityType {
+  LIKE
+  COMMENT
+  SAVED
+  SYSTEM
+  POPULAR
+}
