@@ -4,10 +4,11 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, MapPin, Phone, Mail, User, Lock, AtSign, Calendar, Heart } from "lucide-react";
+import { UserPlus, MapPin, Phone, Mail, User, Lock, AtSign, Calendar, Heart, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import Logo from "@/components/brand/logo";
 import { signIn } from "next-auth/react";
@@ -52,17 +53,24 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
     resolver: zodResolver(signupSchema),
   });
 
+  const [signupError, setSignupError] = useState<string | null>(null);
+
   const onSubmit = async (data: SignupFormValues) => {
-    await signup({
-      email: data.email,
-      pass: data.password,
-      name: data.name,
-      preferredName: data.preferredName,
-      username: data.username,
-      mobile: data.mobile,
-      location: data.location,
-      dob: data.dob
-    });
+    setSignupError(null);
+    try {
+      await signup({
+        email: data.email,
+        pass: data.password,
+        name: data.name,
+        preferredName: data.preferredName,
+        username: data.username,
+        mobile: data.mobile,
+        location: data.location,
+        dob: data.dob
+      });
+    } catch (err: any) {
+      setSignupError(err.message || "Registration failed. Please try again.");
+    }
   };
 
   return (
@@ -78,6 +86,12 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {signupError && (
+          <div className="flex items-center gap-2 rounded-md bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {signupError}
+          </div>
+        )}
         {/* Full Name */}
         <div className="space-y-2 text-left">
           <Label htmlFor="name" className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">
