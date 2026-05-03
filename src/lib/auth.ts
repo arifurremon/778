@@ -1,7 +1,10 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { compare } from "bcryptjs";
 import { db } from "@/lib/db";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { sendWelcomeEmail } from "@/lib/mail";
 
 /**
  * Extended token shape — we add custom fields so middleware can access them
@@ -13,7 +16,7 @@ declare module "next-auth" {
       id: string;
       email: string;
       name: string | null;
-      username: string;
+      username?: string | null;
       isAdmin: boolean;
       profileImage: string | null;
     };
@@ -21,7 +24,7 @@ declare module "next-auth" {
 
   interface User {
     id: string;
-    username: string;
+    username?: string | null;
     isAdmin: boolean;
     profileImage: string | null;
   }
@@ -30,12 +33,18 @@ declare module "next-auth" {
 // Removed next-auth/jwt augmentation because in v5 it's handled differently and causes a TS error here.
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },
+  secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: "/auth",
     error: "/auth",
   },
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -64,7 +73,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           },
         });
 
-        if (!user) return null;
+        if (!user || !user.password) return null;
 
         const passwordsMatch = await compare(credentials.password, user.password);
         if (!passwordsMatch) return null;
@@ -81,12 +90,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // initial sign in
       if (user) {
         token.id = user.id;
         token.username = user.username;
         token.isAdmin = user.isAdmin;
-        token.profileImage = user.profileImage;
+        // for OAuth users, user.image maps to profileImage or standard NextAuth image
+        token.profileImage = user.profileImage || user.image;
       }
       return token;
     },
@@ -96,6 +107,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.isAdmin = token.isAdmin as boolean;
       session.user.profileImage = token.profileImage as string | null;
       return session;
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      // Send welcome email upon successful user creation
+      if (user.email) {
+        await sendWelcomeEmail({
+          to: user.email,
+          name: user.name || "Neighbour",
+        });
+      }
     },
   },
 });

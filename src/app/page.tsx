@@ -3,26 +3,21 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import SplashScreen from "@/components/splash/splash-screen";
+import { useRouter } from "next/navigation";
 import AuthContainer from "@/components/auth/auth-container";
 import CityBackground from "@/components/ui/city-background";
 import { useAuth } from "@/hooks/use-auth";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
-  const [showSplash, setShowSplash] = useState(true);
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (user && !showSplash) {
+    if (user) {
       router.push('/dashboard');
     }
-  }, [user, showSplash, router]);
-
-  if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
-  }
+  }, [user, router]);
 
   if (isLoading) {
     return (
