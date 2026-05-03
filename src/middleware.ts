@@ -1,5 +1,8 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "./auth.config";
 import { NextResponse } from "next/server";
+
+const { auth } = NextAuth(authConfig);
 
 // ---------------------------------------------------------------------------
 // Routes that require a valid session
@@ -20,9 +23,6 @@ const PROTECTED_PATHS: string[] = [
   "/sos",
 ];
 
-// ---------------------------------------------------------------------------
-// Routes that additionally require isAdmin === true
-// ---------------------------------------------------------------------------
 const ADMIN_PATHS: string[] = ["/admin"];
 
 export default auth((req) => {
@@ -56,9 +56,6 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    /*
-     * Match all protected paths explicitly to avoid overhead on public pages
-     */
     "/dashboard/:path*",
     "/profile/:path*",
     "/settings/:path*",

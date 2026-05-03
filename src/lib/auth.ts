@@ -1,47 +1,18 @@
 import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { db } from "@/lib/db";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { authConfig } from "@/auth.config";
 import { sendWelcomeEmail } from "@/lib/mail";
 
 /**
- * Extended token shape — we add custom fields so middleware can access them
- * without a separate DB call.
+ * Full Auth.js configuration including Node.js-only providers and adapters.
  */
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      email: string;
-      name: string | null;
-      username?: string | null;
-      isAdmin: boolean;
-      profileImage: string | null;
-    };
-  }
-
-  interface User {
-    id: string;
-    username?: string | null;
-    isAdmin: boolean;
-    profileImage: string | null;
-  }
-}
-
-// Removed next-auth/jwt augmentation because in v5 it's handled differently and causes a TS error here.
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(db),
-  session: { strategy: "jwt" },
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
-  pages: {
-    signIn: "/",
-    error: "/",
-  },
-  debug: process.env.NODE_ENV === "development",
-  trustHost: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -55,30 +26,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (
-          !credentials ||
-          typeof credentials.email !== "string" ||
-          typeof credentials.password !== "string"
-        ) {
-          return null;
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
         const user = await db.user.findUnique({
-          where: { email: credentials.email },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            username: true,
-            password: true,
-            isAdmin: true,
-            profileImage: true,
-          },
+          where: { email: credentials.email as string },
         });
 
         if (!user || !user.password) return null;
 
-        const passwordsMatch = await compare(credentials.password, user.password);
+        const passwordsMatch = await compare(credentials.password as string, user.password);
         if (!passwordsMatch) return null;
 
         return {
@@ -92,26 +48,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    async jwt({ token, user, account }) {
-      // initial sign in
-      if (user) {
-        token.id = user.id;
-        token.username = user.username;
-        token.isAdmin = user.isAdmin;
-        // for OAuth users, user.image maps to profileImage or standard NextAuth image
-        token.profileImage = user.profileImage || user.image;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      session.user.id = token.id as string;
-      session.user.username = token.username as string;
-      session.user.isAdmin = token.isAdmin as boolean;
-      session.user.profileImage = token.profileImage as string | null;
-      return session;
-    },
-  },
   events: {
     async createUser({ user }) {
       if (user.email) {
@@ -128,5 +64,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 });
 
-// Convenience re-export so that route.ts can do: export { GET, POST } from "@/lib/auth"
 export const { GET, POST } = handlers;
