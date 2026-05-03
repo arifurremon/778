@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768898/p_svfnq8.png" alt="The Chattala Logo" width="140" />
+<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768013/logo_tuvebp.png" alt="The Chattala Logo" width="220" />
 
 # The Chattala
 
