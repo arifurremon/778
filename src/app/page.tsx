@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useRouter } from "next/navigation";
 import AuthContainer from "@/components/auth/auth-container";
 import CityBackground from "@/components/ui/city-background";
 import { useAuth } from "@/hooks/use-auth";
