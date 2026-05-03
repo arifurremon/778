@@ -28,7 +28,16 @@ const ADMIN_PATHS: string[] = ["/admin"];
 
 export async function middleware(req: NextRequest) {
   const { nextUrl } = req;
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET, salt: "authjs.session-token" });
+  // Use NEXTAUTH_SECRET to match auth.ts
+  const secureCookie = process.env.NODE_ENV === "production" || nextUrl.protocol === "https:";
+  const cookieName = secureCookie ? "__Secure-authjs.session-token" : "authjs.session-token";
+  
+  const token = await getToken({ 
+    req, 
+    secret: process.env.NEXTAUTH_SECRET,
+    salt: cookieName,
+    secureCookie
+  });
 
   const isProtected = PROTECTED_PATHS.some((path) =>
     nextUrl.pathname.startsWith(path)
@@ -38,9 +47,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Unauthenticated → /auth
+  // Unauthenticated → /
   if (!token) {
-    const signInUrl = new URL("/auth", nextUrl.origin);
+    const signInUrl = new URL("/", nextUrl.origin);
     signInUrl.searchParams.set("callbackUrl", nextUrl.pathname);
     return NextResponse.redirect(signInUrl);
   }
