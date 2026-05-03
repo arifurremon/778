@@ -1,8 +1,10 @@
 <div align="center">
 
-<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768013/logo_tuvebp.png" alt="The Chattala Logo" width="220" />
+<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768055/LOGOICON_swfpo9.png" alt="The Chattala Icon" width="90" />
 
-# The Chattala
+<br/><br/>
+
+<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768013/logo_tuvebp.png" alt="The Chattala" width="220" />
 
 ### Hyperlocal Digital Hub of Chittagong
 
@@ -221,14 +223,16 @@ The Chattala is configured for **one-click deployment on Vercel**.
 
 <div align="center">
 
-**Abu Md. Selim**
-*Founder & CTO — Inievo Technologies*
+# **ABU MD. SELIM**
 
-Senior Computer Science Engineer and the architect behind The Chattala's high-fidelity infrastructure. Directing technical strategy and execution of this hyperlocal ecosystem, merging rigorous engineering standards with a commitment to building lasting digital infrastructure for the city of Chittagong.
+**Founder** — [Inievo Technologies](https://inievo.com)
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/abumdselim)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/abumdselim)
-[![Inievo Technologies](https://img.shields.io/badge/Company-Inievo%20Technologies-FF6B35?style=for-the-badge)](https://github.com/abumdselim)
+<br/>
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-aabumdselim-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/aabumdselim)
+[![Facebook](https://img.shields.io/badge/Facebook-mishuabcde-1877F2?style=for-the-badge&logo=facebook&logoColor=white)](https://www.facebook.com/mishuabcde)
+[![Instagram](https://img.shields.io/badge/Instagram-mishuabcde-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/mishuabcde)
+[![GitHub](https://img.shields.io/badge/GitHub-abumdselim-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/abumdselim)
 
 </div>
 
@@ -238,6 +242,6 @@ Senior Computer Science Engineer and the architect behind The Chattala's high-fi
 
 **The Chattala** — Built for Chittagong. Engineered for the future.
 
-*© 2026 Inievo Technologies. All rights reserved.*
+*© 2026 [Inievo Technologies](https://inievo.com). All rights reserved.*
 
 </div>
