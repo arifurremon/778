@@ -38,6 +38,7 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
     setLoginError(null);
     try {
       await login(data.email, data.password);
+      router.refresh();
       router.push("/dashboard");
     } catch (err) {
       setLoginError("Invalid email or password. Please try again.");

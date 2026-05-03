@@ -114,12 +114,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   events: {
     async createUser({ user }) {
-      // Send welcome email upon successful user creation
       if (user.email) {
-        await sendWelcomeEmail({
-          to: user.email,
-          name: user.name || "Neighbour",
-        });
+        try {
+          await sendWelcomeEmail({
+            to: user.email,
+            name: user.name || "Neighbour",
+          });
+        } catch (emailError) {
+          console.error("[Auth] Welcome email failed — user creation is NOT affected:", emailError);
+        }
       }
     },
   },

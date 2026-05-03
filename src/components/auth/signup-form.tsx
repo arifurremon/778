@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,7 @@ const signupSchema = z.object({
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
+  const router = useRouter();
   const { signup } = useAuth();
   const {
     register,
@@ -68,6 +70,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         location: data.location,
         dob: data.dob
       });
+      router.refresh();
+      router.push("/dashboard");
     } catch (err: any) {
       setSignupError(err.message || "Registration failed. Please try again.");
     }
