@@ -24,9 +24,11 @@ const getPrismaClient = () => {
 
   if (!isEdge && typeof window === "undefined") {
     try {
+      // Use require for Node.js runtime and handle default export
       const ws = require("ws");
-      if (ws) {
-        neonConfig.webSocketConstructor = ws;
+      const WebSocket = ws.default || ws;
+      if (WebSocket) {
+        neonConfig.webSocketConstructor = WebSocket;
       }
     } catch (e) {
       console.error("[Prisma] Failed to load 'ws' for Neon adapter:", e);

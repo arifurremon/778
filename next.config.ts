@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  serverExternalPackages: ["ws", "@neondatabase/serverless"],
   images: {
     remotePatterns: [
       {
