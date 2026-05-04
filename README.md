@@ -4,12 +4,6 @@
 
 <br/>
 
-### Hyperlocal Digital Hub of Chittagong
-
-*Where every street, every shop, every voice of Chittagong finds its digital home.*
-
-<br/>
-
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge&logo=vercel&logoColor=white)](https://github.com/abumdselim/thechattala)
 [![Next.js](https://img.shields.io/badge/Next.js-15.x-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
