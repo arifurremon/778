@@ -233,109 +233,138 @@ export default function ProfileView() {
   );
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-6 relative">
+    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 relative">
       {/* Settings Desktop Trigger */}
-      <div className="absolute top-8 right-6 hidden md:block">
+      <div className="absolute top-8 right-6 hidden md:block z-50">
         <Link href="/settings">
-          <Button variant="outline" size="icon" className="rounded-full bg-card/30 border-border/50 hover:bg-accent/10 hover:text-accent">
+          <Button variant="outline" size="icon" className="rounded-full bg-card/50 backdrop-blur-md border-border/50 hover:bg-accent hover:text-accent-foreground shadow-lg">
             <Settings size={20} />
           </Button>
         </Link>
       </div>
 
-      <section className="flex flex-col items-center text-center mb-12">
-        <div className="relative group mb-6">
-          <Avatar className="w-32 h-32 border-4 border-card ring-4 ring-primary/20 shadow-2xl transition-transform duration-500">
-            <AvatarImage src={user?.profileImage} />
-            <AvatarFallback className="text-4xl font-bold bg-primary/20 text-primary">
-              {user?.name?.[0]}
-            </AvatarFallback>
-          </Avatar>
-          
-          {/* Upload Button Overlay - Always visible on small screens, hover on large */}
-          <div className="absolute bottom-0 right-0 p-1">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-primary rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity" />
-              <UploadButton
-                endpoint="profileImage"
-                onClientUploadComplete={(res) => {
-                  if (res?.[0]) {
-                    updateUser({ profileImage: res[0].url });
-                    toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
-                    setTimeout(() => window.location.reload(), 1000);
-                  }
-                }}
-                onUploadError={(error: Error) => {
-                  toast({ variant: "destructive", title: "Upload Failed", description: error.message });
-                }}
-                appearance={{
-                  button: "bg-primary hover:bg-primary/90 text-white rounded-full w-10 h-10 min-w-0 p-0 shadow-lg transition-all hover:scale-110 flex items-center justify-center",
-                  allowedContent: "hidden"
-                }}
-                content={{
-                  button: <Camera size={18} />
-                }}
-              />
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex flex-col items-center gap-1 mb-10">
-          <div className="flex items-center justify-center gap-2">
-            <h2 className="text-3xl font-bold tracking-tight">{user?.name}</h2>
-            <GlobalUserBadges user={user} size={20} />
-          </div>
-          <p className="text-accent font-bold text-sm tracking-tight mb-2">@{user?.username}</p>
-          
-          <p className="text-sm text-muted-foreground font-bold max-w-sm mx-auto">
-            {user?.bio || "A passionate developer from Chattogram."}
-          </p>
-
-          {ageData && (
-            <div className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mt-3 flex items-center justify-center gap-1.5">
-               <Cake size={10} className="text-accent/40" />
-               <span>BIRTHDAY: {ageData.birthday.toUpperCase()}</span>
-            </div>
-          )}
+      {/* Banner & Profile Info Section */}
+      <section className="relative mb-16">
+        {/* Cover Photo/Gradient */}
+        <div className="h-48 sm:h-64 w-full rounded-[2.5rem] bg-gradient-to-r from-primary/30 via-accent/20 to-purple-500/30 border border-border/50 relative overflow-hidden shadow-2xl">
+          <div className="absolute inset-0 bg-background/20 backdrop-blur-[2px]" />
+          {/* Decorative Pattern */}
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent" />
         </div>
 
-        {/* Unified Neighbour Interaction Bar */}
-        <div className="w-full max-w-sm mb-10">
-          <div className="bg-card/30 backdrop-blur-md border border-border/50 rounded-2xl overflow-hidden flex items-stretch shadow-lg">
-            {/* Left: Social Proof */}
-            <Link href="/neighbours" className="flex-1 flex flex-col items-center justify-center p-4 border-r border-border/50 hover:bg-white/5 transition-colors cursor-pointer group">
-              <span className="text-lg font-black tracking-tight">{user?.neighbours?.length || 0}</span>
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-accent transition-colors">neighbours</span>
-            </Link>
+        {/* Avatar & Main Info */}
+        <div className="absolute -bottom-16 left-6 sm:left-12 flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 w-[calc(100%-3rem)] sm:w-[calc(100%-6rem)]">
+          
+          <div className="relative group shrink-0">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl scale-110" />
+            <Avatar className="w-32 h-32 sm:w-40 sm:h-40 border-4 border-background ring-4 ring-card shadow-2xl transition-transform duration-500 relative z-10">
+              <AvatarImage src={user?.profileImage} className="object-cover" />
+              <AvatarFallback className="text-5xl font-black bg-gradient-to-br from-primary/20 to-accent/20 text-primary">
+                {user?.name?.[0]}
+              </AvatarFallback>
+            </Avatar>
+            
+            {/* Upload Button Overlay - Always visible on small screens, hover on large */}
+            <div className="absolute bottom-2 right-2 p-1 z-20">
+              <div className="relative group/btn">
+                <div className="absolute inset-0 bg-primary rounded-full blur-md opacity-40 group-hover/btn:opacity-60 transition-opacity" />
+                <UploadButton
+                  endpoint="profileImage"
+                  onClientUploadComplete={(res) => {
+                    if (res?.[0]) {
+                      updateUser({ profileImage: res[0].url });
+                      toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
+                      setTimeout(() => window.location.reload(), 1000);
+                    }
+                  }}
+                  onUploadError={(error: Error) => {
+                    toast({ variant: "destructive", title: "Upload Failed", description: error.message });
+                  }}
+                  appearance={{
+                    button: "bg-primary hover:bg-primary/90 text-white rounded-full w-10 h-10 min-w-0 p-0 shadow-xl transition-all hover:scale-110 flex items-center justify-center border-2 border-background",
+                    allowedContent: "hidden"
+                  }}
+                  content={{
+                    button: <Camera size={16} />
+                  }}
+                />
+              </div>
+            </div>
+          </div>
 
-            {/* Right: Action Trigger */}
-            <div className="flex-1 flex items-center justify-center p-4">
+          <div className="flex-1 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 pb-2 w-full text-center sm:text-left">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground drop-shadow-sm">{user?.name}</h2>
+                <GlobalUserBadges user={user} size={22} />
+              </div>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-sm font-bold">
+                <span className="text-accent bg-accent/10 px-2.5 py-0.5 rounded-md tracking-tight">@{user?.username}</span>
+                {user?.location && (
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <MapPin size={14} className="text-primary/70" /> {user?.location}
+                  </span>
+                )}
+                {ageData && user?.showBirthdayOnly !== false && user?.privacySettings?.dob !== 'Only Me' && (
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Cake size={14} className="text-pink-500/70" /> {ageData.birthday}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
                {user?.isVerified ? (
-                 <Button variant="ghost" className="w-full h-full rounded-xl font-black text-[10px] uppercase tracking-widest text-accent flex items-center justify-center gap-2">
-                   <Home size={16} /> Neighbour
+                 <Button variant="outline" className="rounded-xl font-black text-[10px] uppercase tracking-widest text-emerald-400 border-emerald-500/30 bg-emerald-500/5 h-10 px-5 cursor-default hover:bg-emerald-500/10">
+                   <ShieldCheck size={16} className="mr-2" /> Verified Neighbour
                  </Button>
                ) : requestSent ? (
-                 <Button disabled className="w-full h-full bg-muted/40 text-muted-foreground rounded-xl font-black text-[10px] uppercase tracking-widest cursor-default flex items-center justify-center gap-2">
-                   <Clock size={16} /> Request Sent
+                 <Button disabled className="bg-muted/40 text-muted-foreground rounded-xl font-black text-[10px] uppercase tracking-widest h-10 px-5">
+                   <Clock size={16} className="mr-2" /> Request Sent
                  </Button>
                ) : (
-                 <Button onClick={() => setRequestSent(true)} className="w-full h-full bg-accent text-accent-foreground rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-accent/20 hover:scale-[1.02] transition-all">
-                   <UserPlus size={16} className="mr-1.5" /> Add Neighbour
+                 <Button onClick={() => setRequestSent(true)} className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-accent/20 h-10 px-5 transition-transform hover:scale-105">
+                   <UserPlus size={16} className="mr-2" /> Add Neighbour
                  </Button>
                )}
             </div>
           </div>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          {user?.verificationRequestStatus === 'Pending' && !user?.isVerified && (
-            <Badge variant="outline" className="rounded-full border-orange-500/50 text-orange-400 font-bold uppercase tracking-widest text-[9px] h-10 px-8 flex items-center justify-center">
-              <Clock size={12} className="mr-1.5" /> Identity Review Pending
-            </Badge>
-          )}
-        </div>
       </section>
 
+      {/* Bio & Stats Section */}
+      <section className="mt-24 sm:mt-20 mb-12 flex flex-col sm:flex-row gap-6">
+        <div className="flex-1 space-y-4">
+          <div className="bg-card/40 border border-border/50 rounded-3xl p-6 shadow-sm backdrop-blur-md h-full">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-3 flex items-center gap-2">
+              <FileText size={12} /> About
+            </h3>
+            <p className="text-sm text-foreground/90 font-medium leading-relaxed">
+              {user?.bio || "No bio added yet. Tell the community about yourself!"}
+            </p>
+            {user?.verificationRequestStatus === 'Pending' && !user?.isVerified && (
+              <div className="mt-6">
+                <Badge variant="outline" className="rounded-lg border-orange-500/50 text-orange-400 font-bold uppercase tracking-widest text-[9px] h-8 px-4 flex items-center gap-2 bg-orange-500/5 w-fit">
+                  <Clock size={12} /> Identity Review Pending
+                </Badge>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="w-full sm:w-72 shrink-0">
+          <div className="bg-card/40 border border-border/50 rounded-3xl overflow-hidden flex flex-col shadow-sm backdrop-blur-md h-full">
+             <Link href="/neighbours" className="flex-1 flex flex-col items-center justify-center p-6 border-b border-border/50 hover:bg-white/5 transition-colors cursor-pointer group">
+               <span className="text-3xl font-black tracking-tight text-foreground group-hover:text-accent transition-colors">{user?.neighbours?.length || 0}</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">Neighbours</span>
+             </Link>
+             <div className="flex-1 flex flex-col items-center justify-center p-6 bg-background/20">
+               <span className="text-3xl font-black tracking-tight text-foreground">{myPosts.length}</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mt-1">Posts</span>
+             </div>
+          </div>
+        </div>
+      </section>
       {/* Opportunities Section */}
       <section className="mb-16 space-y-6">
         <div className="border-b border-border/10 pb-2">
