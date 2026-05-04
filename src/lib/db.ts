@@ -24,11 +24,12 @@ const getPrismaClient = () => {
 
   if (!isEdge && typeof window === "undefined") {
     try {
-      // Use dynamic import for ws to avoid issues in Edge runtime if this file is bundled
       const ws = require("ws");
-      neonConfig.webSocketConstructor = ws;
+      if (ws) {
+        neonConfig.webSocketConstructor = ws;
+      }
     } catch (e) {
-      // ws not found
+      console.error("[Prisma] Failed to load 'ws' for Neon adapter:", e);
     }
   }
 
