@@ -1,10 +1,8 @@
 <div align="center">
 
-<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777854124/IMG_7120_sixohh.png" alt="The Chattala Icon" width="120" />
+<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777854124/IMG_7120_sixohh.png" alt="The Chattala Icon" width="250" />
 
 <br/><br/>
-
-<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768013/logo_tuvebp.png" alt="The Chattala" width="220" />
 
 ### Hyperlocal Digital Hub of Chittagong
 
