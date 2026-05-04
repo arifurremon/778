@@ -8,22 +8,27 @@ import { neonConfig } from "@neondatabase/serverless";
  */
 const getPrismaClient = () => {
   const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) return new PrismaClient();
-
-  const url = connectionString.replace(/&?channel_binding=require/g, "");
-
+  
   // Detect runtime
   const isEdge = process.env.NEXT_RUNTIME === "edge";
 
+  if (!connectionString) {
+    // In Prisma 7, we must provide an options object.
+    // If we reach here, we're likely in a build or environment without the URL.
+    return new PrismaClient({
+      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    });
+  }
+
+  const url = connectionString.replace(/&?channel_binding=require/g, "");
+
   if (!isEdge && typeof window === "undefined") {
-    // We only set the WebSocket constructor in Node.js
-    // We use a global check to avoid 'require' issues in some bundlers
     try {
-      // @ts-ignore
+      // Use dynamic import for ws to avoid issues in Edge runtime if this file is bundled
       const ws = require("ws");
       neonConfig.webSocketConstructor = ws;
     } catch (e) {
-      // ws not found or not supported
+      // ws not found
     }
   }
 

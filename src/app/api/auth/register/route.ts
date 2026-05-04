@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { sendWelcomeEmail } from "@/lib/mail";
 
 // ---------------------------------------------------------------------------
 // Rate Limiting
@@ -115,6 +116,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         joinDate,
       },
     });
+
+    // --- Send Welcome Email (Fire and forget, don't block registration) ---
+    try {
+      await sendWelcomeEmail({
+        to: email,
+        name: name || "Neighbour",
+      });
+    } catch (emailError) {
+      console.error("[POST /api/auth/register] Welcome email failed:", emailError);
+    }
 
     return NextResponse.json(
       { success: true, message: "Account created." },

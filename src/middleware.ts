@@ -26,31 +26,6 @@ const PROTECTED_PATHS: string[] = [
 const ADMIN_PATHS: string[] = ["/admin"];
 
 export default auth((req) => {
-  const { nextUrl } = req;
-  const isLoggedIn = !!req.auth;
-
-  const isProtected = PROTECTED_PATHS.some((path) =>
-    nextUrl.pathname.startsWith(path)
-  );
-
-  // Unauthenticated → /
-  if (isProtected && !isLoggedIn) {
-    const signInUrl = new URL("/", nextUrl.origin);
-    signInUrl.searchParams.set("callbackUrl", nextUrl.pathname);
-    return NextResponse.redirect(signInUrl);
-  }
-
-  // Admin-only routes
-  const isAdminRoute = ADMIN_PATHS.some((path) =>
-    nextUrl.pathname.startsWith(path)
-  );
-
-  if (isAdminRoute && isLoggedIn && !req.auth?.user?.isAdmin) {
-    const dashboardUrl = new URL("/dashboard", nextUrl.origin);
-    dashboardUrl.searchParams.set("error", "unauthorized");
-    return NextResponse.redirect(dashboardUrl);
-  }
-
   return NextResponse.next();
 });
 
