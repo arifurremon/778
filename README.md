@@ -217,7 +217,9 @@ The Chattala is configured for **one-click deployment on Vercel**.
 
 # **ABU MD. SELIM**
 
-**Founder** — [Inievo Technologies](https://inievo.com)
+**Founder**
+[Inievo Technologies]
+(https://inievo.com)
 
 <br/>
 
