@@ -245,30 +245,38 @@ export default function ProfileView() {
 
       <section className="flex flex-col items-center text-center mb-12">
         <div className="relative group mb-6">
-          <Avatar className="w-32 h-32 border-4 border-card ring-4 ring-primary/20 shadow-2xl transition-transform duration-500 group-hover:scale-105">
+          <Avatar className="w-32 h-32 border-4 border-card ring-4 ring-primary/20 shadow-2xl transition-transform duration-500">
             <AvatarImage src={user?.profileImage} />
             <AvatarFallback className="text-4xl font-bold bg-primary/20 text-primary">
               {user?.name?.[0]}
             </AvatarFallback>
           </Avatar>
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 opacity-0 group-hover:opacity-100 transition-smooth z-10 flex items-center justify-center">
-            <UploadButton
-              endpoint="profileImage"
-              onClientUploadComplete={(res) => {
-                if (res?.[0]) {
-                  updateUser({ profileImage: res[0].url });
-                  toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
-                  setTimeout(() => window.location.reload(), 1500);
-                }
-              }}
-              onUploadError={(error: Error) => {
-                toast({ variant: "destructive", title: "Upload Failed", description: error.message });
-              }}
-              appearance={{
-                button: "bg-accent text-accent-foreground rounded-full shadow-lg text-xs font-bold px-3 py-1.5 h-auto",
-                allowedContent: "hidden"
-              }}
-            />
+          
+          {/* Upload Button Overlay - Always visible on small screens, hover on large */}
+          <div className="absolute bottom-0 right-0 p-1">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-primary rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity" />
+              <UploadButton
+                endpoint="profileImage"
+                onClientUploadComplete={(res) => {
+                  if (res?.[0]) {
+                    updateUser({ profileImage: res[0].url });
+                    toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
+                    setTimeout(() => window.location.reload(), 1000);
+                  }
+                }}
+                onUploadError={(error: Error) => {
+                  toast({ variant: "destructive", title: "Upload Failed", description: error.message });
+                }}
+                appearance={{
+                  button: "bg-primary hover:bg-primary/90 text-white rounded-full w-10 h-10 min-w-0 p-0 shadow-lg transition-all hover:scale-110 flex items-center justify-center",
+                  allowedContent: "hidden"
+                }}
+                content={{
+                  button: <Camera size={18} />
+                }}
+              />
+            </div>
           </div>
         </div>
         

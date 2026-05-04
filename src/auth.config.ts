@@ -12,7 +12,8 @@ export const authConfig: NextAuthConfig = {
         token.id = user.id;
         token.username = user.username;
         token.isAdmin = user.isAdmin;
-        token.profileImage = user.profileImage;
+        // Fallback to Google image if profileImage is not set
+        token.profileImage = user.profileImage || (user as any).image;
       }
       
       // Support manual session updates
