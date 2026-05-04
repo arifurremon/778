@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768013/logo_tuvebp.png" alt="The Chattala" width="220" />
+<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768013/logo_tuvebp.png" alt="The Chattala" width="260" />
 <br/><br/>
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge&logo=vercel&logoColor=white)](https://github.com/abumdselim/thechattala)
