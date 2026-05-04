@@ -278,29 +278,26 @@ export default function ProfileView() {
                     </AvatarFallback>
                   </Avatar>
                   
-                  {/* Modern Upload Overlay */}
-                  <div className="absolute bottom-2 right-2 p-1 z-20">
-                    <div className="relative group/btn">
-                      <div className="absolute inset-0 bg-primary rounded-full blur-md opacity-40 group-hover/btn:opacity-60 transition-opacity" />
-                      <UploadButton
-                        endpoint="profileImage"
-                        onClientUploadComplete={(res) => {
-                          if (res?.[0]) {
-                            updateUser({ profileImage: res[0].url });
-                            toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
-                            setTimeout(() => window.location.reload(), 1000);
-                          }
-                        }}
-                        onUploadError={(error: Error) => {
-                          toast({ variant: "destructive", title: "Upload Failed", description: error.message });
-                        }}
-                        appearance={{
-                          button: "bg-primary hover:bg-primary/90 text-primary-foreground rounded-full w-12 h-12 min-w-0 p-0 shadow-xl transition-all hover:scale-110 flex items-center justify-center border-4 border-card",
-                          allowedContent: "hidden"
-                        }}
-                        content={{ button: <Camera size={18} /> }}
-                      />
-                    </div>
+                  {/* Facebook-style Upload Button */}
+                  <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 z-20">
+                    <UploadButton
+                      endpoint="profileImage"
+                      onClientUploadComplete={(res) => {
+                        if (res?.[0]) {
+                          updateUser({ profileImage: res[0].url });
+                          toast({ title: "Photo Updated", description: "Your new profile picture has been saved." });
+                          setTimeout(() => window.location.reload(), 1000);
+                        }
+                      }}
+                      onUploadError={(error: Error) => {
+                        toast({ variant: "destructive", title: "Upload Failed", description: error.message });
+                      }}
+                      appearance={{
+                        button: "bg-secondary hover:bg-secondary/80 text-foreground rounded-full w-10 h-10 sm:w-11 sm:h-11 min-w-0 p-0 shadow-sm transition-colors flex items-center justify-center border-4 border-card",
+                        allowedContent: "hidden"
+                      }}
+                      content={{ button: <Camera size={18} /> }}
+                    />
                   </div>
                 </div>
 
