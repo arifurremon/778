@@ -66,3 +66,68 @@ export const sendWelcomeEmail = async ({ to, name }: SendWelcomeEmailParams) => 
     console.error("Error sending welcome email:", error);
   }
 };
+
+export const sendPasswordResetEmail = async (to: string, resetLink: string) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: `"The Chattala" <${process.env.SMTP_FROM}>`,
+      to,
+      subject: "Reset your password - The Chattala",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Password Reset Request</h2>
+          <p>You requested a password reset. Click the link below to reset your password. This link will expire in 1 hour.</p>
+          <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #000; color: #fff; text-decoration: none; border-radius: 5px;">Reset Password</a>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    throw error;
+  }
+};
+
+export const sendVerificationEmail = async (to: string, verifyLink: string) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: `"The Chattala" <${process.env.SMTP_FROM}>`,
+      to,
+      subject: "Verify your email - The Chattala",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Email Verification</h2>
+          <p>Welcome to The Chattala! Please verify your email address by clicking the link below.</p>
+          <a href="${verifyLink}" style="display: inline-block; padding: 10px 20px; background-color: #000; color: #fff; text-decoration: none; border-radius: 5px;">Verify Email</a>
+          <p>If you did not create an account, please ignore this email.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    throw error;
+  }
+};
+

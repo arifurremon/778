@@ -26,6 +26,12 @@ model User {
   joinDate             String?
   isAdmin              Boolean              @default(false)
   
+  // Security & Lifecycle
+  resetToken           String?
+  resetTokenExp        DateTime?
+  emailToken           String?
+  deletedAt            DateTime?
+
   // Status Flags
   isVerified           Boolean              @default(false)
   isSeller             Boolean              @default(false)

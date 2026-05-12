@@ -4,8 +4,9 @@ import { headers } from "next/headers";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { sendWelcomeEmail } from "@/lib/mail";
+import { sendWelcomeEmail, sendVerificationEmail } from "@/lib/mail";
 import { sanitizeUserInput } from "@/lib/sanitize";
+import crypto from "crypto";
 
 // ---------------------------------------------------------------------------
 // Rate Limiting
@@ -110,6 +111,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const now = new Date();
     const joinDate = now.toLocaleString("default", { month: "long", year: "numeric" });
 
+    const emailToken = crypto.randomBytes(32).toString("hex");
+
     await db.user.create({
       data: {
         email,
@@ -121,11 +124,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         location,
         dob,
         joinDate,
+        emailToken,
       },
     });
 
-    // --- Send Welcome Email (Fire and forget, don't block registration) ---
+    // --- Send Welcome & Verification Email (Fire and forget) ---
     try {
+      const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/verify-email/${emailToken}`;
+      await sendVerificationEmail(email, verifyUrl);
+      
+      // Keep welcome email as well
       await sendWelcomeEmail({
         to: email,
         name: name || "Neighbour",
