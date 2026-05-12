@@ -1,7 +1,7 @@
-import type {NextConfig} from 'next';
+import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
-  /* config options here */
   serverExternalPackages: ["ws", "@neondatabase/serverless"],
   images: {
     remotePatterns: [
@@ -43,6 +43,25 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    // Suppress known Sentry + OpenTelemetry critical dependency warnings
+    config.ignoreWarnings = [
+      { module: /require-in-the-middle/ },
+      { module: /@opentelemetry\/instrumentation/ },
+      { module: /@prisma\/instrumentation/ },
+      { module: /@fastify\/otel/ },
+      { message: /Critical dependency: the request of a dependency is an expression/ },
+      { message: /Critical dependency: require function is used in a way/ },
+    ];
+    return config;
+  },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: "inievo-technologies",
+  project: "javascript-nextjs",
+  silent: !process.env.CI,
+  widenClientFileUpload: true,
+  disableLogger: true,
+  automaticVercelMonitors: true,
+});

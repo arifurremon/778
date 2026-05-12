@@ -1,0 +1,16 @@
+# Documentation files — not needed in production bundle
+API.md
+SETUP.md
+DEPLOYMENT.md
+CONTRIBUTING.md
+PRODUCTION_CHECKLIST.md
+LAUNCH_READINESS_REPORT.md
+PRE_LAUNCH_RUNBOOK.md
+SUCCESS_METRICS.md
+
+# Test files
+src/__tests__/
+src/tests/
+
+# Misc
+*.local
