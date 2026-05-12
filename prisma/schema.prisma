@@ -67,6 +67,8 @@ model User {
 
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
+
+  @@index([createdAt])
 }
 
 model Account {
@@ -134,6 +136,10 @@ model Post {
   comments         Comment[]
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
+
+  @@index([visibility])
+  @@index([authorId])
+  @@index([createdAt])
 }
 
 model Comment {
@@ -173,6 +179,8 @@ model Shop {
   products          Product[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
+
+  @@index([userId])
 }
 
 model Product {

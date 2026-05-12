@@ -6,6 +6,8 @@ import { compare } from "bcryptjs";
 import { db } from "@/lib/db";
 import { authConfig } from "@/auth.config";
 import { sendWelcomeEmail } from "@/lib/mail";
+import { rateLimiters } from "@/lib/rate-limit";
+import { headers } from "next/headers";
 
 /**
  * Full Auth.js configuration including Node.js-only providers and adapters.
@@ -27,6 +29,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        const headersList = await headers();
+        const ip = headersList.get("x-forwarded-for") || "unknown";
+
+        const { success } = await rateLimiters.signin.limit(ip);
+        if (!success) {
+          throw new Error("Too many attempts. Please try again later.");
+        }
 
         const user = await db.user.findUnique({
           where: { email: credentials.email as string },

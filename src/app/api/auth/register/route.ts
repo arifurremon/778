@@ -7,13 +7,9 @@ import { db } from "@/lib/db";
 import { sendWelcomeEmail, sendVerificationEmail } from "@/lib/mail";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import crypto from "crypto";
+import { rateLimiters } from "@/lib/rate-limit";
 
 // ---------------------------------------------------------------------------
-// Rate Limiting
-// ---------------------------------------------------------------------------
-const rateLimitMap = new Map<string, { count: number; timestamp: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 // ---------------------------------------------------------------------------
 // Validation schema
@@ -43,23 +39,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const headersList = await headers();
     const ip = headersList.get("x-forwarded-for") || "unknown";
     
-    const nowMs = Date.now();
-    const limitRecord = rateLimitMap.get(ip);
+    // Check Redis-based rate limit
+    const { success } = await rateLimiters.register.limit(ip);
     
-    if (limitRecord) {
-      if (nowMs - limitRecord.timestamp > WINDOW_MS) {
-        // Reset if window has passed
-        rateLimitMap.set(ip, { count: 1, timestamp: nowMs });
-      } else if (limitRecord.count >= MAX_ATTEMPTS) {
-        return NextResponse.json(
-          { success: false, message: "Too many attempts. Please try again later." },
-          { status: 429 }
-        );
-      } else {
-        rateLimitMap.set(ip, { count: limitRecord.count + 1, timestamp: limitRecord.timestamp });
-      }
-    } else {
-      rateLimitMap.set(ip, { count: 1, timestamp: nowMs });
+    if (!success) {
+      return NextResponse.json(
+        { success: false, message: "Too many attempts. Please try again later." },
+        { status: 429 }
+      );
     }
 
     const body: unknown = await req.json();
