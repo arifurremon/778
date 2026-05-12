@@ -9,8 +9,25 @@ www.thechattala.com
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)](./LICENSE)
 [![Made with ❤️](https://img.shields.io/badge/Made%20in-Chittagong-FF6B35?style=for-the-badge)](https://github.com/abumdselim/thechattala)
+[![Production Ready](https://img.shields.io/badge/Production%20Ready-v1.0.0+-22C55E?style=for-the-badge&logo=checkmarx&logoColor=white)](./DEPLOYMENT.md)
 
 </div>
+
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [📖 Setup Guide](./SETUP.md) | Get the app running locally in 30 minutes |
+| [🚀 Deployment Guide](./DEPLOYMENT.md) | Step-by-step production deployment on Vercel |
+| [🔌 API Reference](./API.md) | All endpoints, request/response schemas, rate limits |
+| [🤝 Contributing Guide](./CONTRIBUTING.md) | Code style, commit format, PR process |
+| [⚙️ Environment Variables](./.env.example) | All required environment variables with descriptions |
+| [✅ Production Checklist](./PRODUCTION_CHECKLIST.md) | Critical / High / Medium launch readiness criteria |
+| [📋 Launch Readiness Report](./LAUNCH_READINESS_REPORT.md) | Go/No-Go framework, risk assessment, sign-offs |
+| [🗂️ Pre-Launch Runbook](./PRE_LAUNCH_RUNBOOK.md) | T-24h through T+24h step-by-step launch execution |
+| [📊 Success Metrics](./SUCCESS_METRICS.md) | Performance, reliability, and business KPIs |
 
 ---
 
@@ -200,14 +217,21 @@ npx prisma studio  # Visual database editor
 
 ## 🚢 Deployment
 
-The Chattala is configured for **one-click deployment on Vercel**.
+The Chattala is configured for **automated deployment on Vercel** — every push to `main` triggers a production deploy.
 
-1. Push your code to GitHub (already done ✅)
-2. Import the repository at [vercel.com/new](https://vercel.com/new)
-3. Add all environment variables from `.env.local` to the Vercel project settings
-4. Deploy — Vercel's Edge Network handles the rest
+> 📖 **See the full step-by-step guide:** [DEPLOYMENT.md](./DEPLOYMENT.md)
 
-> **Note:** Ensure `DATABASE_URL` uses the **pooled** Neon connection string and `DIRECT_URL` uses the **direct** connection string for Prisma migrations.
+### Quick Summary
+
+```
+1. Push to main → Vercel auto-deploys
+2. Set all env variables in Vercel project settings
+3. Run migrations: npx prisma migrate deploy
+4. Run smoke tests (see DEPLOYMENT.md)
+5. Monitor Sentry for 24h
+```
+
+> **Note:** `DATABASE_URL` must use the **pooled** Neon connection string. `DIRECT_URL` must use the **direct** connection string (for migrations only).
 
 ---
 
