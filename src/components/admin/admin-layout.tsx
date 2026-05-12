@@ -32,6 +32,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Logo from "@/components/brand/logo";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useAdminStore } from "@/hooks/admin/use-admin-store";
+import { Menu as MenuIcon, X as CloseIcon } from "lucide-react";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Navigation structure
@@ -148,9 +150,10 @@ interface NavGroupItemProps {
   openGroups: Set<string>;
   onToggle: (label: string) => void;
   onNavClick?: () => void;
+  collapsed?: boolean;
 }
 
-function NavGroupItem({ group, pathname, openGroups, onToggle, onNavClick }: NavGroupItemProps) {
+function NavGroupItem({ group, pathname, openGroups, onToggle, onNavClick, collapsed }: NavGroupItemProps) {
   const Icon = group.icon;
   const isOpen = openGroups.has(group.label);
 
@@ -161,15 +164,16 @@ function NavGroupItem({ group, pathname, openGroups, onToggle, onNavClick }: Nav
       <Link href={group.href} onClick={onNavClick}>
         <div className={cn(
           "group relative flex items-center gap-3 px-4 py-2.5 rounded-xl cursor-pointer transition-all duration-200",
-          isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+          collapsed && "px-0 justify-center"
         )}>
           <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
             isActive ? `${group.bgColor} ${group.color}` : "bg-muted/50 text-muted-foreground"
           )}>
             <Icon size={14} />
           </div>
-          <span className="font-semibold text-sm">{group.label}</span>
-          {isActive && (
+          {!collapsed && <span className="font-semibold text-sm">{group.label}</span>}
+          {isActive && !collapsed && (
             <motion.div layoutId="adminActiveNav"
               className="absolute right-3 w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(97,179,204,0.8)]"
             />
@@ -188,7 +192,8 @@ function NavGroupItem({ group, pathname, openGroups, onToggle, onNavClick }: Nav
         onClick={() => onToggle(group.label)}
         className={cn(
           "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl cursor-pointer transition-all duration-200",
-          anyChildActive ? "text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          anyChildActive ? "text-foreground" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+          collapsed && "px-0 justify-center"
         )}
       >
         <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all",
@@ -196,11 +201,13 @@ function NavGroupItem({ group, pathname, openGroups, onToggle, onNavClick }: Nav
         )}>
           <Icon size={14} />
         </div>
-        <span className="font-semibold text-sm flex-1 text-left">{group.label}</span>
-        <ChevronDown
-          size={13}
-          className={cn("text-muted-foreground/50 transition-transform duration-200", isOpen && "rotate-180")}
-        />
+        {!collapsed && <span className="font-semibold text-sm flex-1 text-left">{group.label}</span>}
+        {!collapsed && (
+          <ChevronDown
+            size={13}
+            className={cn("text-muted-foreground/50 transition-transform duration-200", isOpen && "rotate-180")}
+          />
+        )}
       </button>
 
       <AnimatePresence>
@@ -236,7 +243,7 @@ function NavGroupItem({ group, pathname, openGroups, onToggle, onNavClick }: Nav
   );
 }
 
-function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
+function SidebarContent({ onNavClick, collapsed, onToggle }: { onNavClick?: () => void; collapsed?: boolean; onToggle?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
@@ -258,14 +265,37 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <div className="flex flex-col h-full bg-card/10 backdrop-blur-xl">
       {/* Header */}
-      <div className="px-5 pt-5 pb-4 border-b border-border/50 shrink-0">
-        <Link href="/admin" onClick={onNavClick}>
-          <Logo width={100} className="cursor-pointer mb-3" />
-        </Link>
-        <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-rose-400">
-          <ShieldCheck size={10} />
-          Admin Command Center
+      <div className={cn(
+        "px-5 pt-5 pb-4 border-b border-border/50 shrink-0 flex flex-col",
+        collapsed && "px-0 items-center"
+      )}>
+        <div className="flex items-center justify-between w-full">
+          <Link href="/admin" onClick={onNavClick}>
+            {collapsed ? (
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                <Logo width={24} className="cursor-pointer" />
+              </div>
+            ) : (
+              <Logo width={100} className="cursor-pointer mb-3" />
+            )}
+          </Link>
+          {!collapsed && onToggle && (
+            <Button variant="ghost" size="icon" onClick={onToggle} className="h-8 w-8">
+              <Menu size={14} />
+            </Button>
+          )}
         </div>
+        {!collapsed && (
+          <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-rose-400">
+            <ShieldCheck size={10} />
+            Admin Command Center
+          </div>
+        )}
+        {collapsed && onToggle && (
+          <Button variant="ghost" size="icon" onClick={onToggle} className="h-8 w-8 mt-4">
+            <Menu size={14} />
+          </Button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -278,47 +308,56 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             openGroups={openGroups}
             onToggle={handleToggle}
             onNavClick={onNavClick}
+            collapsed={collapsed}
           />
         ))}
 
         <div className="h-px bg-border/30 my-2 mx-2" />
 
         <Link href="/dashboard" onClick={onNavClick}>
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all duration-200 cursor-pointer">
+          <div className={cn(
+            "flex items-center gap-3 px-4 py-2.5 rounded-xl text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all duration-200 cursor-pointer",
+            collapsed && "px-0 justify-center"
+          )}>
             <div className="w-7 h-7 rounded-lg bg-muted/50 flex items-center justify-center">
               <LayoutDashboard size={14} />
             </div>
-            <span className="font-semibold text-sm">Main Dashboard</span>
+            {!collapsed && <span className="font-semibold text-sm">Main Dashboard</span>}
           </div>
         </Link>
 
         <button
           onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer"
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 cursor-pointer",
+            collapsed && "px-0 justify-center"
+          )}
         >
           <div className="w-7 h-7 rounded-lg bg-muted/50 flex items-center justify-center">
             <LogOut size={14} />
           </div>
-          <span className="font-semibold text-sm">Sign Out</span>
+          {!collapsed && <span className="font-semibold text-sm">Sign Out</span>}
         </button>
       </nav>
 
       {/* Admin User Footer */}
-      <div className="shrink-0 p-3 border-t border-border/50 bg-background/20">
-        <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl">
+      <div className={cn("shrink-0 p-3 border-t border-border/50 bg-background/20", collapsed && "p-2")}>
+        <div className={cn("flex items-center gap-2.5 px-2 py-2 rounded-xl", collapsed && "justify-center px-0")}>
           <Avatar className="w-8 h-8 border-2 border-rose-400/30 shrink-0">
             <AvatarImage src={session?.user?.profileImage ?? session?.user?.image ?? ""} />
             <AvatarFallback className="text-xs font-bold bg-rose-500/10 text-rose-400">
               {session?.user?.name?.[0] ?? "A"}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-black uppercase truncate tracking-tight">
-              {session?.user?.name}
-            </p>
-            <p className="text-[9px] text-rose-400 font-bold uppercase tracking-widest">Super Admin</p>
-          </div>
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-black uppercase truncate tracking-tight">
+                {session?.user?.name}
+              </p>
+              <p className="text-[9px] text-rose-400 font-bold uppercase tracking-widest">Super Admin</p>
+            </div>
+          )}
+          {!collapsed && <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />}
         </div>
       </div>
     </div>
@@ -346,12 +385,16 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const breadcrumbs = useBreadcrumb(pathname);
+  const { isSidebarCollapsed, toggleSidebar } = useAdminStore();
 
   return (
     <div className="h-screen w-screen bg-background text-foreground overflow-hidden flex">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-60 flex-col border-r border-border h-full bg-card/5 shrink-0 overflow-hidden">
-        <SidebarContent />
+      <aside className={cn(
+        "hidden md:flex flex-col border-r border-border h-full bg-card/5 shrink-0 overflow-hidden transition-all duration-300",
+        isSidebarCollapsed ? "w-20" : "w-64"
+      )}>
+        <SidebarContent collapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
       </aside>
 
       {/* Main Area */}

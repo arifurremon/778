@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import AdminDashboardLayout from "@/components/admin/admin-layout";
+import { AdminErrorBoundary } from "@/components/admin/error-boundary";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -32,5 +33,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return null;
   }
 
-  return <AdminDashboardLayout>{children}</AdminDashboardLayout>;
+  return (
+    <AdminErrorBoundary>
+      <AdminDashboardLayout>{children}</AdminDashboardLayout>
+    </AdminErrorBoundary>
+  );
 }
