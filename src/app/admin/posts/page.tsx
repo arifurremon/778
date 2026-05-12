@@ -12,7 +12,10 @@ import {
   Image as ImageIcon,
   MessageSquare,
   ThumbsUp,
+  ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
+
 import { AdminTableToolbar, AdminPagination, AdminEmptyState } from "@/components/admin/admin-table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -228,12 +231,16 @@ export default function AdminPostsPage() {
                   {/* Author row */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                      <Avatar className="w-8 h-8 border border-border/30">
-                        <AvatarImage src={post.author.profileImage ?? ""} />
-                        <AvatarFallback className="text-xs font-bold">{post.author.name?.[0] ?? "U"}</AvatarFallback>
-                      </Avatar>
+                      <Link href={`/admin/users/${post.author.id}`}>
+                        <Avatar className="w-8 h-8 border border-border/30 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all">
+                          <AvatarImage src={post.author.profileImage ?? ""} />
+                          <AvatarFallback className="text-xs font-bold">{post.author.name?.[0] ?? "U"}</AvatarFallback>
+                        </Avatar>
+                      </Link>
                       <div>
-                        <p className="text-xs font-bold">{post.author.name ?? post.author.email}</p>
+                        <Link href={`/admin/users/${post.author.id}`}>
+                          <p className="text-xs font-bold hover:text-primary transition-colors cursor-pointer">{post.author.name ?? post.author.email}</p>
+                        </Link>
                         <p className="text-[10px] text-muted-foreground">{new Date(post.createdAt).toLocaleDateString()}</p>
                       </div>
                     </div>
@@ -245,7 +252,13 @@ export default function AdminPostsPage() {
                             <MoreHorizontal size={13} />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36 rounded-xl">
+                        <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                          <DropdownMenuItem asChild className="text-xs">
+                            <Link href={`/admin/posts/${post.id}`} className="flex items-center">
+                              <ExternalLink size={12} className="mr-2" />
+                              View Details
+                            </Link>
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setConfirmDelete([post.id])}
                             className="text-xs text-destructive focus:text-destructive"

@@ -10,7 +10,10 @@ import {
   MoreHorizontal,
   UserCheck,
   BadgeCheck,
+  ExternalLink,
 } from "lucide-react";
+import Link from "next/link";
+
 import { AdminTableToolbar, AdminPagination, AdminEmptyState } from "@/components/admin/admin-table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -302,7 +305,14 @@ export default function AdminUsersPage() {
                       <MoreHorizontal size={14} />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44 rounded-xl">
+                  <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                    <DropdownMenuItem asChild className="text-xs">
+                      <Link href={`/admin/users/${user.id}`} className="flex items-center">
+                        <ExternalLink size={13} className="mr-2" />
+                        View Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => void handleSingleAction("verify", user.id)} className="text-xs">
                       <UserCheck size={13} className="mr-2" />
                       {user.isVerified ? "Unverify" : "Verify User"}
