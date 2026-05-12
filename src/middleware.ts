@@ -40,7 +40,7 @@ export default auth(async (req) => {
         try {
           const clone = req.clone();
           const formData = await clone.formData();
-          csrfToken = formData.get("csrfToken")?.toString();
+          csrfToken = formData.get("csrfToken")?.toString() ?? null;
         } catch (e) {}
       }
     }
