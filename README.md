@@ -1,255 +1,129 @@
 <div align="center">
 
-<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768013/logo_tuvebp.png" alt="The Chattala" width="260" />
-www.thechattala.com
+<img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768013/logo_tuvebp.png" alt="The Chattala" width="280" />
+<h3>The Digital Operating System for Chittagong</h3>
+<a href="https://www.thechattala.com">www.thechattala.com</a>
 <br/><br/>
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=for-the-badge&logo=vercel&logoColor=white)](https://github.com/abumdselim/thechattala)
-[![Next.js](https://img.shields.io/badge/Next.js-15.x-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/license-Proprietary-red?style=for-the-badge)](./LICENSE)
-[![Made with ❤️](https://img.shields.io/badge/Made%20in-Chittagong-FF6B35?style=for-the-badge)](https://github.com/abumdselim/thechattala)
-[![Production Ready](https://img.shields.io/badge/Production%20Ready-v1.0.0+-22C55E?style=for-the-badge&logo=checkmarx&logoColor=white)](./DEPLOYMENT.md)
+[![Deployment](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://github.com/abumdselim/thechattala)
+[![Framework](https://img.shields.io/badge/Next.js-15.x-white?style=for-the-badge&logo=next.js&logoColor=black)](https://nextjs.org/)
+[![Runtime](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Database](https://img.shields.io/badge/PostgreSQL-Neon-44CC11?style=for-the-badge&logo=postgresql&logoColor=white)](https://neon.tech/)
+[![Security](https://img.shields.io/badge/Production%20Ready-v1.0.0+-22C55E?style=for-the-badge&logo=checkmarx&logoColor=white)](./PRODUCTION_CHECKLIST.md)
 
 </div>
 
 ---
 
-## 📚 Documentation
+## 🏛️ Project Ethos
 
-| Document | Description |
-|----------|-------------|
-| [📖 Setup Guide](./SETUP.md) | Get the app running locally in 30 minutes |
-| [🚀 Deployment Guide](./DEPLOYMENT.md) | Step-by-step production deployment on Vercel |
-| [🔌 API Reference](./API.md) | All endpoints, request/response schemas, rate limits |
-| [🤝 Contributing Guide](./CONTRIBUTING.md) | Code style, commit format, PR process |
-| [⚙️ Environment Variables](./.env.example) | All required environment variables with descriptions |
-| [✅ Production Checklist](./PRODUCTION_CHECKLIST.md) | Critical / High / Medium launch readiness criteria |
-| [📋 Launch Readiness Report](./LAUNCH_READINESS_REPORT.md) | Go/No-Go framework, risk assessment, sign-offs |
-| [🗂️ Pre-Launch Runbook](./PRE_LAUNCH_RUNBOOK.md) | T-24h through T+24h step-by-step launch execution |
-| [📊 Success Metrics](./SUCCESS_METRICS.md) | Performance, reliability, and business KPIs |
+**The Chattala** is an enterprise-grade hyperlocal city platform engineered specifically for **Chittagong, Bangladesh**. It serves as a unified digital infrastructure connecting residents, businesses, and expert services within a high-trust, verified ecosystem. 
+
+Designed with a **mobile-first approach** and **distributed architecture**, it aims to bridge the gap between physical city interactions and digital efficiency.
 
 ---
 
-## 🌏 Vision & Mission
+## 📑 Technical Documentation
 
-**The Chattala** is not merely an application — it is a **digital covenant with a city**.
-
-Chittagong, Bangladesh's commercial capital and home to millions, has long deserved a unified digital infrastructure that mirrors its complexity, its humanity, and its extraordinary energy. **The Chattala** is that infrastructure: a **pioneering hyperlocal city platform** built from the ground up to serve the streets, businesses, communities, and citizens of Chittagong in a single, cohesive digital ecosystem.
-
-> *"The Chattala is an attempt to map the existential needs of a city onto the precision of code."*
-> — **Abu Md. Selim**, Founder & CTO
-
-### What We Are Building
-
-| Pillar | Description |
-|--------|-------------|
-| 🏘️ **Community Hub** | A real-time, location-aware social layer for neighbourhoods — where residents post, connect, and build trust |
-| 🛒 **Hyperlocal Marketplace** | A verified directory of local shops and their products, reducing the gap between the physical bazaar and the digital world |
-| 🧰 **Expert Services Network** | A platform for skilled professionals — doctors, engineers, designers — to offer and manage their services |
-| 🚨 **Emergency Lifeline** | Rapid-access emergency services, SOS features, and critical city contacts for moments that matter most |
-| 🤝 **Social Trust Graph** | A neighbour connection system built on verified identities and community reputation |
-
-The Chattala is designed to scale into the **unified operating system for Chittagong's digital economy**.
+| Resource | Scope |
+| :--- | :--- |
+| [🚀 **Launch Runbook**](./PRE_LAUNCH_RUNBOOK.md) | Step-by-step T-24h to T+24h execution plan. |
+| [🔌 **API Reference**](./API.md) | RESTful architecture, Rate limiting (Upstash), and Schemas. |
+| [⚙️ **Infrastructure Setup**](./SETUP.md) | Local environment orchestration & dependency management. |
+| [🚢 **Deployment Ops**](./DEPLOYMENT.md) | Vercel CI/CD pipeline, migration strategies & rollbacks. |
+| [🛡️ **Security Audit**](./PRODUCTION_CHECKLIST.md) | Critical readiness criteria for production environments. |
+| [📊 **Success KPIs**](./SUCCESS_METRICS.md) | Performance monitoring, Uptime, and business metrics. |
 
 ---
 
-## ⚡ Tech Stack
+## 🛠️ Engineering Stack
 
-<div align="center">
-
-[![Skills](https://skillicons.dev/icons?i=nextjs,ts,tailwind,postgres,prisma,vercel&perline=6)](https://skillicons.dev)
-
-</div>
-
-<br/>
-
-| Technology | Role | Why We Chose It |
-|------------|------|-----------------|
-| **Next.js 15** (App Router) | Core Framework | Server Components, Edge Runtime, automatic code-splitting, and best-in-class SEO via `Metadata` API. The App Router paradigm aligns perfectly with our route-heavy architecture |
-| **TypeScript 5** | Language | End-to-end type safety across API routes, Prisma queries, and React components eliminates an entire class of runtime bugs |
-| **Tailwind CSS** | Styling | Utility-first approach enables rapid, consistent, responsive UI development without leaving component files. Dark mode support is native and zero-overhead |
-| **PostgreSQL via Neon DB** | Database | Serverless PostgreSQL with connection pooling eliminates cold-start issues. Neon's branching model makes safe schema migrations possible in production |
-| **Prisma ORM** | Database Layer | Type-safe query builder generated directly from our schema. Schema migrations are declarative, version-controlled, and human-readable |
-| **UploadThing** | File Uploads | Modern file upload infrastructure with a custom `onUploadComplete` hook that automatically **deletes stale profile images from the CDN server** before inserting the new URL — real storage cost optimization |
-| **NextAuth.js v5** | Authentication | Secure, session-based authentication with credentials provider, JWT strategy, and server-side session callbacks for enriching the user token |
-| **Framer Motion** | Animations | Production-grade animation library powering the splash screen, page transitions, and micro-interactions throughout the platform |
+- **Core Infrastructure:** [Next.js 15](https://nextjs.org/) (App Router paradigm) with React Server Components (RSC).
+- **Type Safety:** Full-stack [TypeScript](https://www.typescriptlang.org/) implementation for end-to-end data integrity.
+- **Data Layer:** [Prisma ORM](https://www.prisma.io/) over [Neon Serverless PostgreSQL](https://neon.tech/) with dedicated pooling logic.
+- **Identity & Security:** [NextAuth.js v5](https://authjs.dev/) with CSRF protection, rate-limiting, and hashed credential storage.
+- **Media Engine:** [UploadThing](https://uploadthing.com/) with automated storage optimization (stale asset cleanup).
+- **State & UI:** [Tailwind CSS](https://tailwindcss.com/) & [Framer Motion](https://www.framer.com/motion/) for production-grade motion design.
 
 ---
 
-## ✨ Key Features
+## 🚀 Key Architectural Features
 
-### 🎬 Premium Animated Splash Screen
-A full-screen, session-aware entry experience using Framer Motion featuring:
-- **Ambient radial glow** and a **breathing pulse ring** behind the brand logo
-- **Spring-physics logo entry** with a sonar-wave outer ring
-- **Staggered typewriter-style tagline** fade-in
-- Automatically shown **once per browser session** via `sessionStorage` — never intrusive
+### ⚡ Server-Side Optimization
+- **Dynamic Routing:** All authenticated routes utilize `force-dynamic` to ensure real-time data accuracy without build-time stale states.
+- **Database Factory Pattern:** Implementation of `getDb()` to manage serverless PostgreSQL connections efficiently, preventing saturation.
 
-### 🌗 Flawless Dark / Light Mode
-Theme switching is powered by a custom `ThemeProvider` with:
-- **Dual-image `<Logo />` component** — light and dark assets rendered simultaneously, toggled purely via Tailwind's `dark:` utilities — **zero hydration flicker**
-- Persistent theme preference via `localStorage`
+### 🛡️ Security & Resilience
+- **Rate Limiting:** IP-based and User-based request throttling using **Upstash Redis**.
+- **Input Sanitization:** Multi-layer validation using Zod and Prisma constraints.
+- **Error Boundaries:** Centralized error handling and logging via Sentry integration.
 
-### 👤 Dynamic Profile Management
-- Real-time avatar uploads via **UploadThing**
-- Server-side **automatic cleanup**: when a user uploads a new profile photo, the previous image is deleted from UploadThing's CDN using `UTApi.deleteFiles()` before the DB is updated
-- Session refresh via `NextAuth update()` after profile changes — UI reflects changes instantly without a page reload
-
-### 🔐 Secure Authentication & Identity
-- IP-based **rate limiting** (5 registration attempts/hour) on the `/api/auth/register` route
-- **Unique username enforcement** at the database level via Prisma unique constraints
-- Protected routes via `middleware.ts` using `getToken()` — Edge Runtime compatible
-
-### 🏘️ Neighbour Social Graph
-- Send, accept, and reject neighbour connection requests
-- ACCEPTED connections form a bilateral trust graph queryable by either party
-- Full privacy — all endpoints require active authenticated sessions
-
-### 🛡️ Admin Control Panel
-- Role-based access (`isAdmin` flag on the User model)
-- Admin-only API routes for user verification, shop approval, and service provider endorsement
+### 🖼️ Media Management
+- **Smart Cleanup:** Integrated CDN cleanup logic that purges old assets from UploadThing before updating profile records—maintaining a zero-waste storage footprint.
 
 ---
 
-## 🗂️ Project Architecture
-
-```
-thechattala/
-├── prisma/
-│   └── schema.prisma          # Single source of truth for the data model
-│
-├── src/
-│   ├── app/                   # Next.js App Router — pages & API routes
-│   │   ├── api/               # All server-side route handlers (REST-style)
-│   │   │   ├── auth/          # NextAuth & Registration
-│   │   │   ├── posts/         # Community feed CRUD
-│   │   │   ├── neighbours/    # Social trust graph
-│   │   │   ├── shops/         # Marketplace endpoints
-│   │   │   ├── services/      # Expert service endpoints
-│   │   │   ├── admin/         # Admin-only management routes
-│   │   │   └── uploadthing/   # File upload handler & storage optimization
-│   │   └── (pages)/           # Route segments: dashboard, community, profile…
-│   │
-│   ├── components/            # Reusable UI components
-│   │   ├── brand/             # <Logo /> — smart dual-image theme-aware logo
-│   │   ├── splash/            # SplashScreen + SplashProvider
-│   │   ├── auth/              # Login & Signup forms
-│   │   ├── dashboard/         # Sidebar, bottom nav, layout shell
-│   │   ├── community/         # PostCard, CreatePost feed
-│   │   ├── profile/           # ProfileView with UploadThing integration
-│   │   ├── market/            # Marketplace & order modals
-│   │   └── ui/                # shadcn/ui primitives (Button, Dialog, etc.)
-│   │
-│   ├── hooks/                 # Client-side state providers
-│   │   ├── use-auth.tsx       # NextAuth session mapped to our User type
-│   │   ├── use-theme.tsx      # Dark/Light theme provider
-│   │   └── use-community.tsx  # Community data & post actions
-│   │
-│   └── lib/                   # Core utilities & server helpers
-│       ├── db.ts              # getDb() factory — serverless Prisma connection
-│       ├── auth.ts            # NextAuth config with callbacks
-│       └── uploadthing.ts     # UploadButton & UploadDropzone exports
-│
-└── next.config.ts             # remotePatterns for Cloudinary & UploadThing CDNs
-```
-
-### Design Principles
-
-- **Server-first** — API logic lives in route handlers, not client components
-- **Zero mock data in production** — all UI is driven by real Neon DB queries
-- **`getDb()` pattern** — a factory function that creates a fresh Prisma client per request, preventing connection saturation in a serverless environment
-- **`force-dynamic`** on all authenticated pages — prevents static pre-rendering of private routes at build time
-
----
-
-## 🚀 Running Locally
+## 💻 Local Development
 
 ### Prerequisites
-- Node.js `>= 18.x`
-- A [Neon DB](https://neon.tech) PostgreSQL database
-- An [UploadThing](https://uploadthing.com) account
-- An `AUTH_SECRET` (generate with `openssl rand -base64 32`)
+- Node.js 20+
+- PostgreSQL (or Neon DB account)
+- Redis (via Upstash)
 
-### Setup
-
+### Initialization
 ```bash
-# 1. Clone the repository
+# 1. Clone & Install
 git clone https://github.com/abumdselim/thechattala.git
-cd thechattala
+cd thechattala && npm install
 
-# 2. Install dependencies
-npm install
-
-# 3. Create your environment file
+# 2. Environment Configuration
 cp .env.example .env.local
-```
 
-Populate `.env.local` with:
-
-```env
-DATABASE_URL="postgresql://..."
-DIRECT_URL="postgresql://..."
-AUTH_SECRET="your-secret-here"
-UPLOADTHING_SECRET="sk_live_..."
-UPLOADTHING_APP_ID="your-app-id"
-```
-
-```bash
-# 4. Push the Prisma schema to your database
+# 3. Database Synchronization
 npx prisma db push
 
-# 5. Start the development server
+# 4. Launch Development Environment
 npm run dev
 ```
 
-Open [http://localhost:9002](http://localhost:9002) in your browser.
+---
 
-### Other Scripts
+## 🏗️ System Architecture
 
-```bash
-npm run build      # Production build
-npm run start      # Start production server
-npx prisma studio  # Visual database editor
+```text
+src/
+├── app/                  # Next.js 15 App Router & API Route Handlers
+├── components/           # Atomic UI Design System (Shadcn/UI base)
+├── hooks/                # Custom React Hooks & Context Providers
+├── lib/                  # Core Utilities (Auth, Database, Sentry)
+├── types/                # Global TypeScript interfaces & enums
+└── prisma/               # Schema definitions & migrations
 ```
 
 ---
 
-## 🚢 Deployment
-
-The Chattala is configured for **automated deployment on Vercel** — every push to `main` triggers a production deploy.
-
-> 📖 **See the full step-by-step guide:** [DEPLOYMENT.md](./DEPLOYMENT.md)
-
-### Quick Summary
-
-```
-1. Push to main → Vercel auto-deploys
-2. Set all env variables in Vercel project settings
-3. Run migrations: npx prisma migrate deploy
-4. Run smoke tests (see DEPLOYMENT.md)
-5. Monitor Sentry for 24h
-```
-
-> **Note:** `DATABASE_URL` must use the **pooled** Neon connection string. `DIRECT_URL` must use the **direct** connection string (for migrations only).
-
----
-
-## 👨‍💻 Developer
+## 👨‍💻 Engineering Lead
 
 <div align="center">
 
-# **ABU MD. SELIM**
+### **Abu Md. Selim**
+*Founder & CTO, Inievo Technologies*
 
-**Founder**
-[Inievo Technologies]
-(https://inievo.com)
+[![Portfolio](https://img.shields.io/badge/Portfolio-inievo.com-black?style=flat-square&logo=browser)](https://inievo.com)
+[![LinkedIn](https://img.shields.io/badge/Connect-LinkedIn-0077B5?style=flat-square&logo=linkedin)](https://www.linkedin.com/in/aabumdselim)
+[![GitHub](https://img.shields.io/badge/Follow-GitHub-181717?style=flat-square&logo=github)](https://github.com/abumdselim)
 
-<br/>
+</div>
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-aabumdselim-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/aabumdselim)
-[![Facebook](https://img.shields.io/badge/Facebook-mishuabcde-1877F2?style=for-the-badge&logo=facebook&logoColor=white)](https://www.facebook.com/mishuabcde)
-[![Instagram](https://img.shields.io/badge/Instagram-mishuabcde-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/mishuabcde)
+---
+
+<div align="center">
+
+**The Chattala** — Engineered for Resilience. Built for Community.
+*© 2026 [Inievo Technologies](https://inievo.com). All rights reserved.*
+
+</div>
+gram-mishuabcde-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/mishuabcde)
 [![GitHub](https://img.shields.io/badge/GitHub-abumdselim-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/abumdselim)
 
 </div>
