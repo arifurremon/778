@@ -1,80 +1,61 @@
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import React from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 export default function AdminDashboardLoading() {
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="p-6 md:p-8 space-y-8">
       {/* Header Skeleton */}
       <div className="space-y-2">
-        <Skeleton className="h-9 w-48" />
-        <Skeleton className="h-4 w-64" />
+        <div className="h-4 w-24 bg-muted/60 animate-pulse rounded-full" />
+        <div className="h-10 w-64 bg-muted/60 animate-pulse rounded-xl" />
       </div>
 
-      {/* Stats Grid Skeleton */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="border-border/50 bg-card/40">
-            <CardContent className="p-5 flex flex-col gap-4">
-              <div className="flex items-start justify-between">
-                <Skeleton className="w-10 h-10 rounded-xl" />
-                <Skeleton className="h-6 w-12 rounded-full" />
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-20" />
-                <Skeleton className="h-4 w-24" />
-              </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="border-border/50 shadow-sm overflow-hidden">
+            <CardHeader className="pb-2">
+              <div className="h-3 w-20 bg-muted/60 animate-pulse rounded-full" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 w-16 bg-muted/60 animate-pulse rounded-lg mb-2" />
+              <div className="h-3 w-24 bg-muted/60 animate-pulse rounded-full" />
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Main Content Area Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Recent Activity Skeleton */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-7 w-40" />
-            <Skeleton className="h-8 w-20" />
-          </div>
-          <Card className="border-border/50 bg-card/40">
-            <CardContent className="p-6 space-y-6">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex gap-6">
-                  <Skeleton className="w-10 h-10 rounded-full shrink-0" />
-                  <div className="flex-1 space-y-2 py-1">
-                    <div className="flex gap-2">
-                      <Skeleton className="h-4 w-1/3" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right: Pending Actions Skeleton */}
-        <div className="space-y-4">
-          <Skeleton className="h-7 w-40" />
-          <Card className="border-border/50 bg-card/40">
-            <CardHeader className="pb-3">
-              <Skeleton className="h-4 w-32 mb-1" />
-              <Skeleton className="h-3 w-48" />
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {[...Array(2)].map((_, i) => (
+          <Card key={i} className="border-border/50 shadow-xl shadow-black/5 overflow-hidden">
+            <CardHeader className="bg-muted/10 pb-4 border-b border-border/30">
+              <div className="h-5 w-40 bg-muted/60 animate-pulse rounded-lg" />
             </CardHeader>
-            <CardContent className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-border/50">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="w-8 h-5 rounded-full" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="w-7 h-7 rounded-lg" />
-                </div>
-              ))}
+            <CardContent className="p-6">
+              <div className="h-[300px] w-full bg-muted/40 animate-pulse rounded-xl" />
             </CardContent>
           </Card>
-        </div>
+        ))}
+      </div>
+
+      {/* Recent Activity Table Skeleton */}
+      <div className="space-y-4">
+        <div className="h-6 w-32 bg-muted/60 animate-pulse rounded-lg" />
+        <Card className="border-border/50 shadow-sm overflow-hidden">
+          <div className="divide-y divide-border/30">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-muted/60 animate-pulse shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-1/3 bg-muted/60 animate-pulse rounded-full" />
+                  <div className="h-3 w-1/4 bg-muted/60 animate-pulse rounded-full" />
+                </div>
+                <div className="h-6 w-16 bg-muted/60 animate-pulse rounded-lg" />
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
     </div>
   );
