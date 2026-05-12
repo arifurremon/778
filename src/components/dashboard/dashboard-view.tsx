@@ -123,11 +123,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { icon: <ShieldCheck size={18} />, label: "Expert Hub", href: "/expert", expertOnly: true },
     { icon: <ShieldAlert size={18} />, label: "Emergency", href: "/emergency" },
     { icon: <Compass size={18} />, label: "Vision & Legacy", href: "/about" },
+    { icon: <ShieldAlert size={18} />, label: "Admin Center", href: "/admin", adminOnly: true },
   ];
 
   const visibleNavItems = NAV_ITEMS.filter(item => {
     if (item.sellerOnly && !user?.isSeller) return false;
     if (item.expertOnly && !user?.isServiceProvider) return false;
+    if (item.adminOnly && !user?.isAdmin) return false;
     return true;
   });
 
