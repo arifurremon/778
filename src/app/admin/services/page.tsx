@@ -1,230 +1,302 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import {
-  Briefcase,
-  Star,
-  MapPin,
-  Clock,
-  CheckCircle2,
-  XCircle,
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Briefcase, 
+  Search, 
+  Filter, 
+  ShieldCheck, 
+  XCircle, 
+  Trash2, 
   MoreHorizontal,
-  ShieldCheck,
-} from "lucide-react";
-import { AdminTableToolbar, AdminPagination, AdminEmptyState } from "@/components/admin/admin-table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  User,
+  ExternalLink,
+  Ban,
+  Mail,
+  Calendar
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+
+import { StatusBadge } from '@/components/admin/display/StatusBadge';
+import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
+import { FilterPanel } from '@/components/admin/forms/FilterPanel';
+import { SearchBar } from '@/components/admin/forms/SearchBar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface AdminService {
   id: string;
-  profession: string;
-  category: string;
-  location: string;
-  experienceYears: number;
-  fee: string;
-  rating: number;
-  createdAt: string;
-  user: {
-    id: string;
-    name: string | null;
-    email: string;
-    profileImage: string | null;
-    isServiceProvider: boolean;
-    serviceRegistrationStatus: string;
-  };
+  title: string;
+  description: string | null;
+  category: string | null;
+  serviceAreas: string[];
+  pricing: string | null;
+  isVerified: boolean;
+  verifiedAt: Date | null;
+  rejectedAt: Date | null;
+  rejectionReason: string | null;
+  createdAt: Date;
+  provider: { id: string; name: string; email: string; profileImage: string | null };
+  _count: { bookings: number };
 }
-
-interface ServicesResponse {
-  services: AdminService[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
-
-const CATEGORIES = ["All", "Medical", "Legal", "Engineering", "Education", "Finance", "Technology", "Construction"];
 
 export default function AdminServicesPage() {
+  const router = useRouter();
   const [services, setServices] = useState<AdminService[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
+  
+  // Filters
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("all");
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+
+  // Dialogs
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+  const [confirmVerify, setConfirmVerify] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: "20", search, category });
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pageSize.toString(),
+        search,
+        category,
+        status,
+        from: dateRange.from,
+        to: dateRange.to
+      });
       const res = await fetch(`/api/admin/services?${params.toString()}`);
       if (!res.ok) throw new Error();
-      const data = await res.json() as ServicesResponse;
+      const data = await res.json();
       setServices(data.services);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
-    } catch {
+      setTotalCount(data.total);
+    } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to load services." });
     } finally {
       setLoading(false);
     }
-  }, [page, search, category]);
+  }, [page, pageSize, search, category, status, dateRange]);
 
-  useEffect(() => { void fetchServices(); }, [fetchServices]);
-  useEffect(() => { const t = setTimeout(() => setPage(1), 400); return () => clearTimeout(t); }, [search]);
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
-  const handleApprove = async (userId: string, approve: boolean) => {
+  const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/verify/${userId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: approve ? "approve" : "reject", type: "service" }),
-      });
+      const res = await fetch(`/api/admin/services/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
-      toast({ title: approve ? "Expert Certified" : "Application Rejected" });
-      void fetchServices();
-    } catch {
-      toast({ variant: "destructive", title: "Error", description: "Action failed." });
+      toast({ title: "Deleted", description: "Service removed successfully." });
+      fetchServices();
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to delete service." });
+    } finally {
+      setConfirmDelete({ open: false, id: null });
     }
   };
 
-  const CATEGORY_FILTERS = [
-    { key: "category", label: "Category", options: CATEGORIES.map((c) => ({ value: c.toLowerCase() === "all" ? "all" : c, label: c })) },
-  ];
+  const handleVerify = async (id: string, approve: boolean) => {
+    try {
+      const res = await fetch(`/api/admin/services/${id}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: approve ? 'approve' : 'reject' })
+      });
+      if (!res.ok) throw new Error();
+      toast({ title: approve ? "Verified" : "Rejected", description: `Service ${approve ? 'verified' : 'rejected'} successfully.` });
+      fetchServices();
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Update failed." });
+    } finally {
+      setConfirmVerify({ open: false, id: null });
+    }
+  };
+
+  const getStatus = (service: AdminService) => {
+    if (service.isVerified) return 'active';
+    if (service.rejectedAt) return 'rejected';
+    return 'pending';
+  };
+
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-      <div>
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-cyan-400 mb-2">
-          <Briefcase size={12} />
-          Service Management
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-emerald-500 mb-2">
+            <Briefcase size={12} />
+            Services Management
+          </div>
+          <h1 className="text-3xl font-black tracking-tight">Active Providers</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage verified and unverified service providers on the platform</p>
         </div>
-        <h1 className="text-2xl font-black tracking-tight">Expert Services</h1>
-        <p className="text-sm text-muted-foreground mt-1">{total.toLocaleString()} service providers on the platform</p>
+        <Button variant="outline" size="sm" asChild className="rounded-full border-primary/20">
+          <Link href="/admin/services/pending-verification" className="gap-2">
+            <Badge variant="secondary" className="h-5 px-1 bg-amber-500/10 text-amber-600">!</Badge>
+            Verification Queue
+          </Link>
+        </Button>
       </div>
 
-      <div className="bg-card/40 border border-border/50 rounded-2xl p-4">
-        <AdminTableToolbar
-          search={search}
-          onSearch={(v) => { setSearch(v); setPage(1); }}
-          placeholder="Search by profession, category, or location..."
-          filters={CATEGORY_FILTERS}
-          activeFilters={{ category }}
-          onFilter={(_, v) => { setCategory(v); setPage(1); }}
+      <div className="flex flex-col md:flex-row gap-4">
+        <SearchBar 
+          value={search} 
+          onChange={setSearch} 
+          placeholder="Search by service title or provider..." 
+          className="flex-1"
         />
+        <FilterPanel activeCount={0} onReset={() => {}} onApply={fetchServices}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-background border rounded-lg p-2 text-sm">
+                <option value="all">All Categories</option>
+                <option value="home">Home Services</option>
+                <option value="education">Education & Tutors</option>
+                <option value="health">Health & Wellness</option>
+                <option value="tech">Tech Support</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full bg-background border rounded-lg p-2 text-sm">
+                <option value="all">All Status</option>
+                <option value="verified">Verified</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+        </FilterPanel>
       </div>
 
-      <div className="bg-card/40 border border-border/50 rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="divide-y divide-border/20">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-5">
-                <Skeleton className="w-12 h-12 rounded-xl" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              </div>
-            ))}
+      <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-xl shadow-black/5">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-muted/30 text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50">
+              <tr>
+                <th className="px-6 py-4">Service</th>
+                <th className="px-6 py-4">Provider Info</th>
+                <th className="px-6 py-4 text-center">Status</th>
+                <th className="px-6 py-4 text-center">Service Areas</th>
+                <th className="px-6 py-4">Joined</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/30">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={6} className="px-6 py-8"><div className="h-4 bg-muted rounded w-full" /></td>
+                  </tr>
+                ))
+              ) : (
+                services.map((service) => (
+                  <tr key={service.id} className="group hover:bg-muted/20 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl border border-border/50 shadow-sm flex items-center justify-center bg-primary/10 text-primary">
+                          <Briefcase size={20} />
+                        </div>
+                        <div className="flex flex-col max-w-[200px]">
+                          <span className="text-sm font-bold tracking-tight truncate">{service.title}</span>
+                          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest truncate">{service.category || 'General'}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-6 h-6 rounded-full">
+                          <AvatarImage src={service.provider.profileImage || ""} />
+                          <AvatarFallback className="text-[8px]">{service.provider.name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold">{service.provider.name}</span>
+                          <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{service.provider.email}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <StatusBadge status={getStatus(service)} className="text-[10px]" />
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant="outline" className="text-[10px] font-bold bg-muted/50 border-border/50 max-w-[150px] truncate block mx-auto">
+                        {service.serviceAreas && service.serviceAreas.length > 0 ? service.serviceAreas.join(', ') : 'Not specified'}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-xs font-medium text-muted-foreground">
+                      {format(new Date(service.createdAt), 'MMM dd, yyyy')}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreHorizontal size={14} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                          <DropdownMenuItem onClick={() => router.push(`/admin/services/${service.id}`)}>
+                            <ExternalLink size={14} className="mr-2" /> View Details
+                          </DropdownMenuItem>
+                          {!service.isVerified && (
+                            <DropdownMenuItem onClick={() => handleVerify(service.id, true)}>
+                              <ShieldCheck size={14} className="mr-2 text-emerald-500" /> Verify Provider
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem className="text-destructive" onClick={() => setConfirmDelete({ open: true, id: service.id })}>
+                            <Trash2 size={14} className="mr-2" /> Delete Provider
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="p-4 border-t border-border/50 flex items-center justify-between bg-muted/10">
+          <p className="text-xs font-medium text-muted-foreground">Showing <span className="text-foreground">{services.length}</span> of <span className="text-foreground">{totalCount}</span> services</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="h-8 rounded-lg">
+              <ChevronLeft size={14} className="mr-1" /> Previous
+            </Button>
+            <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="h-8 rounded-lg">
+              Next <ChevronRight size={14} className="ml-1" />
+            </Button>
           </div>
-        ) : services.length === 0 ? (
-          <AdminEmptyState icon={<Briefcase size={40} />} title="No services found" />
-        ) : (
-          <div className="divide-y divide-border/20">
-            {services.map((svc, i) => (
-              <motion.div
-                key={svc.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.02 }}
-                className="flex flex-col md:flex-row md:items-center gap-4 px-5 py-5 hover:bg-muted/20 transition-colors"
-              >
-                {/* Provider */}
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <Avatar className="w-12 h-12 border border-border/30 shrink-0">
-                    <AvatarImage src={svc.user.profileImage ?? ""} />
-                    <AvatarFallback className="font-bold">{svc.user.name?.[0] ?? "E"}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold truncate">{svc.user.name ?? svc.user.email}</h3>
-                      {svc.user.isServiceProvider && <ShieldCheck size={13} className="text-cyan-400 shrink-0" />}
-                    </div>
-                    <p className="text-xs font-semibold text-cyan-400/80">{svc.profession}</p>
-                    <div className="flex flex-wrap items-center gap-3 mt-1 text-[10px] text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <MapPin size={9} /> {svc.location}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={9} /> {svc.experienceYears}y exp
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Star size={9} className="text-amber-400" /> {svc.rating.toFixed(1)}
-                      </span>
-                      <span className="font-bold text-foreground">{svc.fee}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Category & Status */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  <Badge className="text-[9px] bg-cyan-400/10 text-cyan-400 border-cyan-400/20">{svc.category}</Badge>
-                  <Badge
-                    className={cn(
-                      "text-[9px]",
-                      svc.user.serviceRegistrationStatus === "APPROVED"
-                        ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20"
-                        : svc.user.serviceRegistrationStatus === "PENDING"
-                        ? "bg-blue-400/10 text-blue-400 border-blue-400/20"
-                        : svc.user.serviceRegistrationStatus === "REJECTED"
-                        ? "bg-destructive/10 text-destructive border-destructive/20"
-                        : "bg-muted text-muted-foreground border-border"
-                    )}
-                  >
-                    {svc.user.serviceRegistrationStatus}
-                  </Badge>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                  {svc.user.serviceRegistrationStatus === "PENDING" && (
-                    <>
-                      <Button size="sm" onClick={() => void handleApprove(svc.user.id, true)}
-                        className="h-7 text-[10px] font-bold bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg px-3">
-                        <CheckCircle2 size={11} className="mr-1" /> Certify
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => void handleApprove(svc.user.id, false)}
-                        className="h-7 text-[10px] text-destructive hover:bg-destructive/10 rounded-lg px-2">
-                        <XCircle size={11} />
-                      </Button>
-                    </>
-                  )}
-                  {svc.user.serviceRegistrationStatus === "APPROVED" && (
-                    <Button size="sm" variant="ghost" onClick={() => void handleApprove(svc.user.id, false)}
-                      className="h-7 text-[10px] text-destructive hover:bg-destructive/10 rounded-lg px-2">
-                      Revoke
-                    </Button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        <div className="px-5 border-t border-border/30">
-          <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} limit={20} />
         </div>
       </div>
+
+      <ConfirmationDialog 
+        open={confirmDelete.open}
+        onOpenChange={(o) => setConfirmDelete({ open: o, id: o ? confirmDelete.id : null })}
+        onConfirm={() => confirmDelete.id && handleDelete(confirmDelete.id)}
+        title="Permanently Delete Service?"
+        description="This will remove the service provider profile and all their active bookings. This action cannot be undone."
+      />
     </div>
   );
 }
