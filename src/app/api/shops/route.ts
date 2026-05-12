@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { sanitizeUserInput } from "@/lib/sanitize";
 
 // ---------------------------------------------------------------------------
 // Shared shop select
@@ -107,7 +108,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { name, description, category, location } = parsed.data;
+    let { name, description, category, location } = parsed.data;
+    
+    name = sanitizeUserInput(name);
+    description = sanitizeUserInput(description);
+    category = sanitizeUserInput(category);
+    location = sanitizeUserInput(location);
 
     const shop = await db.shop.create({
       data: {

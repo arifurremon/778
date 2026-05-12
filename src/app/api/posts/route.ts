@@ -3,6 +3,7 @@ import { z } from "zod";
 import { PrivacyLevel } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { sanitizePostContent } from "@/lib/sanitize";
 
 // ---------------------------------------------------------------------------
 // Shared author select — used by both GET and POST
@@ -95,7 +96,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { content, images, checkInLocation, visibility } = parsed.data;
+    let { content, images, checkInLocation, visibility } = parsed.data;
+    content = sanitizePostContent(content);
     const authorId = session.user.id;
 
     // Create post + activity log sequentially (HTTP adapter doesn't support transactions)

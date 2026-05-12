@@ -73,6 +73,7 @@ import { differenceInYears, format, parseISO } from "date-fns";
 import { useCommunity } from "@/hooks/use-community";
 import { cn } from "@/lib/utils";
 import { UploadButton } from "@/lib/uploadthing";
+import { validateFileUpload } from "@/lib/sanitize";
 
 const CHITTAGONG_AREAS = [
   'Akbar Shah', 'Bakalia', 'Bandar', 'Bayezid Bostami', 
@@ -282,6 +283,13 @@ export default function ProfileView() {
                   <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 z-20">
                     <UploadButton
                       endpoint="profileImage"
+                      onBeforeUploadBegin={(files) => {
+                        const validFiles = files.filter(validateFileUpload);
+                        if (validFiles.length === 0) {
+                          toast({ variant: "destructive", title: "Invalid File", description: "Only JPG, PNG, PDF under 10MB are allowed." });
+                        }
+                        return validFiles;
+                      }}
                       onClientUploadComplete={(res) => {
                         if (res?.[0]) {
                           updateUser({ profileImage: res[0].url });

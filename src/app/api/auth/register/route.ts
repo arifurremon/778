@@ -4,6 +4,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { sendWelcomeEmail } from "@/lib/mail";
+import { sanitizeUserInput } from "@/lib/sanitize";
 
 // ---------------------------------------------------------------------------
 // Rate Limiting
@@ -71,8 +72,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { email, password, username, name, preferredName, mobile, location, dob } =
+    let { email, password, username, name, preferredName, mobile, location, dob } =
       parsed.data;
+      
+    name = sanitizeUserInput(name);
+    preferredName = sanitizeUserInput(preferredName);
+    location = sanitizeUserInput(location);
+    username = sanitizeUserInput(username);
 
     // --- Duplicate checks ---------------------------------------------------
     const existingEmail = await db.user.findUnique({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { sanitizeUserInput } from "@/lib/sanitize";
 
 // ---------------------------------------------------------------------------
 // GET /api/user/profile  — authenticated user's full profile (no password)
@@ -88,7 +89,13 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { name, ...rest } = parsed.data;
+    let { name, preferredName, mobile, location, dob, profileImage, ...rest } = parsed.data;
+
+    if (name) name = sanitizeUserInput(name);
+    if (preferredName) preferredName = sanitizeUserInput(preferredName);
+    if (mobile) mobile = sanitizeUserInput(mobile);
+    if (location) location = sanitizeUserInput(location);
+    if (dob) dob = sanitizeUserInput(dob);
 
     // Enforce name change limit
     if (name !== undefined) {
@@ -113,6 +120,11 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       where: { id: session.user.id },
       data: {
         ...rest,
+        preferredName,
+        mobile,
+        location,
+        dob,
+        profileImage,
         ...(name !== undefined
           ? { name, nameChangeCount: { increment: 1 } }
           : {}),
