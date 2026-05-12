@@ -13,16 +13,17 @@ const rejectSchema = z.object({
  * POST /api/admin/services/[id]/reject
  * Rejects a service provider application.
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
+    const { id } = await params;
     const body = await req.json();
     const validatedData = rejectSchema.parse(body);
 
     const service = await db.expertService.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { user: true }
     });
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       try {
         // SCHEMA-FALLBACK: 'rejectedAt' or 'rejectionReason' may not exist — verify schema
         await tx.expertService.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             // @ts-ignore
             isVerified: false,
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       session.user.id,
       "REJECT_SERVICE",
       "Service",
-      params.id,
+      id,
       { reason: validatedData.reason },
       req.headers.get("x-forwarded-for") || "unknown"
     );

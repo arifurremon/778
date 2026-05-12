@@ -8,13 +8,15 @@ import { sendEmail } from "@/lib/email";
  * POST /api/admin/shops/[id]/verify
  * Approves a shop registration.
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
+    const { id } = await params;
+
     const shop = await db.shop.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { user: true }
     });
 
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await db.$transaction(async (tx) => {
       // Update shop status
       await tx.shop.update({
-        where: { id: params.id },
+        where: { id },
         data: { 
           isVerified: true,
           // SCHEMA-FALLBACK: 'verifiedAt' may not exist — verify schema
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       session.user.id,
       "VERIFY_SHOP",
       "Shop",
-      params.id,
+      id,
       { shopName: shop.name },
       req.headers.get("x-forwarded-for") || "unknown"
     );

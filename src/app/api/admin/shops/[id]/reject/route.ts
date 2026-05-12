@@ -13,16 +13,17 @@ const rejectSchema = z.object({
  * POST /api/admin/shops/[id]/reject
  * Rejects a shop registration request.
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
+    const { id } = await params;
     const body = await req.json();
     const validatedData = rejectSchema.parse(body);
 
     const shop = await db.shop.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { user: true }
     });
 
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // [cite_start]Update shop: set rejectedAt and rejectionReason. [cite: 110]
     await db.$transaction(async (tx) => {
       await tx.shop.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           isVerified: false,
           // SCHEMA-FALLBACK: 'rejectedAt' or 'rejectionReason' may not exist — verify schema
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       session.user.id,
       "REJECT_SHOP",
       "Shop",
-      params.id,
+      id,
       { reason: validatedData.reason },
       req.headers.get("x-forwarded-for") || "unknown"
     );

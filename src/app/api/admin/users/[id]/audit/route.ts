@@ -6,10 +6,12 @@ import { requireAdmin } from "@/lib/admin-auth";
  * GET /api/admin/users/[id]/audit
  * Returns last 20 audit logs for a specific user.
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { error } = await requireAdmin();
     if (error) return error;
+
+    const { id } = await params;
 
     let logs = [];
 
@@ -18,7 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     try {
       // @ts-ignore
       logs = await db.auditLog.findMany({
-        where: { resourceId: params.id },
+        where: { resourceId: id },
         take: 20,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -30,7 +32,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       // Optional: Try fetching from ActivityLog if it represents similar data
       try {
         logs = await db.activityLog.findMany({
-          where: { userId: params.id },
+          where: { userId: id },
           take: 20,
           orderBy: { createdAt: 'desc' },
           select: {

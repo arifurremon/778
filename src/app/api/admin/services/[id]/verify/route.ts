@@ -8,13 +8,15 @@ import { sendEmail } from "@/lib/email";
  * POST /api/admin/services/[id]/verify
  * Approves a service provider application.
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
+    const { id } = await params;
+
     const service = await db.expertService.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { user: true }
     });
 
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       try {
         // SCHEMA-FALLBACK: 'isVerified' or 'verifiedAt' may not exist — verify schema
         await tx.expertService.update({
-          where: { id: params.id },
+          where: { id },
           data: { 
             // @ts-ignore
             isVerified: true,
@@ -92,7 +94,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       session.user.id,
       "VERIFY_SERVICE",
       "Service",
-      params.id,
+      id,
       { serviceTitle },
       req.headers.get("x-forwarded-for") || "unknown"
     );

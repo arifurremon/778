@@ -12,15 +12,16 @@ const suspendSchema = z.object({
 /**
  * POST /api/admin/users/[id]/suspend
  */
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
+    const { id } = await params;
     const body = await req.json();
     const validatedData = suspendSchema.parse(body);
 
-    if (params.id === session.user.id && validatedData.suspended) {
+    if (id === session.user.id && validatedData.suspended) {
       return NextResponse.json({ error: "You cannot suspend your own account." }, { status: 400 });
     }
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // SCHEMA-FALLBACK: 'suspendedAt' may not exist — verify schema [cite: 264]
     try {
       await db.user.update({
-        where: { id: params.id },
+        where: { id },
         data: {
           // @ts-ignore
           suspendedAt: validatedData.suspended ? new Date() : null,
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
       success = true;
     } catch (err) {
-      console.warn(`[SCHEMA_FALLBACK]: Could not update suspension fields for user ${params.id}. They may be missing from the schema.`);
+      console.warn(`[SCHEMA_FALLBACK]: Could not update suspension fields for user ${id}. They may be missing from the schema.`);
       // Return a safe default success response to avoid crashing the UI
       success = false; 
     }
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       session.user.id,
       validatedData.suspended ? "SUSPEND_USER" : "UNSUSPEND_USER",
       "User",
-      params.id,
+      id,
       { reason: validatedData.reason },
       req.headers.get("x-forwarded-for") || "unknown"
     );
