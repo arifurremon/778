@@ -1,4 +1,5 @@
 export * from './EntityCard';
 export * from './DetailView';
-export * from './Timeline';
+export * from './ActivityTimeline';
 export * from './StatusBadge';
+export * from './StatsCard';

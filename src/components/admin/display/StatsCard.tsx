@@ -16,7 +16,7 @@ interface StatCardProps {
   className?: string;
 }
 
-export function StatCard({
+export function StatsCard({
   title,
   value,
   subtitle,

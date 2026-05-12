@@ -22,7 +22,7 @@ const typeStyles = {
   error: 'bg-red-500',
 };
 
-export const Timeline = ({ items, className }: TimelineProps) => {
+export const ActivityTimeline = ({ items, className }: TimelineProps) => {
   return (
     <div className={cn("relative space-y-6 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-muted before:to-transparent", className)}>
       {items.map((item, index) => (
