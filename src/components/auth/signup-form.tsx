@@ -72,8 +72,9 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
       });
       router.refresh();
       router.push("/dashboard");
-    } catch (err: any) {
-      setSignupError(err.message || "Registration failed. Please try again.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
+      setSignupError(message);
     }
   };
 

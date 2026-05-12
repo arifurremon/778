@@ -23,7 +23,9 @@ import {
   Eye,
   Briefcase
 } from "lucide-react";
-import { useServices, Booking, BookingStatus } from "@/hooks/use-services";
+import { LucideIcon } from "lucide-react";
+import { useServices, Booking, BookingStatus, OngoingSubStatus } from "@/hooks/use-services";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,10 +90,10 @@ export function ExpertDashboard() {
 
       {/* Bento Metrics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard label="Requests" value={stats.totalRequests.toString()} icon={<Zap size={18} />} color="text-accent" />
-        <MetricCard label="Completed" value={stats.completedTasks.toString()} icon={<CheckCircle2 size={18} />} color="text-emerald-400" />
-        <MetricCard label="Profile Views" value={stats.profileViews} icon={<Eye size={18} />} color="text-blue-400" />
-        <MetricCard label="Expert Rating" value={stats.rating} icon={<Star size={18} />} color="text-amber-400" />
+        <MetricCard label="Requests" value={stats.totalRequests.toString()} icon={Zap} color="text-accent" />
+        <MetricCard label="Completed" value={stats.completedTasks.toString()} icon={CheckCircle2} color="text-emerald-400" />
+        <MetricCard label="Profile Views" value={stats.profileViews} icon={Eye} color="text-blue-400" />
+        <MetricCard label="Expert Rating" value={stats.rating} icon={Star} color="text-amber-400" />
       </div>
 
       <Tabs defaultValue="requests" className="space-y-8">
@@ -217,7 +219,7 @@ export function ExpertDashboard() {
                         onChange={(e) => setReplyText({...replyText, [review.id]: e.target.value})}
                       />
                       <Button size="icon" onClick={() => {
-                        replyToReview(review.id, replyText[review.id]);
+                        replyToReview(review.id, replyText[review.id] ?? "");
                         setReplyText({...replyText, [review.id]: ""});
                         toast({ title: "Reply Published" });
                       }} className="bg-accent text-accent-foreground h-11 w-11 rounded-xl shrink-0 shadow-lg shadow-accent/20 hover:scale-105 transition-all"><Send size={16} /></Button>
@@ -271,12 +273,12 @@ export function ExpertDashboard() {
   );
 }
 
-function MetricCard({ label, value, icon, color }: { label: string, value: string, icon: any, color: string }) {
+function MetricCard({ label, value, icon: Icon, color }: { label: string, value: string, icon: LucideIcon, color: string }) {
   return (
     <Card className="p-6 bg-card/20 border-border/50 rounded-[2rem] relative overflow-hidden group text-left backdrop-blur-sm">
       <div className="flex justify-between items-start mb-4">
         <div className={cn("p-2 rounded-xl bg-background/40 border border-border/30 shadow-sm", color)}>
-          {icon}
+          <Icon size={18} />
         </div>
       </div>
       <p className="text-[9px] text-muted-foreground font-black uppercase tracking-[0.25em] mb-1">{label}</p>
@@ -322,10 +324,10 @@ function BookingCard({ booking, onAccept, onDecline }: { booking: Booking, onAcc
   );
 }
 
-function ActiveBookingCard({ booking, onUpdate, onComplete }: { booking: Booking, onUpdate: (s: any) => void, onComplete: () => void }) {
-  const nextStatusMap: { [key: string]: any } = {
+function ActiveBookingCard({ booking, onUpdate, onComplete }: { booking: Booking, onUpdate: (s: OngoingSubStatus) => void, onComplete: () => void }) {
+  const nextStatusMap: { [key: string]: OngoingSubStatus } = {
     'Confirmed': 'On My Way',
-    'On My Way': 'Start Service',
+    'On My Way': 'Service Started',
   };
 
   const nextStatus = nextStatusMap[booking.subStatus || ''];
@@ -374,15 +376,13 @@ function ActiveBookingCard({ booking, onUpdate, onComplete }: { booking: Booking
   );
 }
 
-function EmptyState({ message, icon }: { message: string, icon?: any }) {
+function EmptyState({ message, icon: Icon }: { message: string, icon?: LucideIcon }) {
   return (
     <div className="py-12 text-center bg-card/5 border border-dashed border-border/30 rounded-[2rem]">
-      {icon ? <div className="text-muted-foreground/20 mb-3">{icon}</div> : <CheckCircle2 className="w-10 h-10 text-muted-foreground/10 mx-auto mb-3" />}
+      {Icon ? <div className="text-muted-foreground/20 mb-3"><Icon size={40} className="mx-auto" /></div> : <CheckCircle2 className="w-10 h-10 text-muted-foreground/10 mx-auto mb-3" />}
       <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">{message}</p>
     </div>
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}
+

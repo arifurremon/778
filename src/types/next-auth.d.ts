@@ -7,6 +7,7 @@ declare module "next-auth" {
     username?: string | null;
     isAdmin?: boolean;
     profileImage?: string | null;
+    image?: string | null;
   }
 
   interface Session {

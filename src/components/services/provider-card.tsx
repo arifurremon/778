@@ -8,11 +8,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+import { Provider } from "@/types";
 import { BookingModal } from "./booking-modal";
 import Link from "next/link";
 
 interface ProviderCardProps {
-  provider: any;
+  provider: Provider;
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
@@ -56,7 +57,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
           </div>
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
             <Award size={14} className="text-primary" />
-            <span>{(provider as any).experience}+ Years Experience</span>
+            <span>{provider.experience}+ Years Experience</span>
           </div>
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
             {provider.type === 'appointment' ? <Clock size={14} className="text-primary" /> : <Zap size={14} className="text-primary" />}

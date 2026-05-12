@@ -146,7 +146,7 @@ function NeighbourCard({ username, onRemove }: { username: string, onRemove: () 
        <div className="flex items-center gap-4 text-left">
           <Avatar className="w-12 h-12 border border-border/50">
             <AvatarImage src={`https://picsum.photos/seed/${username}/100`} />
-            <AvatarFallback>{username[0].toUpperCase()}</AvatarFallback>
+            <AvatarFallback>{(username[0] ?? '').toUpperCase()}</AvatarFallback>
           </Avatar>
           <div>
             <div className="flex items-center gap-1">

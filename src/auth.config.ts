@@ -13,7 +13,7 @@ export const authConfig: NextAuthConfig = {
         token.username = user.username;
         token.isAdmin = user.isAdmin;
         // Fallback to Google image if profileImage is not set
-        token.profileImage = user.profileImage || (user as any).image;
+        token.profileImage = user.profileImage || user.image;
       }
       
       // Support manual session updates
@@ -34,7 +34,7 @@ export const authConfig: NextAuthConfig = {
     },
     async authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isAdmin = (auth?.user as any)?.isAdmin;
+      const isAdmin = auth?.user?.isAdmin;
       
       if (process.env.NODE_ENV === "development") {
         console.log(`[Auth] Path: ${nextUrl.pathname}, LoggedIn: ${isLoggedIn}`);

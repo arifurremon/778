@@ -12,7 +12,7 @@ export const api = {
     return res.json();
   },
 
-  async post<T>(url: string, body?: any): Promise<T> {
+  async post<T>(url: string, body?: unknown): Promise<T> {
     const res = await fetch(url, {
       method: "POST",
       headers: {
@@ -27,7 +27,7 @@ export const api = {
     return res.json();
   },
 
-  async patch<T>(url: string, body?: any): Promise<T> {
+  async patch<T>(url: string, body?: unknown): Promise<T> {
     const res = await fetch(url, {
       method: "PATCH",
       headers: {

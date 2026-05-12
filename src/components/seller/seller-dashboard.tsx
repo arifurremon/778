@@ -18,10 +18,12 @@ import {
   ArrowUpRight,
   Trash2,
   Edit,
-  Star
+  Star,
+  LucideIcon
 } from "lucide-react";
 import { useBusiness, OrderStatus } from "@/hooks/use-business";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -72,26 +74,26 @@ export function SellerDashboard() {
         <MetricCard 
           label="Total Revenue" 
           value={`৳${stats.totalSales.toLocaleString()}`} 
-          icon={<TrendingUp size={18} />} 
+          icon={TrendingUp} 
           color="text-emerald-400"
           trend="+12%"
         />
         <MetricCard 
           label="Active Orders" 
           value={stats.activeOrders.toString()} 
-          icon={<Truck size={18} />} 
+          icon={Truck} 
           color="text-accent"
         />
         <MetricCard 
           label="Live Products" 
           value={stats.activeProducts.toString()} 
-          icon={<Package size={18} />} 
+          icon={Package} 
           color="text-blue-400"
         />
         <MetricCard 
           label="Shop Rating" 
           value={stats.rating} 
-          icon={<Star size={18} />} 
+          icon={Star} 
           color="text-amber-400"
         />
       </div>
@@ -234,7 +236,7 @@ export function SellerDashboard() {
                 </div>
               </motion.div>
             ))}
-            {products.length === 0 && <EmptyFeed message="No products listed yet." icon={<ShoppingBag size={32} />} />}
+            {products.length === 0 && <EmptyFeed message="No products listed yet." icon={ShoppingBag} />}
           </div>
         </TabsContent>
       </Tabs>
@@ -242,12 +244,12 @@ export function SellerDashboard() {
   );
 }
 
-function MetricCard({ label, value, icon, color, trend }: { label: string, value: string, icon: any, color: string, trend?: string }) {
+function MetricCard({ label, value, icon: Icon, color, trend }: { label: string, value: string, icon: LucideIcon, color: string, trend?: string }) {
   return (
     <Card className="p-6 bg-card/20 border-border/50 rounded-3xl relative overflow-hidden group text-left backdrop-blur-sm">
       <div className="flex justify-between items-start mb-4">
         <div className={cn("p-2 rounded-xl bg-background/40 border border-border/30", color)}>
-          {icon}
+          <Icon size={18} />
         </div>
         {trend && <span className="text-[9px] font-black text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20">{trend}</span>}
       </div>
@@ -257,15 +259,13 @@ function MetricCard({ label, value, icon, color, trend }: { label: string, value
   );
 }
 
-function EmptyFeed({ message, icon }: { message: string, icon?: any }) {
+function EmptyFeed({ message, icon: Icon }: { message: string, icon?: LucideIcon }) {
   return (
     <div className="py-20 text-center bg-card/5 border border-dashed border-border/30 rounded-[2.5rem]">
-      {icon ? <div className="text-muted-foreground/20 mb-4 flex justify-center">{icon}</div> : <BarChart3 className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />}
+      {Icon ? <div className="text-muted-foreground/20 mb-4 flex justify-center"><Icon size={32} /></div> : <BarChart3 className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />}
       <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{message}</p>
     </div>
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}
+

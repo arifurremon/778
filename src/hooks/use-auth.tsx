@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (status === "authenticated" && session?.user) {
       setIsProfileLoading(true);
-      api.get<any>('/api/user/profile')
+      api.get<Record<string, any>>('/api/user/profile')
         .then(data => {
           
           const mapRegStatus = (s: string) => {
@@ -172,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateUser = async (updates: Partial<User>) => {
-    const apiUpdates: any = { ...updates };
+    const apiUpdates: Record<string, unknown> = { ...updates };
     
     if (updates.privacySettings) {
       const mapPrivacyToDB = (s: string) => {

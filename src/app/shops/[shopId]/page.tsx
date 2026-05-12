@@ -63,13 +63,13 @@ export default function ShopStorefront() {
   const { user } = useAuth();
   const { startConversation } = useMessages();
   
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Record<string, any> | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   // Scoped Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
-  const [priceRange, setPriceRange] = useState([0, 10000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [onlyInStock, setOnlyInStock] = useState(false);
 
   const shop = useMemo(() => {
@@ -91,7 +91,7 @@ export default function ShopStorefront() {
     });
   }, [shopProducts, searchQuery, priceRange, onlyInStock]);
 
-  const handleBuyNow = (product: any) => {
+  const handleBuyNow = (product: Record<string, any>) => {
     setSelectedProduct({ ...product, shopName: shop.name });
     setIsOrderModalOpen(true);
   };
@@ -241,7 +241,7 @@ export default function ShopStorefront() {
                            max={10000} 
                            step={100}
                            value={priceRange}
-                           onValueChange={setPriceRange}
+                           onValueChange={(val) => setPriceRange(val as [number, number])}
                            className="py-4"
                          />
                        </div>
