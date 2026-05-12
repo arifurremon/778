@@ -1,206 +1,298 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import {
-  ClipboardList,
-  Search,
-  Filter,
-  User,
-  Clock,
-  ExternalLink,
-  AlertCircle,
-} from "lucide-react";
-import { AdminTableToolbar, AdminPagination, AdminEmptyState } from "@/components/admin/admin-table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import Link from "next/link";
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { 
+  History, 
+  Search, 
+  Filter, 
+  Download, 
+  ChevronDown, 
+  ChevronUp,
+  FileJson,
+  Loader2,
+  ExternalLink
+} from 'lucide-react';
+import Link from 'next/link';
 
-interface AuditLog {
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+interface AuditLogEntry {
   id: string;
-  type: string;
-  description: string;
-  contextUrl: string | null;
-  isRead: boolean;
+  adminId: string;
+  admin: { name: string | null; email: string; profileImage: string | null };
+  action: string;
+  entityType: string;
+  entityId: string;
+  details: any;
+  ipAddress: string | null;
+  userAgent: string | null;
   createdAt: string;
-  user: {
-    id: string;
-    name: string | null;
-    email: string;
-    profileImage: string | null;
-    isAdmin: boolean;
-  };
 }
 
-interface AuditResponse {
-  logs: AuditLog[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
-
-const TYPE_FILTERS = [
-  { key: "type", label: "Type", options: [
-    { value: "all", label: "All Types" },
-    { value: "SYSTEM", label: "System" },
-    { value: "LIKE", label: "Like" },
-    { value: "COMMENT", label: "Comment" },
-    { value: "SAVED", label: "Saved" },
-    { value: "POPULAR", label: "Popular" },
-  ]},
-];
-
-const TYPE_STYLES: Record<string, string> = {
-  SYSTEM: "bg-blue-400/10 text-blue-400",
-  LIKE: "bg-emerald-400/10 text-emerald-400",
-  COMMENT: "bg-violet-400/10 text-violet-400",
-  SAVED: "bg-amber-400/10 text-amber-400",
-  POPULAR: "bg-rose-400/10 text-rose-400",
-};
-
-const TYPE_EMOJI: Record<string, string> = {
-  SYSTEM: "⚙️",
-  LIKE: "👍",
-  COMMENT: "💬",
-  SAVED: "🔖",
-  POPULAR: "🔥",
-};
-
-export default function AdminAuditLogPage() {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState("all");
+export default function AuditLogViewerPage() {
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filters
+  const [adminSearch, setAdminSearch] = useState('');
+  const [actionFilter, setActionFilter] = useState('all');
+  const [entityFilter, setEntityFilter] = useState('all');
+  
+  // Expanded rows
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
 
-  const fetchLogs = useCallback(async () => {
+  useEffect(() => {
+    fetchLogs();
+  }, [actionFilter, entityFilter]);
+
+  const fetchLogs = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: "30", search, type });
-      const res = await fetch(`/api/admin/audit-log?${params.toString()}`);
+      const params = new URLSearchParams();
+      if (actionFilter !== 'all') params.append('action', actionFilter);
+      if (entityFilter !== 'all') params.append('entityType', entityFilter);
+      // We can add adminSearch here, but for now we'll do client-side filtering for search
+
+      const res = await fetch(`/api/admin/settings/audit-log?${params.toString()}`);
       if (!res.ok) throw new Error();
-      const data = await res.json() as AuditResponse;
-      setLogs(data.logs);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
-    } catch {
-      toast({ variant: "destructive", title: "Error", description: "Failed to load audit log." });
+      const json = await res.json();
+      setLogs(json.data || []);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to load audit logs." });
     } finally {
       setLoading(false);
     }
-  }, [page, search, type]);
+  };
 
-  useEffect(() => { void fetchLogs(); }, [fetchLogs]);
-  useEffect(() => { const t = setTimeout(() => setPage(1), 400); return () => clearTimeout(t); }, [search]);
+  const getActionColor = (action: string) => {
+    if (action.includes('VERIFY')) return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+    if (action.includes('REJECT') || action.includes('DELETE')) return 'bg-rose-500/10 text-rose-600 border-rose-500/20';
+    if (action.includes('SUSPEND')) return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+    if (action.includes('UPDATE') || action.includes('PROMOTE')) return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+    if (action.includes('TOGGLE')) return 'bg-orange-500/10 text-orange-600 border-orange-500/20';
+    return 'bg-muted text-muted-foreground border-border/50';
+  };
+
+  const toggleRow = (id: string) => {
+    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const exportCSV = () => {
+    if (logs.length === 0) return;
+    
+    const headers = ['Timestamp', 'Admin', 'Action', 'Entity Type', 'Entity ID', 'IP Address', 'Details'];
+    const csvContent = [
+      headers.join(','),
+      ...logs.map(log => {
+        const detailsStr = JSON.stringify(log.details).replace(/"/g, '""'); // Escape quotes for CSV
+        return [
+          log.createdAt,
+          log.admin.name || log.admin.email,
+          log.action,
+          log.entityType,
+          log.entityId,
+          log.ipAddress || 'Unknown',
+          `"${detailsStr}"`
+        ].join(',');
+      })
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `audit_logs_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Client-side filtering for the search bar
+  const filteredLogs = logs.filter(log => {
+    if (!adminSearch) return true;
+    const searchLower = adminSearch.toLowerCase();
+    return (
+      (log.admin.name && log.admin.name.toLowerCase().includes(searchLower)) ||
+      log.admin.email.toLowerCase().includes(searchLower)
+    );
+  });
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-6xl mx-auto">
-      <div>
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-2">
-          <ClipboardList size={12} />
-          Settings
+    <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary mb-2">
+            <History size={12} />
+            Security & Compliance
+          </div>
+          <h1 className="text-3xl font-black tracking-tight">System Audit Log</h1>
+          <p className="text-sm text-muted-foreground mt-1">Immutable record of all administrative actions and system events.</p>
         </div>
-        <h1 className="text-2xl font-black tracking-tight">Audit Log</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {total.toLocaleString()} activity events recorded
-        </p>
+
+        <Button onClick={exportCSV} variant="outline" className="font-bold gap-2 rounded-xl border-border/50">
+          <Download size={16} /> Export CSV
+        </Button>
       </div>
 
-      <div className="bg-card/40 border border-border/50 rounded-2xl p-4">
-        <AdminTableToolbar
-          search={search}
-          onSearch={(v) => { setSearch(v); setPage(1); }}
-          placeholder="Search log descriptions..."
-          filters={TYPE_FILTERS}
-          activeFilters={{ type }}
-          onFilter={(_, v) => { setType(v); setPage(1); }}
-        />
-      </div>
+      <Card className="border-border/50 shadow-xl shadow-black/5 overflow-hidden">
+        {/* Filters Bar */}
+        <div className="p-4 bg-muted/10 border-b border-border/30 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+            <Input 
+              placeholder="Search by admin name..." 
+              className="pl-9 bg-background"
+              value={adminSearch}
+              onChange={(e) => setAdminSearch(e.target.value)}
+            />
+          </div>
+          
+          <Select value={actionFilter} onValueChange={setActionFilter}>
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="All Actions" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Actions</SelectItem>
+              <SelectItem value="VERIFY_SHOP">Verify Shop</SelectItem>
+              <SelectItem value="REJECT_SHOP">Reject Shop</SelectItem>
+              <SelectItem value="DELETE_SHOP">Delete Shop</SelectItem>
+              <SelectItem value="VERIFY_SERVICE">Verify Service</SelectItem>
+              <SelectItem value="REJECT_SERVICE">Reject Service</SelectItem>
+              <SelectItem value="UPDATE_SETTINGS">Update Settings</SelectItem>
+              <SelectItem value="TOGGLE_MAINTENANCE">Toggle Maintenance</SelectItem>
+            </SelectContent>
+          </Select>
 
-      <div className="bg-card/40 border border-border/50 rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="divide-y divide-border/20">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-4">
-                <Skeleton className="w-9 h-9 rounded-xl" />
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-3.5 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
+          <Select value={entityFilter} onValueChange={setEntityFilter}>
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="All Entities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Entities</SelectItem>
+              <SelectItem value="User">User</SelectItem>
+              <SelectItem value="Shop">Shop</SelectItem>
+              <SelectItem value="Service">Service</SelectItem>
+              <SelectItem value="Post">Post</SelectItem>
+              <SelectItem value="Settings">Settings</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button variant="ghost" className="font-bold gap-2 text-muted-foreground w-full justify-start">
+            <Filter size={16} /> Advanced Filters
+          </Button>
+        </div>
+
+        {/* Data Table */}
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : filteredLogs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-4">
+                <Search size={32} />
               </div>
-            ))}
-          </div>
-        ) : logs.length === 0 ? (
-          <AdminEmptyState icon={<ClipboardList size={40} />} title="No log entries" description="Try adjusting your filters." />
-        ) : (
-          <div className="divide-y divide-border/20">
-            {logs.map((log, i) => (
-              <motion.div
-                key={log.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.01 }}
-                className="flex items-start gap-4 px-5 py-4 hover:bg-muted/20 transition-colors"
-              >
-                {/* Type emoji */}
-                <div className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center text-base shrink-0",
-                  TYPE_STYLES[log.type] ?? "bg-muted"
-                )}>
-                  {TYPE_EMOJI[log.type] ?? "📋"}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <Badge className={cn("text-[9px] px-1.5 py-0.5 font-bold border-0", TYPE_STYLES[log.type] ?? "bg-muted text-muted-foreground")}>
-                      {log.type}
-                    </Badge>
-                    {log.user.isAdmin && (
-                      <Badge className="text-[9px] px-1.5 py-0.5 bg-rose-500/10 text-rose-400 border-0">Admin</Badge>
+              <h3 className="text-lg font-black tracking-tight">No logs found</h3>
+              <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters to see more results.</p>
+            </div>
+          ) : (
+            <table className="w-full text-left">
+              <thead className="bg-muted/50 border-b border-border/50 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                <tr>
+                  <th className="px-6 py-4">Timestamp</th>
+                  <th className="px-6 py-4">Administrator</th>
+                  <th className="px-6 py-4">Action</th>
+                  <th className="px-6 py-4">Entity</th>
+                  <th className="px-6 py-4">IP Address</th>
+                  <th className="px-6 py-4"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/30">
+                {filteredLogs.map((log) => (
+                  <React.Fragment key={log.id}>
+                    <tr className={cn("hover:bg-muted/10 transition-colors", expandedRows[log.id] && "bg-muted/5")}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-bold">{format(new Date(log.createdAt), 'MMM d, yyyy')}</div>
+                        <div className="text-xs text-muted-foreground">{format(new Date(log.createdAt), 'h:mm a')}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-8 h-8 border">
+                            <AvatarImage src={log.admin.profileImage || ""} />
+                            <AvatarFallback className="text-xs font-black">{log.admin.name?.[0] || 'A'}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-bold">{log.admin.name || 'System Admin'}</p>
+                            <p className="text-[10px] text-muted-foreground">{log.admin.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className={cn("font-bold text-[10px] tracking-wider", getActionColor(log.action))}>
+                          {log.action}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-muted-foreground">{log.entityType}</span>
+                          {log.entityId !== 'global' && (
+                            <Link 
+                              href={`/admin/${log.entityType.toLowerCase()}s/${log.entityId}`} 
+                              className="text-primary hover:text-primary/80 transition-colors"
+                            >
+                              <ExternalLink size={14} />
+                            </Link>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">
+                          {log.entityId}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-mono text-muted-foreground">
+                        {log.ipAddress || '127.0.0.1'}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => toggleRow(log.id)}
+                          className="h-8 w-8 p-0 rounded-lg"
+                        >
+                          {expandedRows[log.id] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </Button>
+                      </td>
+                    </tr>
+                    {expandedRows[log.id] && (
+                      <tr className="bg-muted/10 border-b border-border/30">
+                        <td colSpan={6} className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <div className="mt-1 text-muted-foreground"><FileJson size={16} /></div>
+                            <div className="flex-1 bg-background border border-border/50 rounded-lg p-4 overflow-x-auto">
+                              <pre className="text-xs font-mono text-muted-foreground">
+                                {JSON.stringify(log.details, null, 2)}
+                              </pre>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </div>
-                  <p className="text-sm text-foreground font-medium leading-tight">{log.description}</p>
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <Link href={`/admin/users/${log.user.id}`} className="flex items-center gap-1.5 group">
-                      <Avatar className="w-4 h-4">
-                        <AvatarImage src={log.user.profileImage ?? ""} />
-                        <AvatarFallback className="text-[8px]">{log.user.name?.[0] ?? "U"}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-[10px] font-medium text-muted-foreground group-hover:text-primary transition-colors">
-                        {log.user.name ?? log.user.email}
-                      </span>
-                    </Link>
-                    <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
-                      <Clock size={9} />
-                      {new Date(log.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Context link */}
-                {log.contextUrl && (
-                  <Link href={log.contextUrl} className="shrink-0">
-                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground">
-                      <ExternalLink size={12} />
-                    </Button>
-                  </Link>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        <div className="px-5 border-t border-border/30">
-          <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} limit={30} />
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -54,6 +54,7 @@ model User {
   posts                Post[]
   comments             Comment[]
   activityLogs         ActivityLog[]
+  auditLogs            AuditLog[]
   shop                 Shop?
   expertService        ExpertService?
   
@@ -238,3 +239,40 @@ enum ActivityType {
   SYSTEM
   POPULAR
 }
+
+// -----------------------------------------------------------------------------
+// INSTRUCTION: Run `npx prisma migrate dev --name add_admin_settings_audit` 
+// to apply these new schema models to the database.
+// -----------------------------------------------------------------------------
+
+model Settings {
+  id                    String   @id @default("global")
+  siteName              String   @default("The Chattala")
+  siteDescription       String   @default("A hyper-local community platform")
+  contactEmail          String   @default("support@thechattala.com")
+  supportPhone          String   @default("")
+  maintenanceMode       Boolean  @default(false)
+  registrationOpen      Boolean  @default(true)
+  emailVerificationReq  Boolean  @default(true)
+  featuresEnabled       Json     @default("{}")
+  defaultPostVisibility String   @default("PUBLIC")
+  updatedAt             DateTime @updatedAt
+  updatedBy             String?
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  adminId     String
+  admin       User     @relation(fields: [adminId], references: [id])
+  action      String
+  entityType  String
+  entityId    String
+  details     Json     @default("{}")
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
+}
+
