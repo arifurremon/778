@@ -1,267 +1,304 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import {
-  Store,
-  CheckCircle2,
-  XCircle,
-  Star,
-  Package,
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Store, 
+  Search, 
+  Filter, 
+  ShieldCheck, 
+  XCircle, 
+  Trash2, 
   MoreHorizontal,
-  ShieldCheck,
-} from "lucide-react";
-import { AdminTableToolbar, AdminPagination, AdminEmptyState } from "@/components/admin/admin-table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  User,
+  ExternalLink,
+  Ban,
+  Mail,
+  Calendar
+} from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+
+import { StatusBadge } from '@/components/admin/display/StatusBadge';
+import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
+import { FilterPanel } from '@/components/admin/forms/FilterPanel';
+import { SearchBar } from '@/components/admin/forms/SearchBar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface AdminShop {
   id: string;
   name: string;
-  description: string;
-  category: string;
-  location: string;
-  trustScore: number;
-  rating: number;
+  description: string | null;
+  category: string | null;
+  address: string | null;
+  phone: string | null;
+  logo: string | null;
   isVerified: boolean;
+  verifiedAt: string | null;
+  rejectedAt: string | null;
+  rejectionReason: string | null;
   createdAt: string;
-  user: {
-    id: string;
-    name: string | null;
-    email: string;
-    profileImage: string | null;
-    registrationStatus: string;
-  };
+  owner: { id: string; name: string; email: string; profileImage: string | null };
   _count: { products: number };
 }
 
-interface ShopsResponse {
-  shops: AdminShop[];
-  total: number;
-  page: number;
-  totalPages: number;
-}
-
-const VERIFICATION_FILTERS = [
-  { key: "verified", label: "Status", options: [
-    { value: "", label: "All" },
-    { value: "true", label: "Verified" },
-    { value: "false", label: "Unverified" },
-  ]},
-];
-
 export default function AdminShopsPage() {
+  const router = useRouter();
   const [shops, setShops] = useState<AdminShop[]>([]);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [verified, setVerified] = useState("");
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
+  
+  // Filters
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+
+  // Dialogs
+  const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+  const [confirmVerify, setConfirmVerify] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
 
   const fetchShops = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: "20", search });
-      if (verified) params.set("verified", verified);
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pageSize.toString(),
+        search,
+        category,
+        status,
+        from: dateRange.from,
+        to: dateRange.to
+      });
       const res = await fetch(`/api/admin/shops?${params.toString()}`);
       if (!res.ok) throw new Error();
-      const data = await res.json() as ShopsResponse;
+      const data = await res.json();
       setShops(data.shops);
-      setTotal(data.total);
-      setTotalPages(data.totalPages);
-    } catch {
+      setTotalCount(data.total);
+    } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to load shops." });
     } finally {
       setLoading(false);
     }
-  }, [page, search, verified]);
+  }, [page, pageSize, search, category, status, dateRange]);
 
-  useEffect(() => { void fetchShops(); }, [fetchShops]);
-  useEffect(() => { const t = setTimeout(() => setPage(1), 400); return () => clearTimeout(t); }, [search]);
+  useEffect(() => {
+    fetchShops();
+  }, [fetchShops]);
 
-  const handleVerify = async (shopId: string, userId: string, approve: boolean) => {
+  const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/verify/${userId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: approve ? "approve" : "reject", type: "shop" }),
-      });
+      const res = await fetch(`/api/admin/shops/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error();
-      toast({ title: approve ? "Shop Verified" : "Shop Rejected", description: approve ? "Shop is now listed as verified." : "Shop verification rejected." });
-      void fetchShops();
-    } catch {
-      toast({ variant: "destructive", title: "Error", description: "Failed to update shop." });
+      toast({ title: "Deleted", description: "Shop removed successfully." });
+      fetchShops();
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to delete shop." });
+    } finally {
+      setConfirmDelete({ open: false, id: null });
     }
   };
 
+  const handleVerify = async (id: string, approve: boolean) => {
+    try {
+      const res = await fetch(`/api/admin/shops/${id}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: approve ? 'approve' : 'reject' })
+      });
+      if (!res.ok) throw new Error();
+      toast({ title: approve ? "Verified" : "Rejected", description: `Shop ${approve ? 'verified' : 'rejected'} successfully.` });
+      fetchShops();
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Update failed." });
+    } finally {
+      setConfirmVerify({ open: false, id: null });
+    }
+  };
+
+  const getStatus = (shop: AdminShop) => {
+    if (shop.isVerified) return 'active';
+    if (shop.rejectedAt) return 'rejected';
+    return 'pending';
+  };
+
+  const totalPages = Math.ceil(totalCount / pageSize);
+
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-      <div>
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-amber-400 mb-2">
-          <Store size={12} />
-          Shop Management
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-amber-500 mb-2">
+            <Store size={12} />
+            Marketplace Management
+          </div>
+          <h1 className="text-3xl font-black tracking-tight">Active Shops</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage verified and unverified sellers on the platform</p>
         </div>
-        <h1 className="text-2xl font-black tracking-tight">All Shops</h1>
-        <p className="text-sm text-muted-foreground mt-1">{total.toLocaleString()} shops on the marketplace</p>
+        <Button variant="outline" size="sm" asChild className="rounded-full border-primary/20">
+          <Link href="/admin/shops/pending-verification" className="gap-2">
+            <Badge variant="secondary" className="h-5 px-1 bg-amber-500/10 text-amber-600">!</Badge>
+            Verification Queue
+          </Link>
+        </Button>
       </div>
 
-      <div className="bg-card/40 border border-border/50 rounded-2xl p-4">
-        <AdminTableToolbar
-          search={search}
-          onSearch={(v) => { setSearch(v); setPage(1); }}
-          placeholder="Search by name, category, or location..."
-          filters={VERIFICATION_FILTERS}
-          activeFilters={{ verified }}
-          onFilter={(_, v) => { setVerified(v); setPage(1); }}
+      <div className="flex flex-col md:flex-row gap-4">
+        <SearchBar 
+          value={search} 
+          onChange={setSearch} 
+          placeholder="Search by shop name or owner..." 
+          className="flex-1"
         />
+        <FilterPanel activeCount={0} onReset={() => {}} onApply={fetchShops}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-background border rounded-lg p-2 text-sm">
+                <option value="all">All Categories</option>
+                <option value="electronics">Electronics</option>
+                <option value="clothing">Clothing</option>
+                <option value="grocery">Grocery</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full bg-background border rounded-lg p-2 text-sm">
+                <option value="all">All Status</option>
+                <option value="verified">Verified</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+        </FilterPanel>
       </div>
 
-      <div className="bg-card/40 border border-border/50 rounded-2xl overflow-hidden">
-        <div className="hidden md:grid grid-cols-[1fr_auto_auto_auto] gap-4 px-5 py-3 border-b border-border/30 bg-muted/20">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Shop</div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">Stats</div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">Status</div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">Actions</div>
+      <div className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-xl shadow-black/5">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-muted/30 text-[10px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/50">
+              <tr>
+                <th className="px-6 py-4">Shop</th>
+                <th className="px-6 py-4">Owner Info</th>
+                <th className="px-6 py-4 text-center">Status</th>
+                <th className="px-6 py-4 text-center">Products</th>
+                <th className="px-6 py-4">Joined</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/30">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={6} className="px-6 py-8"><div className="h-4 bg-muted rounded w-full" /></td>
+                  </tr>
+                ))
+              ) : (
+                shops.map((shop) => (
+                  <tr key={shop.id} className="group hover:bg-muted/20 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="w-10 h-10 rounded-xl border border-border/50 shadow-sm">
+                          <AvatarImage src={shop.logo || ""} />
+                          <AvatarFallback className="font-bold text-lg bg-primary/10 text-primary">{shop.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold tracking-tight">{shop.name}</span>
+                          <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">{shop.category || 'General'}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-6 h-6 rounded-full">
+                          <AvatarImage src={shop.owner.profileImage || ""} />
+                          <AvatarFallback className="text-[8px]">{shop.owner.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold">{shop.owner.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{shop.owner.email}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <StatusBadge status={getStatus(shop)} className="text-[10px]" />
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant="outline" className="text-[10px] font-bold gap-1 bg-muted/50 border-border/50">
+                        <Package size={10} className="text-primary" />
+                        {shop._count.products}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-xs font-medium text-muted-foreground">
+                      {format(new Date(shop.createdAt), 'MMM dd, yyyy')}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreHorizontal size={14} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                          <DropdownMenuItem onClick={() => router.push(`/admin/shops/${shop.id}`)}>
+                            <ExternalLink size={14} className="mr-2" /> View Details
+                          </DropdownMenuItem>
+                          {!shop.isVerified && (
+                            <DropdownMenuItem onClick={() => handleVerify(shop.id, true)}>
+                              <ShieldCheck size={14} className="mr-2 text-emerald-500" /> Verify Shop
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem className="text-destructive" onClick={() => setConfirmDelete({ open: true, id: shop.id })}>
+                            <Trash2 size={14} className="mr-2" /> Delete Shop
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {loading ? (
-          <div className="divide-y divide-border/20">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 px-5 py-5">
-                <Skeleton className="w-12 h-12 rounded-xl" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-              </div>
-            ))}
+        <div className="p-4 border-t border-border/50 flex items-center justify-between bg-muted/10">
+          <p className="text-xs font-medium text-muted-foreground">Showing <span className="text-foreground">{shops.length}</span> of <span className="text-foreground">{totalCount}</span> shops</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="h-8 rounded-lg">
+              <ChevronLeft size={14} className="mr-1" /> Previous
+            </Button>
+            <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="h-8 rounded-lg">
+              Next <ChevronRight size={14} className="ml-1" />
+            </Button>
           </div>
-        ) : shops.length === 0 ? (
-          <AdminEmptyState icon={<Store size={40} />} title="No shops found" description="Try adjusting your search or filters." />
-        ) : (
-          <div className="divide-y divide-border/20">
-            {shops.map((shop, i) => (
-              <motion.div
-                key={shop.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.02 }}
-                className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-5 py-4 hover:bg-muted/20 transition-colors"
-              >
-                {/* Shop Info */}
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black shrink-0",
-                    shop.isVerified ? "bg-amber-400/10 text-amber-400" : "bg-muted text-muted-foreground"
-                  )}>
-                    {shop.name[0]}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm font-bold">{shop.name}</h3>
-                      {shop.isVerified && <ShieldCheck size={13} className="text-amber-400" />}
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">{shop.category} • {shop.location}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Avatar className="w-4 h-4">
-                        <AvatarImage src={shop.user.profileImage ?? ""} />
-                        <AvatarFallback className="text-[8px]">{shop.user.name?.[0]}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-[10px] text-muted-foreground">{shop.user.name ?? shop.user.email}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="hidden md:flex flex-col items-end gap-1">
-                  <div className="flex items-center gap-1 text-xs font-bold">
-                    <Star size={11} className="text-amber-400 fill-amber-400" />
-                    {shop.rating.toFixed(1)}
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <Package size={10} />
-                    {shop._count.products} products
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">
-                    Trust: {shop.trustScore}
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div className="hidden md:flex justify-center">
-                  <Badge
-                    className={cn(
-                      "text-[9px] px-2 py-0.5",
-                      shop.isVerified
-                        ? "bg-amber-400/10 text-amber-400 border-amber-400/20"
-                        : shop.user.registrationStatus === "PENDING"
-                        ? "bg-blue-400/10 text-blue-400 border-blue-400/20"
-                        : "bg-muted text-muted-foreground border-border"
-                    )}
-                  >
-                    {shop.isVerified ? "Verified" : shop.user.registrationStatus === "PENDING" ? "Pending" : "Unverified"}
-                  </Badge>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-2 justify-end md:justify-center">
-                  {!shop.isVerified && shop.user.registrationStatus === "PENDING" && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={() => void handleVerify(shop.id, shop.user.id, true)}
-                        className="h-7 text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg px-3"
-                      >
-                        <CheckCircle2 size={11} className="mr-1" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => void handleVerify(shop.id, shop.user.id, false)}
-                        className="h-7 text-[10px] font-bold text-destructive hover:bg-destructive/10 rounded-lg px-2"
-                      >
-                        <XCircle size={11} />
-                      </Button>
-                    </>
-                  )}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg">
-                        <MoreHorizontal size={13} />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40 rounded-xl">
-                      <DropdownMenuItem
-                        onClick={() => void handleVerify(shop.id, shop.user.id, !shop.isVerified)}
-                        className="text-xs"
-                      >
-                        <ShieldCheck size={12} className="mr-2" />
-                        {shop.isVerified ? "Revoke Verification" : "Verify Shop"}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-
-        <div className="px-5 border-t border-border/30">
-          <AdminPagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} limit={20} />
         </div>
       </div>
+
+      <ConfirmationDialog 
+        open={confirmDelete.open}
+        onOpenChange={(o) => setConfirmDelete({ open: o, id: o ? confirmDelete.id : null })}
+        onConfirm={() => confirmDelete.id && handleDelete(confirmDelete.id)}
+        title="Permanently Delete Shop?"
+        description="This will remove the shop profile and all its listed products. This action cannot be undone."
+      />
     </div>
   );
 }
