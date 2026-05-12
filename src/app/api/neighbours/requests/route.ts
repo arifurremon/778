@@ -1,3 +1,4 @@
+import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -35,7 +36,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ requests });
   } catch (error) {
-    console.error("[GET /api/neighbours/requests]", error);
+    logErrorToSentry(error, { route: "[GET /api/neighbours/requests]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(connection, { status: 201 });
   } catch (error) {
-    console.error("[POST /api/neighbours/requests]", error);
+    logErrorToSentry(error, { route: "[POST /api/neighbours/requests]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

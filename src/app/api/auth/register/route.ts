@@ -1,3 +1,4 @@
+import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { hash } from "bcryptjs";
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         name: name || "Neighbour",
       });
     } catch (emailError) {
-      console.error("[POST /api/auth/register] Welcome email failed:", emailError);
+      logErrorToSentry(emailError, { route: "[POST /api/auth/register] Welcome email failed:" });
     }
 
     return NextResponse.json(
@@ -138,7 +139,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("[POST /api/auth/register] CRITICAL ERROR:", error);
+    logErrorToSentry(error, { route: "[POST /api/auth/register] CRITICAL ERROR:" });
     
     // Provide a slightly more descriptive message for debugging
     const errorMessage = process.env.NODE_ENV === "development" 

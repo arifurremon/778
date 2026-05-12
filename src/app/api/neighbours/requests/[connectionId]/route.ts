@@ -1,3 +1,4 @@
+import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -85,7 +86,7 @@ export async function PATCH(
       return NextResponse.json({ success: true, message: "Request rejected." });
     }
   } catch (error) {
-    console.error("[PATCH /api/neighbours/requests/[connectionId]]", error);
+    logErrorToSentry(error, { route: "[PATCH /api/neighbours/requests/[connectionId]]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
@@ -132,7 +133,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: "Request cancelled." });
   } catch (error) {
-    console.error("[DELETE /api/neighbours/requests/[connectionId]]", error);
+    logErrorToSentry(error, { route: "[DELETE /api/neighbours/requests/[connectionId]]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

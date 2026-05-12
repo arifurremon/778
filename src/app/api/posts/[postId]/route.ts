@@ -1,3 +1,4 @@
+import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -40,7 +41,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: "Post deleted." });
   } catch (error) {
-    console.error("[DELETE /api/posts/[postId]]", error);
+    logErrorToSentry(error, { route: "[DELETE /api/posts/[postId]]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

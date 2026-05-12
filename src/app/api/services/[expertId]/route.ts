@@ -1,3 +1,4 @@
+import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
@@ -43,7 +44,7 @@ export async function GET(
 
     return NextResponse.json(service);
   } catch (error) {
-    console.error("[GET /api/services/[expertId]]", error);
+    logErrorToSentry(error, { route: "[GET /api/services/[expertId]]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

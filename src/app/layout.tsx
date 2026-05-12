@@ -11,6 +11,7 @@ import { SessionProvider } from 'next-auth/react';
 import { Inter } from 'next/font/google';
 import "@uploadthing/react/styles.css";
 import SplashProvider from '@/components/splash/splash-provider';
+import { GlobalErrorBoundary } from '@/components/error-boundary';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -35,7 +36,9 @@ export default function RootLayout({
                   <MessagesProvider>
                     <CommunityProvider>
                       <SplashProvider>
-                        {children}
+                        <GlobalErrorBoundary>
+                          {children}
+                        </GlobalErrorBoundary>
                         <Toaster />
                       </SplashProvider>
                     </CommunityProvider>

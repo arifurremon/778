@@ -1,3 +1,4 @@
+import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -68,7 +69,7 @@ export async function POST(
       notHelpfulCount: updated.notHelpfulCount,
     });
   } catch (error) {
-    console.error("[POST /api/posts/[postId]/react]", error);
+    logErrorToSentry(error, { route: "[POST /api/posts/[postId]/react]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

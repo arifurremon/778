@@ -1,12 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, RefreshCw } from 'lucide-react';
-import Link from 'next/link';
-import Logo from '@/components/brand/logo';
+import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { logErrorToSentry } from "@/lib/error-handler";
+import { AlertCircle } from "lucide-react";
 
-export default function ErrorBoundary({
+export default function GlobalError({
   error,
   reset,
 }: {
@@ -14,49 +13,38 @@ export default function ErrorBoundary({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error('Global error:', error);
+    // Log the error to our monitoring system
+    logErrorToSentry(error, { 
+      component: "GlobalError",
+      digest: error.digest 
+    });
   }, [error]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
-      <div className="max-w-md w-full space-y-8 text-center bg-card/50 p-8 rounded-3xl border border-border/50 backdrop-blur-sm shadow-xl">
-        <div className="flex justify-center mb-8">
-          <Logo width={160} className="mx-auto" />
-        </div>
-        
-        <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-full flex items-center justify-center mx-auto mb-6">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="max-w-md w-full text-center space-y-6 bg-card/60 backdrop-blur-xl border border-border/50 p-8 rounded-3xl shadow-xl">
+        <div className="w-16 h-16 bg-destructive/10 text-destructive rounded-2xl flex items-center justify-center mx-auto mb-4">
           <AlertCircle size={32} />
         </div>
-        
-        <h2 className="text-2xl font-bold text-foreground">Something went wrong!</h2>
-        
-        <p className="text-muted-foreground text-sm">
-          We apologize for the inconvenience. An unexpected error has occurred on our end.
-        </p>
-
-        {process.env.NODE_ENV === 'development' && (
-          <div className="bg-black/50 p-4 rounded-xl overflow-x-auto text-left border border-border/30">
-            <p className="text-xs font-mono text-rose-400 break-words">
-              {error.message}
-            </p>
-          </div>
-        )}
-
-        <div className="flex flex-col gap-3 pt-4">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-black tracking-tight text-foreground">Something went wrong!</h2>
+          <p className="text-sm font-bold text-muted-foreground">
+            We apologize for the inconvenience. Our team has been notified and is looking into the issue.
+          </p>
+        </div>
+        <div className="pt-4 flex flex-col gap-3">
           <Button 
             onClick={() => reset()}
-            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold h-12 rounded-full transition-all active:scale-95"
+            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground rounded-xl font-black uppercase text-[11px] tracking-widest h-12 shadow-lg shadow-accent/20"
           >
-            <RefreshCw className="mr-2 h-4 w-4" /> Try again
+            Try Again
           </Button>
-          
           <Button 
-            variant="outline" 
-            asChild
-            className="w-full h-12 rounded-full border-border/50 hover:bg-muted"
+            variant="outline"
+            onClick={() => window.location.href = '/dashboard'}
+            className="w-full rounded-xl font-black uppercase text-[11px] tracking-widest h-12"
           >
-            <Link href="/dashboard">Return to Dashboard</Link>
+            Go to Dashboard
           </Button>
         </div>
       </div>

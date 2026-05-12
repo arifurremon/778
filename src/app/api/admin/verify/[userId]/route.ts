@@ -1,3 +1,4 @@
+import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -106,7 +107,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, message: `Application ${action}d successfully.` });
   } catch (error) {
-    console.error("[POST /api/admin/verify/[userId]]", error);
+    logErrorToSentry(error, { route: "[POST /api/admin/verify/[userId]]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

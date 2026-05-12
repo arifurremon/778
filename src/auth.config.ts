@@ -82,5 +82,5 @@ export const authConfig: NextAuthConfig = {
       },
     },
   },
-  debug: true,
+  debug: false,
 };

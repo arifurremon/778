@@ -1,3 +1,4 @@
+import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -65,7 +66,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ neighbours });
   } catch (error) {
-    console.error("[GET /api/neighbours]", error);
+    logErrorToSentry(error, { route: "[GET /api/neighbours]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
