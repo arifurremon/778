@@ -1,8 +1,9 @@
+"use client";
+
 import { ActivityTimeline } from "@/components/admin/display/ActivityTimeline";
 import { StatsCard } from "@/components/admin/display/StatsCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import {
     AlertCircle,
@@ -14,6 +15,7 @@ import {
     Users
 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface DashboardStats {
   users: { total: number; growth: number }
@@ -33,70 +35,37 @@ interface DashboardActivityLog {
   }
 }
 
-async function getDashboardData(): Promise<{ stats: DashboardStats; recentActivity: DashboardActivityLog[] }> {
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+export default function AdminDashboardPage() {
+  const [data, setData] = useState<{ stats: DashboardStats; recentActivity: DashboardActivityLog[] } | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [
-    totalUsers, current30dUsers, prev30dUsers,
-    totalPosts, current30dPosts, prev30dPosts,
-    totalShops, current30dShops, prev30dShops,
-    totalServices, current30dServices, prev30dServices,
-    pendingShops, pendingServices,
-    recentLogs
-  ] = await Promise.all([
-    // Users
-    db.user.count(),
-    db.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-    db.user.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
-    
-    // Posts
-    db.post.count(),
-    db.post.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-    db.post.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
-    
-    // Shops
-    db.shop.count(),
-    db.shop.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-    db.shop.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
-    
-    // Services
-    db.expertService.count(),
-    db.expertService.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-    db.expertService.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
-    
-    // Pending
-    db.user.count({ where: { registrationStatus: "PENDING" } }),
-    db.user.count({ where: { serviceRegistrationStatus: "PENDING" } }),
-    
-    // Recent Activity
-    db.activityLog.findMany({
-      take: 10,
-      orderBy: { createdAt: 'desc' },
-      include: { user: true }
-    })
-  ]);
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const response = await fetch('/api/admin/dashboard-data');
+        const json = await response.json();
+        setData(json);
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
-  const calcGrowth = (curr: number, prev: number) => {
-    if (prev === 0) return curr > 0 ? 100 : 0;
-    return Math.round(((curr - prev) / prev) * 100);
-  };
+  if (loading || !data) {
+    return (
+      <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-1 font-medium">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-  return {
-    stats: {
-      users: { total: totalUsers, growth: calcGrowth(current30dUsers, prev30dUsers) },
-      posts: { total: totalPosts, growth: calcGrowth(current30dPosts, prev30dPosts) },
-      shops: { total: totalShops, growth: calcGrowth(current30dShops, prev30dShops), pendingVerification: pendingShops },
-      services: { total: totalServices, growth: calcGrowth(current30dServices, prev30dServices), pendingVerification: pendingServices },
-      flaggedPosts: 0, // No flagged field in current schema
-    },
-    recentActivity: recentLogs as DashboardActivityLog[]
-  };
-}
-
-export default async function AdminDashboardPage() {
-  const { stats, recentActivity } = await getDashboardData();
+  const { stats, recentActivity } = data;
 
   const timelineItems = recentActivity.map(log => ({
     title: log.description,
