@@ -71,7 +71,7 @@ export default function ServiceView() {
       const matchesText = provider.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           provider.profession.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesThana = filterThana === "All Areas" || provider.location === filterThana;
-      const matchesExp = provider.experience >= filterExp[0] && provider.experience <= filterExp[1];
+      const matchesExp = provider.experience >= (filterExp[0] ?? 0) && provider.experience <= (filterExp[1] ?? 100);
       
       return matchesCategory && matchesText && matchesThana && matchesExp;
     });

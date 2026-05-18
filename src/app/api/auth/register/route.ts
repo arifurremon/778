@@ -138,7 +138,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     
     // Provide a slightly more descriptive message for debugging
     const errorMessage = process.env.NODE_ENV === "development" 
-      ? `Registration failed: ${error.message}`
+      ? `Registration failed: ${error instanceof Error ? error.message : 'An error occurred'}`
       : "Internal server error. Please try again later.";
 
     return NextResponse.json(

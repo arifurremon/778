@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { POST as verifyShop } from "@/app/api/admin/shops/[id]/verify/route";
 import { POST as rejectShop } from "@/app/api/admin/shops/[id]/reject/route";
-import { db } from "@/lib/db";
+import { POST as verifyShop } from "@/app/api/admin/shops/[id]/verify/route";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({
   db: {
@@ -51,7 +51,7 @@ describe("Shop Moderation API Endpoints", () => {
       });
 
       const req = new NextRequest("http://localhost/api/admin/shops/shop-1/verify", { method: "POST" });
-      const res = await verifyShop(req, { params: { id: "shop-1" } });
+      const res = await verifyShop(req, { params: Promise.resolve({ id: "shop-1" }) });
       const data = await res.json();
 
       expect(res.status).toBe(200);
@@ -73,7 +73,7 @@ describe("Shop Moderation API Endpoints", () => {
         body: JSON.stringify({ reason: "Too short" })
       });
       
-      const res = await rejectShop(req, { params: { id: "shop-1" } });
+      const res = await rejectShop(req, { params: Promise.resolve({ id: "shop-1" }) });
       const data = await res.json();
 
       expect(res.status).toBe(400);
@@ -105,7 +105,7 @@ describe("Shop Moderation API Endpoints", () => {
     (requireAdmin as any).mockResolvedValue({ session: { user: { id: "admin-1" } } });
     (db.shop.findUnique as any).mockResolvedValue(null);
 
-    const res = await verifyShop(new NextRequest("http://x"), { params: { id: "none" } });
+    const res = await verifyShop(new NextRequest("http://x"), { params: Promise.resolve({ id: "none" }) });
     expect(res.status).toBe(404);
   });
 
@@ -114,7 +114,7 @@ describe("Shop Moderation API Endpoints", () => {
     (db.shop.findUnique as any).mockResolvedValue({ id: "s1", user: { email: "e" } });
     (sendEmail as any).mockRejectedValue(new Error("SMTP Error"));
 
-    const res = await verifyShop(new NextRequest("http://x"), { params: { id: "s1" } });
+    const res = await verifyShop(new NextRequest("http://x"), { params: Promise.resolve({ id: "s1" }) });
     expect(res.status).toBe(200); // API should still succeed
   });
 });

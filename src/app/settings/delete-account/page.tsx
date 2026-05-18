@@ -42,7 +42,7 @@ export default function DeleteAccountPage() {
     } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An error occurred',
         variant: "destructive"
       });
       setIsOpen(false);

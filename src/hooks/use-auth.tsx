@@ -1,8 +1,8 @@
 "use client";
 
-import { createContext, useContext, ReactNode, useState, useEffect } from "react";
-import { signIn, signOut, useSession } from "next-auth/react";
 import { api } from "@/lib/api";
+import { signIn, signOut, useSession } from "next-auth/react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
 export type RegistrationStatus = 'None' | 'Pending' | 'Approved' | 'Rejected';
 export type PrivacyLevel = 'Public' | 'Neighbours' | 'Only Me';
@@ -119,31 +119,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return 'None';
           };
           
-          const mapPrivacy = (s: string) => {
-            if (s === 'PUBLIC') return 'Public';
-            if (s === 'NEIGHBOURS') return 'Neighbours';
-            if (s === 'PRIVATE') return 'Only Me';
-            return s;
-          };
-          
           setUserProfile({
             ...data,
             registrationStatus: mapRegStatus(data.registrationStatus),
             serviceRegistrationStatus: mapRegStatus(data.serviceRegistrationStatus),
             verificationRequestStatus: mapRegStatus(data.verificationRequestStatus),
             privacySettings: data.privacySettings ? {
-              mobile: mapPrivacy(data.privacySettings.mobile),
-              email: mapPrivacy(data.privacySettings.email),
-              dob: mapPrivacy(data.privacySettings.dob),
+              mobile: data.privacySettings.mobile,
+              email: data.privacySettings.email,
+              dob: data.privacySettings.dob,
             } : {
-              mobile: 'Only Me',
-              email: 'Neighbours',
-              dob: 'Neighbours'
+              mobile: 'PRIVATE',
+              email: 'NEIGHBOURS',
+              dob: 'NEIGHBOURS'
             },
             neighbours: [],
             neighbourRequestsSent: [],
             neighbourRequestsReceived: [],
-          });
+          } as any);
           setIsProfileLoading(false);
         })
         .catch(err => {

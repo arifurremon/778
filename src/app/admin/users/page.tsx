@@ -2,7 +2,7 @@
 
 import { BulkActionBar } from '@/components/admin/actions/BulkActionBar';
 import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
-import { UserFilters } from '@/components/admin/users/UserFilters';
+import { UserFilterState, UserFilters } from '@/components/admin/users/UserFilters';
 import { UsersTable } from '@/components/admin/users/UsersTable';
 import { toast } from '@/hooks/use-toast';
 import { Mail, ShieldCheck, Trash2, Users } from 'lucide-react';
@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleFilterChange = (newFilters: Record<string, string | number>) => {
+  const handleFilterChange = (newFilters: UserFilterState) => {
     setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
   };
 

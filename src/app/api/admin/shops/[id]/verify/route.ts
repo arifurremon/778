@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
  * POST /api/admin/shops/[id]/verify
  * Approves a shop registration.
  */
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: any) {
   try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         data: { 
           isVerified: true,
           // SCHEMA-FALLBACK: 'verifiedAt' may not exist — verify schema
-          ...(tryField(tx.shop, 'verifiedAt') ? { verifiedAt: new Date() } : {})
+          ...(('verifiedAt' in tx.shop) ? { verifiedAt: new Date() } : {})
         }
       });
 

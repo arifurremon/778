@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { GET, PATCH } from "@/app/api/admin/users/route";
-import { db } from "@/lib/db";
+import { GET } from "@/app/api/admin/users/route";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
 import { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({
   db: {
@@ -57,19 +57,6 @@ describe("User Management API Endpoints", () => {
     });
   });
 
-  describe("PATCH /api/admin/users/[id]", () => {
-    // Note: The specific route file is usually [id]/route.ts
-    // For this test we assume the logic is accessible or tested via a common handler if defined
-    // If the logic is in [id]/route.ts, we should import from there.
-    // I'll test the validation logic which is common.
-    
-    it("should prevent an admin from suspending themselves", async () => {
-      // Mocking the specific logic found in the PATCH handler
-      // We'll skip complex dynamic import testing and focus on the requirement
-      expect(true).toBe(true); // Placeholder for structural alignment
-    });
-  });
-  
   it("should block non-admin users from listing users", async () => {
     (requireAdmin as any).mockResolvedValue({ error: { status: 403 } });
     const res = await GET(new NextRequest("http://localhost/api/admin/users"));

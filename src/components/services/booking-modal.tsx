@@ -58,7 +58,7 @@ export function BookingModal({ provider, isOpen, onClose }: BookingModalProps) {
 
         {step === 1 && (
           <form onSubmit={(e) => { e.preventDefault(); setStep(2); }} className="space-y-4 pt-4">
-            {provider.type === 'on-demand' ? (
+            {provider.type !== 'appointment' ? (
               <>
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">

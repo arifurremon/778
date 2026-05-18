@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({
   db: {
@@ -18,11 +18,11 @@ describe("logAdminAction() Library Utility", () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     // Reset db.auditLog to original mock before each test
-    db.auditLog = originalAuditLog;
+    (db as { auditLog: typeof db.auditLog }).auditLog = originalAuditLog;
   });
 
   afterEach(() => {
-    db.auditLog = originalAuditLog;
+    (db as { auditLog: typeof db.auditLog }).auditLog = originalAuditLog;
   });
 
   it("should successfully create an audit log record with correct params", async () => {

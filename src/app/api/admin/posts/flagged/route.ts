@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
     const { error } = await requireAdmin();
     if (error) return error;
 
-    let flaggedPosts = [];
+    let flaggedPosts: Prisma.PostGetPayload<object>[] = [];
 
     // [cite_start]Return posts where moderationStatus = 'FLAGGED' (or flagCount > 0). [cite: 78]
     // SCHEMA-FALLBACK: 'moderationStatus' or 'flagCount' may not exist — verify schema

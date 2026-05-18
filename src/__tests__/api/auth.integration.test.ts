@@ -5,10 +5,10 @@
  * (Prisma, rate limiter, mail) to verify correct HTTP responses, validation,
  * password hashing, and duplicate-detection logic.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { testUsers, validRegistrationPayload } from "../fixtures/seed";
 import { prismaMock, resetPrismaMock } from "../helpers/prisma-mock";
-import { testUsers, validRegistrationPayload, getTestPasswordHash } from "../fixtures/seed";
 
 // Mock rate-limiter to always allow
 vi.mock("@/lib/rate-limit", () => ({
@@ -140,8 +140,8 @@ describe("POST /api/auth/register — Integration", () => {
 
     await POST(makeRequest(validRegistrationPayload));
 
-    const createCall = prismaMock.user.create.mock.calls[0][0];
-    const storedPassword = createCall.data.password;
+    const createCall = prismaMock.user.create.mock.calls[0]?.[0];
+    const storedPassword = createCall?.data.password;
 
     // bcryptjs hashes start with "$2a$" or "$2b$"
     expect(storedPassword).toMatch(/^\$2[ab]\$/);

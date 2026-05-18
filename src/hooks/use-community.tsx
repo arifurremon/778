@@ -102,22 +102,30 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     const savedBlocked = localStorage.getItem("chattala_blocked_users");
     if (savedBlocked) setBlockedUsers(JSON.parse(savedBlocked));
 
-    api.get<{ posts: PostApiResponse[] }>('/api/posts?page=1&limit=10')
+    api.get<{ posts: any[] }>('/api/posts?page=1&limit=10')
       .then(data => {
-        const fetchedPosts = data.posts.map((p: PostApiResponse) => ({
+        const fetchedPosts = data.posts.map((p: any) => ({
           ...p,
           timestamp: p.createdAt,
           author: { ...p.author, avatar: p.author.profileImage },
-          comments: (p.comments || []).map((c: CommentApiResponse) => ({ ...c, timestamp: c.createdAt, author: { ...c.author, avatar: c.author.profileImage } })),
+          comments: (p.comments || []).map((c: any) => ({ 
+            ...c, 
+            timestamp: c.createdAt, 
+            author: { ...c.author, avatar: c.author.profileImage },
+            likes: c.likes ?? 0,
+            unlikes: c.unlikes ?? 0
+          })),
           isSaved: false,
           isFollowing: false,
+          helpfulCount: p.helpfulCount ?? 0,
+          notHelpfulCount: p.notHelpfulCount ?? 0,
         }));
         setPosts(fetchedPosts);
         setLoading(false);
       })
       .catch(err => {
         console.error("Failed to fetch posts:", err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : 'An error occurred');
         setLoading(false);
       });
   }, []);
@@ -135,7 +143,14 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
         visibility: postData.visibility === 'Public' ? 'PUBLIC' : postData.visibility === 'Neighbours' ? 'NEIGHBOURS' : 'PRIVATE'
       });
       const newPost = { ...newPostRaw, timestamp: newPostRaw.createdAt, author: { ...newPostRaw.author, avatar: newPostRaw.author.profileImage } };
-      setPosts(prev => [{ ...newPost, comments: [], isSaved: false, isFollowing: false }, ...prev]);
+      setPosts(prev => [{
+        ...newPost,
+        comments: [],
+        isSaved: false,
+        isFollowing: false,
+        helpfulCount: 0,
+        notHelpfulCount: 0,
+      } as any, ...prev]);
     } catch (err) {
       console.error(err);
       throw err;
@@ -155,7 +170,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
   const addComment = async (postId: string, commentData: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'unlikes'>) => {
     try {
       const newCommentRaw = await api.post<CommentApiResponse>(`/api/posts/${postId}/comments`, { text: commentData.text });
-      const newComment = { ...newCommentRaw, timestamp: newCommentRaw.createdAt, author: { ...newCommentRaw.author, avatar: newCommentRaw.author.profileImage } };
+      const newComment = { ...newCommentRaw, timestamp: newCommentRaw.createdAt, author: { ...newCommentRaw.author, avatar: newCommentRaw.author.profileImage }, likes: 0, unlikes: 0 };
       setPosts(prev => prev.map(p => 
         p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p
       ));
@@ -257,7 +272,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
       author: {
         name: user.name,
         username: user.username,
-        avatar: user.profileImage,
+        avatar: (user as { profileImage?: string }).profileImage ?? user.avatar ?? '',
         location: user.location,
         isVerified: user.isVerified,
         isSeller: user.isSeller,

@@ -5,10 +5,10 @@
  * Verifies pagination, auth guards, validation, XSS sanitisation,
  * and rate-limiting behaviour.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { testPosts, testUsers, validPostPayload } from "../fixtures/seed";
 import { prismaMock, resetPrismaMock } from "../helpers/prisma-mock";
-import { testUsers, testPosts, validPostPayload } from "../fixtures/seed";
 
 // Mock rate-limiter
 vi.mock("@/lib/rate-limit", () => ({
@@ -68,7 +68,7 @@ const sampleDbPost = {
     username: testUsers.regular.username,
   },
   _count: { comments: 0 },
-};
+} as any;
 
 // ---------------------------------------------------------------------------
 
@@ -180,9 +180,9 @@ describe("POST /api/posts — Integration", () => {
       })
     );
 
-    const createCall = prismaMock.post.create.mock.calls[0][0];
-    expect(createCall.data.content).not.toContain("<script>");
-    expect(createCall.data.content).toContain("<p>Safe content</p>");
+    const createCall = prismaMock.post.create.mock.calls[0]?.[0];
+    expect(createCall?.data.content).not.toContain("<script>");
+    expect(createCall?.data.content).toContain("<p>Safe content</p>");
   });
 
   it("returns 429 when post rate limit is exceeded", async () => {

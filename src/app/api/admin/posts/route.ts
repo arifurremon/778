@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
-import { Prisma } from "@prisma/client";
+import { Prisma, PrivacyLevel } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     // Visibility filter
     if (visibility !== "all") {
-      where.visibility = visibility;
+      where.visibility = visibility as PrivacyLevel;
     }
 
     // Author filter
@@ -38,24 +38,12 @@ export async function GET(req: NextRequest) {
       where.authorId = authorId;
     }
 
-    // [cite_start]Status filter (Moderation Status Fallback) [cite: 211, 264]
-    if (status !== "all") {
-      // SCHEMA-FALLBACK: 'moderationStatus' may not exist — verify schema
-      try {
-        if (status === "HIDDEN") {
-          where.OR = [
-            { moderationStatus: "HIDDEN" },
-            { visibility: "PRIVATE" } // Using visibility as proxy
-          ];
-        } else {
-          where.moderationStatus = status;
-        }
-      } catch (e) {
-        if (status === "HIDDEN") where.visibility = "PRIVATE";
-      }
+    // Status filter uses visibility because Post has no moderationStatus field.
+    if (status === "hidden") {
+      where.visibility = "PRIVATE" as PrivacyLevel;
     }
 
-    let posts = [];
+    let posts: Prisma.PostGetPayload<object>[] = [];
     let total = 0;
 
     try {
@@ -77,11 +65,9 @@ export async function GET(req: NextRequest) {
         db.post.count({ where })
       ]);
     } catch (err) {
-      // SCHEMA-FALLBACK: 'moderationStatus' or other fields may not exist
-      // If the complex query fails, try a simpler one
       [posts, total] = await Promise.all([
         db.post.findMany({
-          where: { ...where, moderationStatus: undefined }, // Remove potential problematic fields
+          where,
           take: limit,
           skip: (page - 1) * limit,
           orderBy: { createdAt: "desc" },
@@ -90,7 +76,7 @@ export async function GET(req: NextRequest) {
             _count: { select: { comments: true } }
           }
         }),
-        db.post.count({ where: { ...where, moderationStatus: undefined } })
+        db.post.count({ where })
       ]);
     }
 

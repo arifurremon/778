@@ -50,6 +50,7 @@ export interface MockProduct {
 	id: string;
 	name: string;
 	image: string;
+	description?: string;
 	price: string | number;
 	originalPrice?: string | number;
 	category: string;

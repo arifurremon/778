@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-interface UserFilterState {
+export interface UserFilterState {
   search?: string;
   role?: string;
   status?: string;

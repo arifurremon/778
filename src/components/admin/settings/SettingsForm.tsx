@@ -52,7 +52,7 @@ export function SettingsForm({ title, description, fields, defaultValues, onSubm
       if (!field.required) fieldSchema = fieldSchema.optional().or(z.literal(''));
     } else {
       fieldSchema = z.string();
-      if (field.required) fieldSchema = fieldSchema.min(1, 'This field is required');
+      if (field.required) fieldSchema = (fieldSchema as import('zod').ZodString).min(1, 'This field is required');
       else fieldSchema = fieldSchema.optional();
     }
     

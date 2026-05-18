@@ -1,28 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ShieldAlert, 
-  CheckCircle, 
-  Ban, 
-  Trash2, 
-  EyeOff,
-  Flag,
-  MessageSquare,
-  Clock,
-  AlertTriangle
+import { format } from 'date-fns';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    Ban,
+    CheckCircle,
+    Clock,
+    EyeOff,
+    Flag,
+    ShieldAlert,
+    Trash2
 } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { useEffect, useState } from 'react';
 
-import { StatusBadge } from '@/components/admin/display/StatusBadge';
 import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
 // SCHEMA-FALLBACK: moderationStatus field not available — using visibility as proxy
 interface FlaggedPost {

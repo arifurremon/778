@@ -71,13 +71,6 @@ export async function GET(req: NextRequest) {
         include: {
           user: {
             select: { id: true, name: true, email: true, profileImage: true }
-          },
-          // SCHEMA-FALLBACK: 'bookings' relation may not exist — verify schema
-          _count: {
-            select: { 
-              // @ts-ignore
-              bookings: true 
-            }
           }
         }
       }),
@@ -89,11 +82,7 @@ export async function GET(req: NextRequest) {
       ...s,
       title: (s as any).title || s.profession,
       description: (s as any).description || s.bio,
-      provider: s.user,
-      // SCHEMA-FALLBACK: 'bookings' count default to 0 if relation missing
-      _count: {
-        bookings: (s as any)._count?.bookings || 0
-      }
+      provider: s,
     }));
 
     return NextResponse.json({

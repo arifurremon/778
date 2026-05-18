@@ -1,50 +1,49 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ThumbsUp, 
-  ThumbsDown, 
-  MessageSquare, 
-  Share2, 
-  MoreHorizontal,
-  MapPin,
-  Send,
-  Trash2,
-  AlertCircle,
-  Edit,
-  Bookmark,
-  Bell,
-  Ban,
-  EyeOff,
-  Repeat,
-  Copy,
-  Check
-} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Post, useCommunity } from "@/hooks/use-community";
-import { useAuth } from "@/hooks/use-auth";
-import Image from "next/image";
-import { GlobalUserBadges } from "@/components/user/global-user-badges";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { GlobalUserBadges } from "@/components/user/global-user-badges";
+import { useAuth } from "@/hooks/use-auth";
+import { Post, useCommunity } from "@/hooks/use-community";
+import { toast } from "@/hooks/use-toast";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    AlertCircle,
+    Ban,
+    Bell,
+    Bookmark,
+    Check,
+    Copy,
+    Edit,
+    EyeOff,
+    MapPin,
+    MessageSquare,
+    MoreHorizontal,
+    Repeat,
+    Send,
+    Share2,
+    ThumbsDown,
+    ThumbsUp,
+    Trash2
+} from "lucide-react";
+import { useRef, useState } from "react";
 
 interface PostCardProps {
   post: Post;
@@ -151,7 +150,17 @@ export default function PostCard({ post }: PostCardProps) {
 
   const handleRepost = () => {
     if (!user) return;
-    repost(post.id, repostCaption, user);
+    const anyUser = user as any;
+    repost(post.id, repostCaption, {
+      id: anyUser.id || '',
+      name: anyUser.name || 'Anonymous',
+      avatar: anyUser.image ?? anyUser.avatar ?? anyUser.image ?? '',
+      location: anyUser.location ?? '',
+      username: anyUser.username ?? '',
+      isVerified: anyUser.isVerified,
+      isSeller: anyUser.isSeller,
+      isServiceProvider: anyUser.isServiceProvider,
+    } as any);
     setRepostCaption("");
     setIsRepostModalOpen(false);
     setIsShareModalOpen(false);

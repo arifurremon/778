@@ -47,7 +47,7 @@ export function OrderModal({ product, shopId, isOpen, onClose }: OrderModalProps
       buyerEmail: user?.email || "",
       phone: formData.phone,
       address: formData.address,
-      price: product.price,
+      price: String(product.price),
     });
 
     await new Promise(r => setTimeout(r, 1500));

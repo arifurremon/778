@@ -101,7 +101,7 @@ export default async function AdminDashboardPage() {
   const timelineItems = recentActivity.map(log => ({
     title: log.description,
     timestamp: new Date(log.createdAt).toLocaleString(),
-    type: log.type === 'SYSTEM' ? 'info' : 'success',
+    type: log.type === 'SYSTEM' ? ('info' as const) : ('success' as const),
     description: `By ${log.user.name || log.user.email}`
   }));
 

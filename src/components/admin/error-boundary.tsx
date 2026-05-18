@@ -1,9 +1,9 @@
 "use client"
 
-import React, { Component, ErrorInfo, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, RefreshCcw, Home } from "lucide-react";
+import { AlertCircle, Home, RefreshCcw } from "lucide-react";
 import Link from "next/link";
+import { Component, ErrorInfo, ReactNode } from "react";
 
 interface Props {
   children?: ReactNode;
@@ -66,6 +66,6 @@ export class AdminErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.children;
+    return this.props.children;
   }
 }

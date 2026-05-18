@@ -46,7 +46,7 @@ export default function ResetPasswordPage({ params }: { params: Promise<{ token:
     } catch (error: unknown) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : 'An error occurred',
         variant: "destructive"
       });
     } finally {

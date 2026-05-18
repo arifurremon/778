@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
     
     const dailyCounts = growthTrendData.reduce((acc, item) => {
       const date = item.createdAt.toISOString().split('T')[0]
-      acc[date] = (acc[date] || 0) + 1
+      if (date) acc[date] = (acc[date] ?? 0) + 1
       return acc
     }, {} as Record<string, number>);
 
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
     let current = new Date(periodStart);
     while (current <= now) {
       const date = current.toISOString().split('T')[0];
-      growthTrend.push({ date, value: dailyCounts[date] || 0 });
+      if (date) growthTrend.push({ date, value: dailyCounts[date] ?? 0 });
       current.setDate(current.getDate() + 1);
     }
 

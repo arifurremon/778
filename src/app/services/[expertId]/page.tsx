@@ -41,7 +41,7 @@ export default function ExpertPublicProfile() {
     startConversation({
       id: expert.id,
       name: expert.name,
-      avatar: expert.image,
+      avatar: expert.image ?? '',
       role: expert.profession,
       context: `Service Inquiry: ${expert.category}`
     });
@@ -66,7 +66,7 @@ export default function ExpertPublicProfile() {
           
           <div className="absolute -bottom-16 left-8 md:left-16 flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
             <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-[3rem] overflow-hidden border-8 border-background shadow-2xl ring-8 ring-accent/5 bg-background">
-              <Image src={expert.image} alt={expert.name} fill className="object-cover" />
+              <Image src={expert.image ?? ''} alt={expert.name} fill className="object-cover" />
             </div>
             <div className="space-y-3 pb-2 text-center md:text-left">
                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
@@ -107,7 +107,7 @@ export default function ExpertPublicProfile() {
                     <Award size={20} className="text-accent" /> Qualifications & Credentials
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {expert.qualifications?.map((q: Record<string, unknown>, i: number) => (
+                    {expert.qualifications?.map((q: string, i: number) => (
                       <div key={i} className="flex items-center gap-3 p-4 bg-card/20 border border-border/50 rounded-2xl">
                         <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
                         <span className="text-sm font-bold">{q}</span>
@@ -119,7 +119,7 @@ export default function ExpertPublicProfile() {
 
               <TabsContent value="portfolio" className="mt-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {expert.portfolio?.map((img: Record<string, unknown>, i: number) => (
+                  {expert.portfolio?.map((img: string, i: number) => (
                     <div key={i} className="relative aspect-video rounded-3xl overflow-hidden border border-border/50 group shadow-lg">
                       <Image src={img} alt="Work" fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

@@ -1,49 +1,44 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  BarChart3, 
-  Package, 
-  ShoppingBag, 
-  Truck, 
-  CheckCircle2, 
-  Plus, 
-  TrendingUp, 
-  Search,
-  ChevronRight,
-  MoreVertical,
-  Clock,
-  ArrowUpRight,
-  Trash2,
-  Edit,
-  Star,
-  LucideIcon
-} from "lucide-react";
-import { useBusiness, OrderStatus } from "@/hooks/use-business";
-import { useAuth } from "@/hooks/use-auth";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OrderStatus, useBusiness } from "@/hooks/use-business";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import {
+    BarChart3,
+    ChevronRight,
+    Edit,
+    LucideIcon,
+    MoreVertical,
+    Package,
+    Search,
+    ShoppingBag,
+    Star,
+    Trash2,
+    TrendingUp,
+    Truck
+} from "lucide-react";
 import Image from "next/image";
+import { useMemo, useState } from "react";
 
 export function SellerDashboard() {
   const { orders, products, updateOrderStatus } = useBusiness();
@@ -212,7 +207,7 @@ export function SellerDashboard() {
                 className="bg-card/20 border border-border/50 rounded-[2rem] overflow-hidden group hover:bg-card/40 transition-smooth flex flex-col h-full"
               >
                 <div className="relative aspect-video">
-                  <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
+                  <Image src={product.images?.[0] ?? ''} alt={product.name} fill className="object-cover" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <Button size="icon" variant="secondary" className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-accent hover:text-white border-0"><Edit size={16} /></Button>
                     <Button size="icon" variant="secondary" className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-destructive hover:text-white border-0"><Trash2 size={16} /></Button>

@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 function groupByDate(items: { createdAt: Date }[]): Record<string, number> {
   return items.reduce((acc, item) => {
     const date = item.createdAt.toISOString().split('T')[0]
-    acc[date] = (acc[date] || 0) + 1
+    if (date) acc[date] = (acc[date] ?? 0) + 1
     return acc
   }, {} as Record<string, number>)
 }
@@ -17,7 +17,7 @@ function fillDateRange(start: Date, end: Date, counts: Record<string, number>) {
   const current = new Date(start)
   while (current <= end) {
     const date = current.toISOString().split('T')[0]
-    result.push({ date, value: counts[date] || 0 })
+    if (date) result.push({ date, value: counts[date] ?? 0 })
     current.setDate(current.getDate() + 1)
   }
   return result

@@ -13,13 +13,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
 
-    let logs = [];
+    let logs: any[] = [];
 
     // [cite_start]Wrap that specific query in try/catch. [cite: 263]
     // SCHEMA-FALLBACK: 'AuditLog' model may not exist — verify schema
     try {
       // @ts-ignore
-      logs = await db.auditLog.findMany({
+      logs = await (db as any).auditLog.findMany({
         where: { resourceId: id },
         take: 20,
         orderBy: { createdAt: 'desc' },
