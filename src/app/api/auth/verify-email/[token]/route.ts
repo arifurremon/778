@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
@@ -36,7 +37,10 @@ export async function GET(
     // Redirect to login with success message
     return NextResponse.redirect(new URL("/?verified=true", req.url));
   } catch (error) {
-    console.error("[VERIFY_EMAIL]", error);
+    logErrorToSentry(error, {
+      endpoint: "/api/auth/verify-email/[token]",
+      method: "GET",
+    });
     return NextResponse.redirect(new URL("/?error=verification-failed", req.url));
   }
 }

@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/services
@@ -18,7 +20,7 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get("category") || "all";
     const status = searchParams.get("status") || "all";
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (search) {
       // SCHEMA-FALLBACK: 'title' may not exist — using 'profession' or 'category' as proxy
@@ -62,7 +64,7 @@ export async function GET(req: NextRequest) {
 
     const [services, total] = await Promise.all([
       db.expertService.findMany({
-        where,
+        where: where as Prisma.ExpertServiceWhereInput,
         take: limit,
         skip: (page - 1) * limit,
         orderBy: { createdAt: "desc" },
@@ -79,7 +81,7 @@ export async function GET(req: NextRequest) {
           }
         }
       }),
-      db.expertService.count({ where })
+      db.expertService.count({ where: where as Prisma.ExpertServiceWhereInput })
     ]);
 
     // Map fields for frontend consistency
@@ -102,7 +104,13 @@ export async function GET(req: NextRequest) {
       limit
     });
   } catch (err) {
-    console.error("[GET_SERVICES_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to fetch services" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/services",
+      method: "GET"
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

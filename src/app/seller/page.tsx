@@ -1,22 +1,21 @@
 
 "use client";
 
-import { useState } from "react";
-import Layout from "../dashboard/layout";
+import { ProductForm } from "@/components/seller/product-form";
 import { SellerDashboard } from "@/components/seller/seller-dashboard";
-import { Plus, Store, LayoutDashboard, History, Settings, Package, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
-import { ProductForm } from "@/components/seller/product-form";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { History, LayoutDashboard, Package, Plus, Settings, ShoppingBag, Store } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import Layout from "../dashboard/layout";
 
 export default function SellerPage() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -81,7 +80,7 @@ export default function SellerPage() {
   );
 }
 
-function SidebarLink({ icon, label, active = false }: { icon: any, label: string, active?: boolean }) {
+function SidebarLink({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
   return (
     <div className={cn(
       "flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 font-black text-[11px] uppercase tracking-widest",

@@ -1,40 +1,34 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FileText, 
-  Search, 
-  Filter, 
-  Eye, 
-  EyeOff, 
-  Trash2, 
-  MoreHorizontal,
-  ChevronLeft,
-  ChevronRight,
-  User,
-  Calendar,
-  ExternalLink
+import { format } from 'date-fns';
+import {
+    ChevronLeft,
+    ChevronRight,
+    ExternalLink,
+    EyeOff,
+    FileText,
+    MoreHorizontal,
+    Trash2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { useCallback, useEffect, useState } from 'react';
 
-import { StatusBadge } from '@/components/admin/display/StatusBadge';
 import { BulkActionBar } from '@/components/admin/actions/BulkActionBar';
 import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
+import { StatusBadge } from '@/components/admin/display/StatusBadge';
 import { FilterPanel } from '@/components/admin/forms/FilterPanel';
 import { SearchBar } from '@/components/admin/forms/SearchBar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -91,7 +85,7 @@ export default function AdminPostsPage() {
       const data = await res.json();
       
       // SCHEMA-FALLBACK: moderationStatus field not available — using visibility as proxy
-      const mappedPosts = data.posts.map((p: any) => ({
+      const mappedPosts = data.posts.map((p: Record<string, unknown>) => ({
         ...p,
         moderationStatus: p.moderationStatus || (p.visibility === 'PRIVATE' ? 'HIDDEN' : 'ACTIVE')
       }));

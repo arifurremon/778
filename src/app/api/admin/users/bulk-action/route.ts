@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
+import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const bulkActionSchema = z.object({
@@ -60,7 +60,6 @@ export async function POST(req: NextRequest) {
           )
         );
       } catch (err) {
-        console.warn("[BULK_SUSPEND_FAILED]: Likely missing schema fields.");
         return NextResponse.json({ 
           error: "Schema fields for suspension are missing. Operation aborted.",
           fallback: true 

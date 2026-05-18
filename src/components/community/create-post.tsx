@@ -1,42 +1,53 @@
 
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Image as ImageIcon, 
-  MapPin, 
-  X, 
-  Send,
-  Plus,
-  ChevronLeft,
-  Smile,
-  Globe,
-  Home,
-  Lock,
-  ChevronDown
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth, PrivacyLevel } from "@/hooks/use-auth";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    DialogTrigger
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { PrivacyLevel, useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    ChevronDown,
+    ChevronLeft,
+    Globe,
+    Home,
+    Image as ImageIcon,
+    Lock,
+    MapPin,
+    Plus,
+    Send,
+    X
+} from "lucide-react";
+import { useState } from "react";
+
+interface CreatePostInput {
+  author: {
+    name: string;
+    avatar: string;
+    location: string;
+    username: string;
+  };
+  content: string;
+  images: string[];
+  checkInLocation?: string;
+  visibility: PrivacyLevel;
+}
 
 interface CreatePostProps {
-  onCreate: (post: { author: any, content: string, images: string[], checkInLocation?: string, visibility: PrivacyLevel }) => void;
+  onCreate: (post: CreatePostInput) => void;
 }
 
 export default function CreatePost({ onCreate }: CreatePostProps) {

@@ -1,7 +1,7 @@
-import { logErrorToSentry } from "@/lib/error-handler";
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 
 // ---------------------------------------------------------------------------
 // GET /api/admin  — Admin dashboard counts
@@ -32,7 +32,13 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
       pendingVerifications,
     });
   } catch (error) {
-    logErrorToSentry(error, { route: "[GET /api/admin]" });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    logErrorToSentry(error, {
+      endpoint: "/api/admin",
+      method: "GET",
+    });
+    return NextResponse.json(
+      formatAPIError(error),
+      { status: 500 }
+    );
   }
 }

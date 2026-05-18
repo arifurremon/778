@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const settingsSchema = z.object({
@@ -46,7 +47,6 @@ export async function GET(req: NextRequest) {
         }
       });
     } catch (e) {
-      console.warn("[SETTINGS_FALLBACK]: Settings model not available in DB.");
       // Provide a safe default memory object
       settings = {
         siteName: "The Chattala",
@@ -63,8 +63,14 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: settings });
   } catch (err) {
-    console.error("[GET_SETTINGS_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/settings",
+      method: "GET"
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }
 
@@ -93,7 +99,6 @@ export async function PATCH(req: NextRequest) {
         }
       });
     } catch (e) {
-      console.warn("[SETTINGS_FALLBACK]: Settings model not available in DB.");
       updatedSettings = validatedData;
     }
 
@@ -117,7 +122,13 @@ export async function PATCH(req: NextRequest) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ errors: err.errors }, { status: 400 });
     }
-    console.error("[UPDATE_SETTINGS_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/settings",
+      method: "PATCH"
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

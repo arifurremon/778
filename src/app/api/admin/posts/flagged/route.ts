@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/posts/flagged
@@ -36,13 +37,20 @@ export async function GET(req: NextRequest) {
         }
       });
     } catch (err) {
-      console.warn("[SCHEMA_FALLBACK]: Moderation fields missing. Returning empty queue.");
+      // [SCHEMA_FALLBACK]: Moderation fields missing. Returning empty queue.
       // [cite_start]Return a safe default value. [cite: 265]
-      flaggedPosts = []; 
+      flaggedPosts = [];
     }
 
     return NextResponse.json({ success: true, posts: flaggedPosts });
   } catch (err) {
-    return NextResponse.json({ error: "Failed to fetch flagged posts" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/posts/flagged",
+      method: "GET",
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

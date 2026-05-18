@@ -1,43 +1,32 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Search, 
-  ShoppingBag, 
-  Star, 
-  MapPin, 
-  ChevronRight, 
-  Store,
-  Utensils,
-  Cpu,
-  Pill,
-  Shirt,
-  ArrowRight,
-  ShieldCheck,
-  TrendingUp,
-  Flame,
-  Smartphone,
-  Watch,
-  Refrigerator,
-  Zap
-} from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem, 
-  CarouselNext, 
-  CarouselPrevious 
-} from "@/components/ui/carousel";
+import { MOCK_PRODUCTS, MOCK_SHOPS, type MockProduct } from "@/lib/mock-data";
+import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    ArrowRight,
+    ChevronRight,
+    Cpu,
+    Flame,
+    MapPin,
+    Pill,
+    Refrigerator,
+    Search,
+    ShieldCheck,
+    Shirt,
+    ShoppingBag,
+    Smartphone,
+    Star,
+    Store,
+    Zap
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { MOCK_SHOPS, MOCK_PRODUCTS } from "@/lib/mock-data";
-import { cn } from "@/lib/utils";
+import { useMemo, useState } from "react";
 
 export const CATEGORIES = [
   { id: 'all', name: 'All', icon: <ShoppingBag size={14} /> },
@@ -225,7 +214,7 @@ export default function MarketView() {
   );
 }
 
-function ProductCard({ product }: { product: any }) {
+function ProductCard({ product }: { product: MockProduct }) {
   const shop = MOCK_SHOPS.find(s => s.id === product.shopId);
   
   return (

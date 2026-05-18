@@ -1,27 +1,26 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { 
-  History, 
-  Search, 
-  Filter, 
-  Download, 
-  ChevronDown, 
-  ChevronUp,
-  FileJson,
-  Loader2,
-  ExternalLink
+import {
+    ChevronDown,
+    ChevronUp,
+    Download,
+    ExternalLink,
+    FileJson,
+    Filter,
+    History,
+    Loader2,
+    Search
 } from 'lucide-react';
 import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -32,7 +31,7 @@ interface AuditLogEntry {
   action: string;
   entityType: string;
   entityId: string;
-  details: any;
+  details: Record<string, unknown>;
   ipAddress: string | null;
   userAgent: string | null;
   createdAt: string;

@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
+import { logErrorToSentry } from "@/lib/error-handler";
+import { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/posts
@@ -19,7 +21,7 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status") || "all";
     const authorId = searchParams.get("authorId") || "";
 
-    const where: any = {};
+    const where: Prisma.PostWhereInput = {};
 
     // Search logic
     if (search) {
@@ -100,7 +102,13 @@ export async function GET(req: NextRequest) {
       limit
     });
   } catch (err) {
-    console.error("[GET_POSTS_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/posts",
+      method: "GET",
+    });
+    return NextResponse.json(
+      { error: "Failed to fetch posts" },
+      { status: 500 }
+    );
   }
 }

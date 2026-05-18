@@ -15,8 +15,8 @@ interface AdminState {
   // Search & Filters
   globalSearchQuery: string;
   setGlobalSearchQuery: (query: string) => void;
-  activeFilters: Record<string, any>;
-  setFilter: (key: string, value: any) => void;
+  activeFilters: Record<string, string | number | boolean>;
+  setFilter: (key: string, value: string | number | boolean) => void;
   resetFilters: () => void;
 }
 

@@ -1,34 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { 
-  Compass, 
-  User, 
-  ShieldCheck, 
-  Handshake, 
-  Mail, 
-  Send,
-  Linkedin,
-  Facebook,
-  Instagram,
-  Github,
-  ChevronRight,
-  ExternalLink,
-  History,
-  Lightbulb,
-  Building2,
-  FileText
-} from "lucide-react";
-import Layout from "../dashboard/layout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
+import {
+    Building2,
+    Compass,
+    Facebook,
+    FileText,
+    Github,
+    Handshake,
+    History,
+    Instagram,
+    Lightbulb,
+    Linkedin,
+    Mail,
+    Send,
+    ShieldCheck
+} from "lucide-react";
+import { useState } from "react";
+import Layout from "../dashboard/layout";
 
 export default function VisionLegacyPage() {
   const [activeTab, setActiveTab] = useState("genesis");
@@ -226,7 +222,7 @@ export default function VisionLegacyPage() {
   );
 }
 
-function SocialLink({ icon, label, href }: { icon: any, label: string, href: string }) {
+function SocialLink({ icon, label, href }: { icon: React.ReactNode, label: string, href: string }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer">
       <Button variant="outline" className="bg-card/30 border-border/50 hover:bg-accent/10 hover:border-accent/40 rounded-xl px-4 flex items-center gap-2 font-bold text-xs">
@@ -250,7 +246,7 @@ function LegalCard({ title, children }: { title: string, children: React.ReactNo
   );
 }
 
-function FeatureBox({ icon, title, desc }: { icon: any, title: string, desc: string }) {
+function FeatureBox({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
   return (
     <div className="bg-background/40 backdrop-blur-md border border-border/30 rounded-3xl p-6 space-y-2 hover:border-accent/40 transition-colors">
        <div className="mb-3">{icon}</div>

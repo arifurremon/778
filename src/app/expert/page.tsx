@@ -1,10 +1,10 @@
 
 "use client";
 
-import Layout from "../dashboard/layout";
 import { ExpertDashboard } from "@/components/expert/expert-dashboard";
-import { ShieldCheck, Briefcase, LayoutDashboard, Calendar, Star, Wallet, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Calendar, LayoutDashboard, Settings, ShieldCheck, Star, Wallet } from "lucide-react";
+import Layout from "../dashboard/layout";
 
 export default function ExpertPage() {
   return (
@@ -50,7 +50,7 @@ export default function ExpertPage() {
   );
 }
 
-function SidebarLink({ icon, label, active = false }: { icon: any, label: string, active?: boolean }) {
+function SidebarLink({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
   return (
     <div className={cn(
       "flex items-center gap-4 px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-300 font-black text-[11px] uppercase tracking-widest",

@@ -1,50 +1,47 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { 
-  ChevronRight, 
-  Users, 
-  Mail, 
-  ShieldCheck, 
-  UserMinus, 
-  Trash2, 
-  CheckCircle, 
-  Ban, 
-  Clock, 
-  LayoutDashboard,
-  FileText,
-  Store,
-  Briefcase,
-  ExternalLink,
-  Loader2,
-  AlertTriangle
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
+import { NotificationComposer } from '@/components/admin/actions/NotificationComposer';
+import { ActivityTimeline } from '@/components/admin/display/ActivityTimeline';
+import { StatusBadge } from '@/components/admin/display/StatusBadge';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { StatusBadge } from '@/components/admin/display/StatusBadge';
-import { ActivityTimeline } from '@/components/admin/display/ActivityTimeline';
-import { NotificationComposer } from '@/components/admin/actions/NotificationComposer';
-import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import {
+    AlertTriangle,
+    Ban,
+    Briefcase,
+    CheckCircle,
+    ChevronRight,
+    Clock,
+    FileText,
+    Loader2,
+    Mail,
+    ShieldCheck,
+    Store,
+    Trash2,
+    Users
+} from 'lucide-react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface UserDetail {
   id: string;
@@ -117,7 +114,7 @@ export default function UserDetailPage() {
     fetchData();
   }, [id]);
 
-  const handleAction = async (action: string, method: string = 'PATCH', body: any = {}) => {
+  const handleAction = async (action: string, method: string = 'PATCH', body: Record<string, unknown> = {}) => {
     setActionLoading(action);
     try {
       const res = await fetch(`/api/admin/users/${id}`, {

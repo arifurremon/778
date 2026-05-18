@@ -1,10 +1,10 @@
-import { logErrorToSentry } from "@/lib/error-handler";
-import { NextRequest, NextResponse } from "next/server";
+import { logAdminAction } from "@/lib/audit-log";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { logAdminAction } from "@/lib/audit-log";
-import { z } from "zod";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import type { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -82,8 +82,14 @@ export async function GET(
 
     return NextResponse.json(post);
   } catch (error) {
-    logErrorToSentry(error, { route: "[GET /api/admin/posts/[id]]" });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    logErrorToSentry(error, {
+      endpoint: "/api/admin/posts/[id]",
+      method: "GET",
+    });
+    return NextResponse.json(
+      formatAPIError(error),
+      { status: 500 }
+    );
   }
 }
 
@@ -127,13 +133,18 @@ export async function PATCH(
       { changes: validatedData },
       req.headers.get("x-forwarded-for") || "unknown"
     );
-
     return NextResponse.json({ success: true, post: updatedPost });
   } catch (err) {
     if (err instanceof z.ZodError)
       return NextResponse.json({ errors: err.errors }, { status: 400 });
-    logErrorToSentry(err, { route: "[PATCH /api/admin/posts/[id]]" });
-    return NextResponse.json({ error: "Failed to update post" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/posts/[id]",
+      method: "PATCH",
+    });
+    return NextResponse.json(
+      { error: "Failed to update post" },
+      { status: 500 }
+    );
   }
 }
 
@@ -181,7 +192,13 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: "Post soft-deleted successfully" });
   } catch (error) {
-    logErrorToSentry(error, { route: "[DELETE /api/admin/posts/[id]]" });
-    return NextResponse.json({ error: "Failed to delete post" }, { status: 500 });
+    logErrorToSentry(error, {
+      endpoint: "/api/admin/posts/[id]",
+      method: "DELETE",
+    });
+    return NextResponse.json(
+      { error: "Failed to delete post" },
+      { status: 500 }
+    );
   }
 }

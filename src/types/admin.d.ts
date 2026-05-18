@@ -72,7 +72,7 @@ export interface AdminService {
   verifiedAt?: Date | null;
   rejectedAt?: Date | null;
   rejectionReason?: string | null;
-  pricing: any;
+  pricing: Record<string, unknown>;
   createdAt: Date;
 }
 

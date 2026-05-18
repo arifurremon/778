@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
-import { use } from "react";
+import { useRouter } from "next/navigation";
+import { use, useState } from "react";
 
 export default function ResetPasswordPage({ params }: { params: Promise<{ token: string }> }) {
   const resolvedParams = use(params);
@@ -44,7 +43,7 @@ export default function ResetPasswordPage({ params }: { params: Promise<{ token:
         description: "Your password has been reset. You can now login.",
       });
       router.push("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: error.message,

@@ -1,11 +1,11 @@
 "use client";
 
+import { AlertTriangle, Bell, CheckCircle2, Eye, Mail, ShieldX } from 'lucide-react';
 import React, { useState } from 'react';
-import { Mail, Bell, Eye, CheckCircle2, AlertTriangle, ShieldX } from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface NotificationTemplate {
@@ -206,6 +206,7 @@ export default function NotificationTemplatesPage() {
           </DialogHeader>
           <div className="p-8 bg-[#f9fafb] flex justify-center">
             {/* The actual HTML preview wrapper */}
+            {/* SAFE: notification templates are static/hardcoded, not user-generated */}
             <div 
               className="w-full max-w-lg bg-white shadow-xl rounded-xl overflow-hidden border border-gray-100"
               dangerouslySetInnerHTML={{ __html: selectedTemplate?.htmlPreview || '' }}

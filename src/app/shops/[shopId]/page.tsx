@@ -1,48 +1,43 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, 
-  Star, 
-  MapPin, 
-  MessageSquare, 
-  Phone, 
-  ShoppingBag,
-  Info,
-  ChevronRight,
-  Plus,
-  ShieldCheck,
-  Package,
-  Award,
-  Search,
-  Filter,
-  X,
-  Check
-} from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import Layout from "../../dashboard/layout";
-import { Button } from "@/components/ui/button";
+import { OrderModal } from "@/components/market/order-modal";
+import { VerifiedReviews } from "@/components/market/verified-reviews";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog";
-import { MOCK_SHOPS, MOCK_PRODUCTS } from "@/lib/mock-data";
-import { OrderModal } from "@/components/market/order-modal";
-import { VerifiedReviews } from "@/components/market/verified-reviews";
 import { useAuth } from "@/hooks/use-auth";
 import { useMessages } from "@/hooks/use-messages";
+import type { MockProduct, MockShop } from "@/lib/mock-data";
+import { MOCK_PRODUCTS, MOCK_SHOPS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    ArrowLeft,
+    Filter,
+    Info,
+    MapPin,
+    MessageSquare,
+    Package,
+    Phone,
+    Plus,
+    Search,
+    ShieldCheck,
+    Star
+} from "lucide-react";
+import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import Layout from "../../dashboard/layout";
 
 const container = {
   hidden: { opacity: 0 },
@@ -58,12 +53,12 @@ const item = {
 };
 
 export default function ShopStorefront() {
-  const { shopId } = useParams();
+  const { shopId } = useParams<{ shopId: string }>();
   const router = useRouter();
   const { user } = useAuth();
   const { startConversation } = useMessages();
   
-  const [selectedProduct, setSelectedProduct] = useState<Record<string, any> | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<(MockProduct & { shopName: string }) | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
@@ -73,7 +68,7 @@ export default function ShopStorefront() {
   const [onlyInStock, setOnlyInStock] = useState(false);
 
   const shop = useMemo(() => {
-    return MOCK_SHOPS.find(s => s.id === shopId) || MOCK_SHOPS[0];
+    return (MOCK_SHOPS.find(s => s.id === shopId) || MOCK_SHOPS[0]) as MockShop;
   }, [shopId]);
 
   const shopProducts = useMemo(() => {
@@ -84,14 +79,14 @@ export default function ShopStorefront() {
   const filteredCatalog = useMemo(() => {
     return shopProducts.filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const numericPrice = parseInt(p.price.replace(/[^0-9]/g, ''));
+      const numericPrice = parseInt(String(p.price).replace(/[^0-9]/g, ''));
       const matchesPrice = numericPrice >= priceRange[0] && numericPrice <= priceRange[1];
       const matchesStock = onlyInStock ? p.inStock : true;
       return matchesSearch && matchesPrice && matchesStock;
     });
   }, [shopProducts, searchQuery, priceRange, onlyInStock]);
 
-  const handleBuyNow = (product: Record<string, any>) => {
+  const handleBuyNow = (product: MockProduct) => {
     setSelectedProduct({ ...product, shopName: shop.name });
     setIsOrderModalOpen(true);
   };

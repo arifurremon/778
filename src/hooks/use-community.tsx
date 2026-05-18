@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
 import { api } from "@/lib/api";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { PrivacyLevel } from "./use-auth";
 
 export interface Comment {
@@ -56,7 +56,38 @@ interface CommunityContextType {
   toggleSavePost: (id: string) => void;
   toggleFollowPost: (id: string) => void;
   blockUser: (username: string) => void;
-  repost: (postId: string, caption: string, user: any) => void;
+  repost: (postId: string, caption: string, user: Post['author']) => void;
+}
+
+interface PostApiResponse {
+  id: string;
+  content: string;
+  images: string[];
+  checkInLocation?: string;
+  visibility: string;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+    username: string;
+    profileImage: string;
+    isVerified?: boolean;
+    isSeller?: boolean;
+    isServiceProvider?: boolean;
+  };
+  comments?: CommentApiResponse[];
+}
+
+interface CommentApiResponse {
+  id: string;
+  text: string;
+  createdAt: string;
+  author: {
+    id: string;
+    name: string;
+    username: string;
+    profileImage: string;
+  };
 }
 
 const CommunityContext = createContext<CommunityContextType | null>(null);
@@ -71,13 +102,13 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     const savedBlocked = localStorage.getItem("chattala_blocked_users");
     if (savedBlocked) setBlockedUsers(JSON.parse(savedBlocked));
 
-    api.get<{ posts: any[] }>('/api/posts?page=1&limit=10')
+    api.get<{ posts: PostApiResponse[] }>('/api/posts?page=1&limit=10')
       .then(data => {
-        const fetchedPosts = data.posts.map(p => ({
+        const fetchedPosts = data.posts.map((p: PostApiResponse) => ({
           ...p,
           timestamp: p.createdAt,
           author: { ...p.author, avatar: p.author.profileImage },
-          comments: (p.comments || []).map((c: any) => ({ ...c, timestamp: c.createdAt, author: { ...c.author, avatar: c.author.profileImage } })),
+          comments: (p.comments || []).map((c: CommentApiResponse) => ({ ...c, timestamp: c.createdAt, author: { ...c.author, avatar: c.author.profileImage } })),
           isSaved: false,
           isFollowing: false,
         }));
@@ -97,7 +128,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
 
   const addPost = async (postData: Omit<Post, 'id' | 'timestamp' | 'helpfulCount' | 'notHelpfulCount' | 'comments'>) => {
     try {
-      const newPostRaw = await api.post<any>('/api/posts', {
+      const newPostRaw = await api.post<PostApiResponse>('/api/posts', {
         content: postData.content,
         images: postData.images,
         checkInLocation: postData.checkInLocation,
@@ -123,7 +154,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
 
   const addComment = async (postId: string, commentData: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'unlikes'>) => {
     try {
-      const newCommentRaw = await api.post<any>(`/api/posts/${postId}/comments`, { text: commentData.text });
+      const newCommentRaw = await api.post<CommentApiResponse>(`/api/posts/${postId}/comments`, { text: commentData.text });
       const newComment = { ...newCommentRaw, timestamp: newCommentRaw.createdAt, author: { ...newCommentRaw.author, avatar: newCommentRaw.author.profileImage } };
       setPosts(prev => prev.map(p => 
         p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p
@@ -187,7 +218,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
   const interactPost = async (postId: string, type: 'helpful' | 'not-helpful') => {
     try {
       const dbType = type === 'helpful' ? 'helpful' : 'notHelpful';
-      const updatedCounts = await api.post<any>(`/api/posts/${postId}/react`, { type: dbType });
+      const updatedCounts = await api.post<{ helpfulCount: number; notHelpfulCount: number }>(`/api/posts/${postId}/react`, { type: dbType });
       setPosts(prev => prev.map(p => {
         if (p.id === postId) {
           return {
@@ -216,7 +247,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     setBlockedUsers(prev => [...prev, username]);
   };
 
-  const repost = (postId: string, caption: string, user: any) => {
+  const repost = (postId: string, caption: string, user: Post['author']) => {
     const originalPost = posts.find(p => p.id === postId);
     if (!originalPost) return;
 

@@ -1,44 +1,42 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Stethoscope, 
-  AirVent, 
-  BookOpen, 
-  Code, 
-  HardHat, 
-  Zap, 
-  Droplets, 
-  Wrench, 
-  Scissors,
-  Search,
-  MapPin,
-  Filter,
-  ArrowRight,
-  ShieldCheck
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { ProviderCard } from "./provider-card";
-import { MOCK_PROVIDERS, CHITTAGONG_AREAS } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
 } from "@/components/ui/dialog";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
+import { CHITTAGONG_AREAS, MOCK_PROVIDERS } from "@/lib/mock-data";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    AirVent,
+    BookOpen,
+    Code,
+    Droplets,
+    Filter,
+    HardHat,
+    MapPin,
+    Scissors,
+    Search,
+    Stethoscope,
+    Wrench,
+    Zap
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { ProviderCard } from "./provider-card";
 
 export type ServiceCategory = {
   id: string;
@@ -186,7 +184,7 @@ export default function ServiceView() {
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3, delay: idx * 0.05 }}
             >
-              <ProviderCard provider={provider as any} />
+              <ProviderCard provider={provider} />
             </motion.div>
           ))}
         </AnimatePresence>

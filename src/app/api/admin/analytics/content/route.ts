@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
-import { subDays, startOfDay, endOfDay } from "date-fns";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { endOfDay, startOfDay, subDays } from "date-fns";
+import { NextRequest, NextResponse } from "next/server";
 
 function groupByDate(items: { createdAt: Date }[]): Record<string, number> {
   return items.reduce((acc, item) => {
@@ -93,7 +94,13 @@ export async function GET(req: NextRequest) {
       headers: { 'Cache-Control': 'public, max-age=300' }
     });
   } catch (err) {
-    console.error("[ANALYTICS_CONTENT_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to fetch content analytics" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/analytics/content",
+      method: "GET",
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

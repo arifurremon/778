@@ -1,8 +1,8 @@
-import { logErrorToSentry } from "@/lib/error-handler";
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import type { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 // ---------------------------------------------------------------------------
 // GET /api/admin/products  — all products across all shops
@@ -70,7 +70,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    logErrorToSentry(error, { route: "[GET /api/admin/products]" });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    logErrorToSentry(error, {
+      endpoint: "/api/admin/products",
+      method: "GET",
+    });
+    return NextResponse.json(
+      formatAPIError(error),
+      { status: 500 }
+    );
   }
 }

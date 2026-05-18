@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/services/pending
@@ -12,7 +14,7 @@ export async function GET(req: NextRequest) {
     if (error) return error;
 
     // [cite_start]/pending returns services where isVerified=false AND rejectedAt=null, ordered by oldest first. [cite: 111, 116]
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     try {
       // SCHEMA-FALLBACK: 'isVerified' and 'rejectedAt' may not exist — verify schema
@@ -24,7 +26,7 @@ export async function GET(req: NextRequest) {
     }
 
     const pendingServices = await db.expertService.findMany({
-      where,
+      where: where as Prisma.ExpertServiceWhereInput,
       orderBy: { createdAt: "asc" }, // Oldest first
       take: 50, // [cite_start]Maximum 50 items for the pending list. [cite: 122]
       include: {
@@ -42,7 +44,13 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, services: mappedServices });
   } catch (err) {
-    console.error("[GET_PENDING_SERVICES_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to fetch pending services" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/services/pending",
+      method: "GET"
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

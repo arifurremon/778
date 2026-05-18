@@ -1,8 +1,8 @@
-import { logErrorToSentry } from "@/lib/error-handler";
-import { NextRequest, NextResponse } from "next/server";
+import { logAdminAction } from "@/lib/audit-log";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { logAdminAction } from "@/lib/audit-log";
+import { logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -68,8 +68,8 @@ export async function GET(
     // Enrich with fallback fields for UI compatibility
     const enrichedService = {
       ...service,
-      title: (service as any).title || service.profession,
-      description: (service as any).description || service.bio,
+      title: service.profession,
+      description: service.bio,
       provider: service.user,
       bookings: [],
       verificationHistory: [],

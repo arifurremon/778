@@ -1,26 +1,26 @@
 
 "use client";
 
-import { useState } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { MapPin, Calendar, Clock, CheckCircle2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Calendar, CheckCircle2, Clock, MapPin } from "lucide-react";
+
+import { Provider } from "@/types/index";
 
 interface BookingModalProps {
-  provider: any;
+  provider: Provider;
   isOpen: boolean;
   onClose: () => void;
 }

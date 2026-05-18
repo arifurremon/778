@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
+import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/admin/shops/[id]/verify
@@ -75,7 +76,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
          <p>You can now log in to your dashboard and start adding products to your storefront.</p>`
       );
     } catch (emailErr) {
-      console.error("[EMAIL_ERROR]:", emailErr);
+      logErrorToSentry(emailErr, {
+        endpoint: "/api/admin/shops/[id]/verify",
+        method: "POST"
+      });
     }
 
     // [cite_start]Log the admin action. [cite: 110]
@@ -90,13 +94,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json({ success: true, message: "Shop verified successfully" });
   } catch (err) {
-    console.error("[SHOP_VERIFY_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to verify shop" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/shops/[id]/verify",
+      method: "POST"
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }
 
 // Helper to check if a field exists in a Prisma model at runtime (simplistic)
-function tryField(model: any, fieldName: string): boolean {
+function tryField(model: Record<string, unknown>, fieldName: string): boolean {
   // SCHEMA-FALLBACK: Check if field exists in schema
   // In a real scenario, we might use Prisma.dmmf or a try/catch on a dummy query
   return false; // Defaulting to false since we know it's missing in current schema

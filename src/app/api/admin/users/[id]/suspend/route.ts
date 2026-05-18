@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
+import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const suspendSchema = z.object({
@@ -41,7 +41,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
       success = true;
     } catch (err) {
-      console.warn(`[SCHEMA_FALLBACK]: Could not update suspension fields for user ${id}. They may be missing from the schema.`);
       // Return a safe default success response to avoid crashing the UI
       success = false; 
     }

@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import { signOut } from "next-auth/react";
-import { AlertTriangle, Trash2, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
+import { AlertTriangle, ArrowLeft, Trash2 } from "lucide-react";
+import { signOut } from "next-auth/react";
+import Link from "next/link";
+import { useState } from "react";
 
 export default function DeleteAccountPage() {
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,7 @@ export default function DeleteAccountPage() {
       
       // Sign out and redirect
       await signOut({ callbackUrl: "/" });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Error",
         description: error.message,

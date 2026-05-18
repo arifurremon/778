@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
+import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/admin/services/[id]/verify
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (!service) return NextResponse.json({ error: "Service not found" }, { status: 404 });
 
-    const serviceTitle = (service as any).title || service.profession;
+    const serviceTitle = service.profession;
 
     // Prisma transaction for atomic updates
     await db.$transaction(async (tx) => {
@@ -86,7 +87,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
          <p>Your profile is now visible to the community and you can start receiving bookings.</p>`
       );
     } catch (emailErr) {
-      console.error("[EMAIL_ERROR]:", emailErr);
+      logErrorToSentry(emailErr, {
+        endpoint: "/api/admin/services/[id]/verify",
+        method: "POST"
+      });
     }
 
     // [cite_start]AuditLog actions: 'VERIFY_SERVICE' [cite: 157-158]
@@ -101,7 +105,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json({ success: true, message: "Service verified successfully" });
   } catch (err) {
-    console.error("[SERVICE_VERIFY_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to verify service" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/services/[id]/verify",
+      method: "POST"
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/users
@@ -20,7 +22,7 @@ export async function GET(req: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
-    const where: any = {
+    const where: Record<string, unknown> = {
       deletedAt: null // Only active users
     };
 
@@ -57,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     const [users, total] = await Promise.all([
       db.user.findMany({
-        where,
+        where: where as Prisma.UserWhereInput,
         take: limit,
         skip: (page - 1) * limit,
         orderBy: { [sortBy]: sortOrder },
@@ -83,7 +85,7 @@ export async function GET(req: NextRequest) {
           }
         }
       } as any), // Cast to any to handle potential missing fields in types
-      db.user.count({ where })
+      db.user.count({ where: where as Prisma.UserWhereInput })
     ]);
 
     return NextResponse.json({
@@ -93,7 +95,13 @@ export async function GET(req: NextRequest) {
       limit
     });
   } catch (err) {
-    console.error("[GET_USERS_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/users",
+      method: "GET"
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

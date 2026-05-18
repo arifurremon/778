@@ -1,36 +1,32 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ShieldCheck, 
-  XCircle, 
-  Mail, 
-  MapPin, 
-  User, 
-  Briefcase, 
-  FileText,
-  AlertCircle,
-  CheckCircle2,
-  Clock
-} from 'lucide-react';
-import Link from 'next/link';
 import { format } from 'date-fns';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    AlertCircle,
+    CheckCircle2,
+    Clock,
+    Mail,
+    MapPin,
+    ShieldCheck,
+    XCircle
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 
 interface PendingService {
@@ -75,7 +71,7 @@ export default function PendingServiceVerificationPage() {
   const handleAction = async (id: string, action: 'approve' | 'reject') => {
     setActionLoading(id);
     try {
-      const body: any = { action };
+      const body: Record<string, string> = { action };
       if (action === 'reject') body.reason = rejectDialog.reason;
 
       const res = await fetch(`/api/admin/services/${id}/verify`, {

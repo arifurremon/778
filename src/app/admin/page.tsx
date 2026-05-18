@@ -1,19 +1,19 @@
-import { db } from "@/lib/db";
-import { 
-  Users, 
-  FileText, 
-  Store, 
-  Briefcase, 
-  ChevronRight,
-  AlertCircle,
-  Clock
-} from "lucide-react";
-import { StatsCard } from "@/components/admin/display/StatsCard";
 import { ActivityTimeline } from "@/components/admin/display/ActivityTimeline";
+import { StatsCard } from "@/components/admin/display/StatsCard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import {
+    AlertCircle,
+    Briefcase,
+    ChevronRight,
+    Clock,
+    FileText,
+    Store,
+    Users
+} from "lucide-react";
+import Link from "next/link";
 
 interface DashboardStats {
   users: { total: number; growth: number }
@@ -23,7 +23,17 @@ interface DashboardStats {
   flaggedPosts: number
 }
 
-async function getDashboardData(): Promise<{ stats: DashboardStats; recentActivity: any[] }> {
+interface DashboardActivityLog {
+  description: string
+  createdAt: Date
+  type: string
+  user: {
+    name: string | null
+    email: string
+  }
+}
+
+async function getDashboardData(): Promise<{ stats: DashboardStats; recentActivity: DashboardActivityLog[] }> {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
@@ -81,7 +91,7 @@ async function getDashboardData(): Promise<{ stats: DashboardStats; recentActivi
       services: { total: totalServices, growth: calcGrowth(current30dServices, prev30dServices), pendingVerification: pendingServices },
       flaggedPosts: 0, // No flagged field in current schema
     },
-    recentActivity: recentLogs
+    recentActivity: recentLogs as DashboardActivityLog[]
   };
 }
 

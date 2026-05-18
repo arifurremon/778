@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { ShieldAlert, Settings as SettingsIcon, AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Settings as SettingsIcon, ShieldAlert } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { SettingsForm, FieldDefinition } from '@/components/admin/settings/SettingsForm';
 import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
+import { FieldDefinition, SettingsForm } from '@/components/admin/settings/SettingsForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
@@ -78,7 +78,7 @@ export default function GeneralSettingsPage() {
     }
   };
 
-  const handleSaveSettings = async (endpoint: string, data: any) => {
+  const handleSaveSettings = async (endpoint: string, data: Record<string, unknown>) => {
     try {
       // Simulated API call
       // await fetch(`/api/admin/settings/${endpoint}`, { method: 'PATCH', body: JSON.stringify(data) });

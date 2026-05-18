@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/shops
@@ -18,7 +20,7 @@ export async function GET(req: NextRequest) {
     const category = searchParams.get("category") || "all";
     const status = searchParams.get("status") || "all";
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (search) {
       where.name = { contains: search, mode: "insensitive" };
@@ -52,7 +54,7 @@ export async function GET(req: NextRequest) {
 
     const [shops, total] = await Promise.all([
       db.shop.findMany({
-        where,
+        where: where as Prisma.ShopWhereInput,
         take: limit,
         skip: (page - 1) * limit,
         orderBy: { createdAt: "desc" },
@@ -65,7 +67,7 @@ export async function GET(req: NextRequest) {
           }
         }
       }),
-      db.shop.count({ where })
+      db.shop.count({ where: where as Prisma.ShopWhereInput })
     ]);
 
     // Map 'user' to 'owner' for frontend consistency
@@ -83,7 +85,13 @@ export async function GET(req: NextRequest) {
       limit
     });
   } catch (err) {
-    console.error("[GET_SHOPS_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to fetch shops" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/shops",
+      method: "GET"
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

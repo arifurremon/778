@@ -1,24 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import Layout from "../dashboard/layout";
-import { 
-  Bell, 
-  Trash2, 
-  Settings as SettingsIcon,
-  ShieldCheck,
-  ShieldAlert,
-  Moon,
-  Sun,
-  Monitor
-} from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/hooks/use-theme";
+import { toast } from "@/hooks/use-toast";
+import {
+    Bell,
+    Monitor,
+    Moon,
+    Settings as SettingsIcon,
+    ShieldAlert,
+    ShieldCheck,
+    Sun,
+    Trash2
+} from "lucide-react";
+import { useState } from "react";
+import Layout from "../dashboard/layout";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -52,7 +51,7 @@ export default function SettingsPage() {
           <h1 className="text-3xl font-bold tracking-tight">
             App <span className="text-accent">Settings</span>
           </h1>
-          <p className="text-muted-foreground text-xs font-medium tracking-wide opacity-60 uppercase font-bold">
+          <p className="text-muted-foreground text-xs font-bold tracking-wide opacity-60 uppercase">
             Customize your digital experience on The Chattala
           </p>
         </section>
@@ -67,7 +66,7 @@ export default function SettingsPage() {
               <Label className="text-base font-bold">Theme Preference</Label>
               <RadioGroup 
                 value={theme} 
-                onValueChange={(v) => setTheme(v as any)}
+                onValueChange={(v) => setTheme(v as 'light' | 'dark' | 'system')}
                 className="grid grid-cols-1 sm:grid-cols-3 gap-4"
               >
                 <div className="flex items-center space-x-2 bg-background/40 p-4 rounded-2xl border border-border/30 cursor-pointer hover:border-accent/30 transition-colors">

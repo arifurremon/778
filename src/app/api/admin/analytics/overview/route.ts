@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
-import { subDays, startOfDay, endOfDay } from "date-fns";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { subDays } from "date-fns";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
     const activities = [
       ...recentUsers.map(u => ({ id: u.id, type: 'user', name: u.name || u.email, avatar: u.profileImage, createdAt: u.createdAt, action: 'Joined the community' })),
       ...recentShops.map(s => ({ id: s.id, type: 'shop', name: s.name, owner: s.user.name, createdAt: s.createdAt, action: 'Registered a new shop' })),
-      ...recentServices.map(s => ({ id: s.id, type: 'service', name: (s as any).profession || s.category, owner: s.user.name, createdAt: s.createdAt, action: 'Listed a new expert service' }))
+      ...recentServices.map(s => ({ id: s.id, type: 'service', name: s.profession || s.category, owner: s.user.name, createdAt: s.createdAt, action: 'Listed a new expert service' }))
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 20);
 
     // Mock data for health and pending as requested in Overview UI
@@ -127,7 +128,13 @@ export async function GET(req: NextRequest) {
       headers: { 'Cache-Control': 'public, max-age=300' }
     });
   } catch (err) {
-    console.error("[ANALYTICS_OVERVIEW_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to fetch overview analytics" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/analytics/overview",
+      method: "GET",
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

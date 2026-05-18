@@ -1,8 +1,8 @@
-import { logErrorToSentry } from "@/lib/error-handler";
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 type RouteContext = { params: Promise<{ userId: string }> };
 
@@ -107,7 +107,13 @@ export async function POST(
 
     return NextResponse.json({ success: true, message: `Application ${action}d successfully.` });
   } catch (error) {
-    logErrorToSentry(error, { route: "[POST /api/admin/verify/[userId]]" });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    logErrorToSentry(error, {
+      endpoint: "/api/admin/verify/[userId]",
+      method: "POST",
+    });
+    return NextResponse.json(
+      formatAPIError(error),
+      { status: 500 }
+    );
   }
 }

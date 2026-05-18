@@ -1,38 +1,33 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { 
-  ChevronLeft, 
-  Store, 
-  ShieldCheck, 
-  ShieldAlert, 
-  Ban, 
-  Trash2, 
-  Mail, 
-  Globe, 
-  Phone, 
-  MapPin, 
-  Package, 
-  Star,
-  Clock,
-  ExternalLink,
-  MoreHorizontal,
-  History,
-  Activity,
-  CheckCircle2,
-  AlertCircle
+import { format } from 'date-fns';
+import {
+    AlertCircle,
+    Ban,
+    CheckCircle2,
+    ChevronLeft,
+    Clock,
+    Globe,
+    History,
+    Mail,
+    MapPin,
+    MoreHorizontal,
+    Phone,
+    ShieldAlert,
+    ShieldCheck,
+    Trash2
 } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-import { StatusBadge } from '@/components/admin/display/StatusBadge';
 import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
 import { ActivityTimeline } from '@/components/admin/display/ActivityTimeline';
+import { StatusBadge } from '@/components/admin/display/StatusBadge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -73,7 +68,7 @@ interface AdminShopDetail {
   auditLogs: Array<{
     id: string;
     action: string;
-    details: any;
+    details: Record<string, unknown>;
     createdAt: string;
   }>;
 }
@@ -285,7 +280,7 @@ export default function ShopDetailPage() {
 
               {/* Sidebar: Owner Info */}
               <div className="space-y-8">
-                <Card className="border-border/50 shadow-xl shadow-black/5 bg-muted/10 border-primary/10">
+                <Card className="shadow-xl shadow-black/5 bg-muted/10">
                   <CardHeader>
                     <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Shop Owner</CardTitle>
                   </CardHeader>

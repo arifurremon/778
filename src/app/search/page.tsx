@@ -1,37 +1,35 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useState, useMemo, Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Layout from "../dashboard/layout";
-import { 
-  Search, 
-  ShoppingBag, 
-  Briefcase, 
-  Users, 
-  MapPin, 
-  Star, 
-  Filter, 
-  ChevronRight,
-  MessageSquare,
-  AlertCircle
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import PostCard from "@/components/community/post-card";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
 } from "@/components/ui/select";
-import { MOCK_SHOPS, MOCK_PROVIDERS, INITIAL_POSTS, CHITTAGONG_AREAS } from "@/lib/mock-data";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CHITTAGONG_AREAS, INITIAL_POSTS, MOCK_PROVIDERS, MOCK_SHOPS, type MockShop } from "@/lib/mock-data";
+import { Provider } from "@/types/index";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    AlertCircle,
+    Briefcase,
+    ChevronRight,
+    MapPin,
+    Search,
+    ShoppingBag,
+    Star,
+    Users
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import PostCard from "@/components/community/post-card";
-import React from "react";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { useSearchParams } from "next/navigation";
+import React, { Suspense, useMemo, useState } from "react";
+import Layout from "../dashboard/layout";
 
 function SearchResults() {
   const searchParams = useSearchParams();
@@ -52,7 +50,7 @@ function SearchResults() {
     });
 
     const services = MOCK_PROVIDERS.filter(p => {
-      const matchesText = p.name.toLowerCase().includes(q) || p.profession.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
+      const matchesText = p.name.toLowerCase().includes(q) || p.profession.toLowerCase().includes(q) || (p.category ? p.category.toLowerCase().includes(q) : false);
       const matchesArea = filterArea === "All Areas" || p.location === filterArea;
       const matchesRating = p.rating >= parseFloat(filterRating);
       return matchesText && matchesArea && matchesRating;
@@ -172,7 +170,7 @@ function SearchResults() {
                     <section className="space-y-4">
                       <SectionHeader title="Community Discussion" icon={<Users size={18} />} href="/community" />
                       <div className="grid grid-cols-1 gap-6 max-w-2xl">
-                        {results.community.slice(0, 2).map(post => <PostCard key={post.id} post={post as any} />)}
+                        {results.community.slice(0, 2).map(post => <PostCard key={post.id} post={post} />)}
                       </div>
                     </section>
                   )}
@@ -196,7 +194,7 @@ function SearchResults() {
 
             <TabsContent value="community" className="mt-0">
               <div className="grid grid-cols-1 gap-6 max-w-2xl">
-                {results.community.map(post => <PostCard key={post.id} post={post as any} />)}
+                {results.community.map(post => <PostCard key={post.id} post={post} />)}
                 {results.community.length === 0 && <EmptyState area={filterArea} category="Posts" />}
               </div>
             </TabsContent>
@@ -221,11 +219,11 @@ export default function SearchPage() {
   );
 }
 
-function SectionHeader({ title, icon, href }: { title: string, icon: any, href: string }) {
+function SectionHeader({ title, icon, href }: { title: string, icon: React.ReactElement<{ className?: string }>, href: string }) {
   return (
     <div className="flex items-center justify-between border-b border-border/10 pb-2">
       <h3 className="text-lg font-bold flex items-center gap-2">
-        {React.cloneElement(icon, { className: "text-accent" })} {title}
+        <span className="text-accent">{icon}</span> {title}
       </h3>
       <Link href={href}>
         <Button variant="link" className="text-accent text-[10px] font-bold uppercase tracking-widest p-0 h-auto">
@@ -236,7 +234,7 @@ function SectionHeader({ title, icon, href }: { title: string, icon: any, href: 
   );
 }
 
-function ShopCard({ shop }: { shop: any }) {
+function ShopCard({ shop }: { shop: MockShop }) {
   return (
     <Link href={`/shops/${shop.id}`}>
       <div className="bg-card/30 backdrop-blur-sm border border-border/50 rounded-2xl overflow-hidden hover:bg-card/40 hover:border-accent/30 transition-smooth group flex flex-col h-full">
@@ -262,7 +260,7 @@ function ShopCard({ shop }: { shop: any }) {
   );
 }
 
-function ProviderMiniCard({ provider }: { provider: any }) {
+function ProviderMiniCard({ provider }: { provider: Provider }) {
   return (
     <div className="bg-card/30 border border-border/50 rounded-2xl p-5 hover:bg-card/40 hover:border-accent/30 transition-smooth group">
       <div className="flex items-center gap-4">

@@ -1,43 +1,40 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { 
-  ArrowLeft, 
-  Star, 
-  MapPin, 
-  MessageSquare, 
-  Phone, 
-  Award,
-  ShieldCheck,
-  Calendar,
-  Clock,
-  Briefcase,
-  ExternalLink,
-  CheckCircle2,
-  FileText
+import { BookingModal } from "@/components/services/booking-modal";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GlobalUserBadges } from "@/components/user/global-user-badges";
+import { useMessages } from "@/hooks/use-messages";
+import { MOCK_PROVIDERS } from "@/lib/mock-data";
+import type { Provider } from "@/types/index";
+import {
+    ArrowLeft,
+    Award,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    FileText,
+    MapPin,
+    MessageSquare,
+    Phone,
+    ShieldCheck,
+    Star
 } from "lucide-react";
 import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import Layout from "../../dashboard/layout";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
-import { MOCK_PROVIDERS } from "@/lib/mock-data";
-import { BookingModal } from "@/components/services/booking-modal";
-import { useMessages } from "@/hooks/use-messages";
-import { GlobalUserBadges } from "@/components/user/global-user-badges";
 
 export default function ExpertPublicProfile() {
-  const { expertId } = useParams();
+  const { expertId } = useParams<{ expertId: string }>();
   const router = useRouter();
   const { startConversation } = useMessages();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
-  const expert = useMemo(() => {
-    return MOCK_PROVIDERS.find(p => p.id === expertId) || MOCK_PROVIDERS[0];
+  const expert = useMemo<Provider>(() => {
+    return (MOCK_PROVIDERS.find(p => p.id === expertId) || MOCK_PROVIDERS[0]) as Provider;
   }, [expertId]);
 
   const handleMessageExpert = () => {
@@ -110,7 +107,7 @@ export default function ExpertPublicProfile() {
                     <Award size={20} className="text-accent" /> Qualifications & Credentials
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {expert.qualifications?.map((q: any, i: number) => (
+                    {expert.qualifications?.map((q: Record<string, unknown>, i: number) => (
                       <div key={i} className="flex items-center gap-3 p-4 bg-card/20 border border-border/50 rounded-2xl">
                         <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
                         <span className="text-sm font-bold">{q}</span>
@@ -122,7 +119,7 @@ export default function ExpertPublicProfile() {
 
               <TabsContent value="portfolio" className="mt-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {expert.portfolio?.map((img: any, i: number) => (
+                  {expert.portfolio?.map((img: Record<string, unknown>, i: number) => (
                     <div key={i} className="relative aspect-video rounded-3xl overflow-hidden border border-border/50 group shadow-lg">
                       <Image src={img} alt="Work" fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -192,7 +189,7 @@ export default function ExpertPublicProfile() {
       </div>
 
       <BookingModal 
-        provider={expert as any} 
+        provider={expert} 
         isOpen={isBookingOpen} 
         onClose={() => setIsBookingOpen(false)} 
       />

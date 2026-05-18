@@ -1,30 +1,42 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { SearchBar } from '@/components/admin/forms/SearchBar';
-import { FilterPanel } from '@/components/admin/forms/FilterPanel';
-import { StatusSelector } from '@/components/admin/forms/StatusSelector';
 import { CategorySelector } from '@/components/admin/forms/CategorySelector';
+import { FilterPanel } from '@/components/admin/forms/FilterPanel';
+import { SearchBar } from '@/components/admin/forms/SearchBar';
+import { StatusSelector } from '@/components/admin/forms/StatusSelector';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+interface UserFilterState {
+  search?: string;
+  role?: string;
+  status?: string;
+  joinedFrom?: string;
+  joinedTo?: string;
+  sortBy?: string;
+  sortOrder?: string;
+  page?: number;
+  limit?: number;
+}
 
 interface UserFiltersProps {
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: UserFilterState) => void;
   onReset: () => void;
-  initialFilters: any;
+  initialFilters: UserFilterState;
 }
 
 export const UserFilters = ({ onFilterChange, onReset, initialFilters }: UserFiltersProps) => {
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState<UserFilterState>(initialFilters);
   const [searchTerm, setSearchTerm] = useState(initialFilters.search || '');
 
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchTerm !== filters.search) {
-        setFilters((prev: any) => ({ ...prev, search: searchTerm }));
+        setFilters((prev: UserFilterState) => ({ ...prev, search: searchTerm }));
       }
     }, 300);
     return () => clearTimeout(timer);
@@ -36,8 +48,8 @@ export const UserFilters = ({ onFilterChange, onReset, initialFilters }: UserFil
     setSearchTerm(initialFilters.search || '');
   }, [initialFilters]);
 
-  const handleFilterChange = (key: string, value: any) => {
-    const newFilters = { ...filters, [key]: value };
+  const handleFilterChange = (key: string, value: string | number) => {
+    const newFilters: UserFilterState = { ...filters, [key]: value };
     setFilters(newFilters);
   };
 

@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { logAdminAction } from "@/lib/audit-log";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { logAdminAction } from "@/lib/audit-log";
-import { logErrorToSentry } from "@/lib/error-handler";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -111,7 +111,7 @@ export async function POST(
           },
         });
       } catch (e) {
-        console.warn("[SCHEMA_FALLBACK]: Suspension fields missing on User.");
+        // SCHEMA_FALLBACK: Suspension fields missing on User.
       }
 
       // Also hide the post
@@ -134,7 +134,13 @@ export async function POST(
   } catch (err) {
     if (err instanceof z.ZodError)
       return NextResponse.json({ errors: err.errors }, { status: 400 });
-    logErrorToSentry(err, { route: "[POST /api/admin/posts/[id]/moderate]" });
-    return NextResponse.json({ error: "Moderation action failed" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/posts/[id]/moderate",
+      method: "POST",
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

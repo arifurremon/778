@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/dashboard/stats
@@ -109,10 +110,12 @@ export async function GET(req: NextRequest) {
     });
 
   } catch (error) {
-    // [cite_start]Wrap everything in try/catch — return 500 with a production-ready error message. [cite: 45]
-    console.error("[API_DASHBOARD_STATS_ERROR]:", error);
+    logErrorToSentry(error, {
+      endpoint: "/api/admin/dashboard/stats",
+      method: "GET",
+    });
     return NextResponse.json(
-      { error: "Failed to retrieve dashboard statistics." },
+      formatAPIError(error),
       { status: 500 }
     );
   }

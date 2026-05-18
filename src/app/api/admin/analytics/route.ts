@@ -1,9 +1,8 @@
-import { logErrorToSentry } from "@/lib/error-handler";
-import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { subDays, startOfDay, format } from "date-fns";
-import type { Prisma } from "@prisma/client";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { format, startOfDay, subDays } from "date-fns";
+import { NextRequest, NextResponse } from "next/server";
 
 // ---------------------------------------------------------------------------
 // GET /api/admin/analytics  — Platform-wide analytics
@@ -169,7 +168,13 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
       recentActivity,
     });
   } catch (error) {
-    logErrorToSentry(error, { route: "[GET /api/admin/analytics]" });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    logErrorToSentry(error, {
+      endpoint: "/api/admin/analytics",
+      method: "GET",
+    });
+    return NextResponse.json(
+      formatAPIError(error),
+      { status: 500 }
+    );
   }
 }

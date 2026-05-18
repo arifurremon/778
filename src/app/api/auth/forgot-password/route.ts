@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { logErrorToSentry } from "@/lib/error-handler";
 import { sendPasswordResetEmail } from "@/lib/mail";
 import crypto from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,7 +39,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: "If that email exists, we sent a password reset link." });
   } catch (error) {
-    console.error("[FORGOT_PASSWORD]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    logErrorToSentry(error, {
+      endpoint: "/api/auth/forgot-password",
+      method: "POST",
+    });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
+import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const rejectSchema = z.object({
@@ -84,7 +85,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
          <p>Please address the issues mentioned above and re-submit your request.</p>`
       );
     } catch (emailErr) {
-      console.error("[EMAIL_ERROR]:", emailErr);
+      logErrorToSentry(emailErr, {
+        endpoint: "/api/admin/shops/[id]/reject",
+        method: "POST"
+      });
     }
 
     await logAdminAction(

@@ -1,13 +1,13 @@
-import { logErrorToSentry } from "@/lib/error-handler";
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { hash } from "bcryptjs";
-import { z } from "zod";
 import { db } from "@/lib/db";
-import { sendWelcomeEmail, sendVerificationEmail } from "@/lib/mail";
-import { sanitizeUserInput } from "@/lib/sanitize";
-import crypto from "crypto";
+import { logErrorToSentry } from "@/lib/error-handler";
+import { sendVerificationEmail, sendWelcomeEmail } from "@/lib/mail";
 import { rateLimiters } from "@/lib/rate-limit";
+import { sanitizeUserInput } from "@/lib/sanitize";
+import { hash } from "bcryptjs";
+import crypto from "crypto";
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { success: true, message: "Account created." },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     logErrorToSentry(error, { route: "[POST /api/auth/register] CRITICAL ERROR:" });
     
     // Provide a slightly more descriptive message for debugging

@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { UsersTable } from '@/components/admin/users/UsersTable';
-import { UserFilters } from '@/components/admin/users/UserFilters';
 import { BulkActionBar } from '@/components/admin/actions/BulkActionBar';
 import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
-import { Users, Trash2, ShieldCheck, Mail } from 'lucide-react';
+import { UserFilters } from '@/components/admin/users/UserFilters';
+import { UsersTable } from '@/components/admin/users/UsersTable';
 import { toast } from '@/hooks/use-toast';
+import { Mail, ShieldCheck, Trash2, Users } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface AdminUser {
   id: string;
@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [fetchUsers]);
 
-  const handleFilterChange = (newFilters: any) => {
+  const handleFilterChange = (newFilters: Record<string, string | number>) => {
     setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
   };
 

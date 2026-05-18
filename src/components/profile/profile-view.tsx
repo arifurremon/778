@@ -1,79 +1,62 @@
-
 "use client";
 
-import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { 
-  Camera, 
-  MapPin, 
-  ShieldCheck, 
-  Calendar, 
-  Store, 
-  Briefcase, 
-  ChevronRight,
-  Settings,
-  Grid,
-  UserCircle,
-  Eye,
-  Clock,
-  Award,
-  BadgeCheck,
-  Star,
-  FileText,
-  AtSign,
-  User,
-  Cake,
-  Hash,
-  AlertCircle,
-  Bookmark,
-  ArrowRight,
-  Globe,
-  Home,
-  Lock,
-  Phone,
-  Mail,
-  UserPlus,
-  Check
-} from "lucide-react";
-import { useAuth, PrivacyLevel } from "@/hooks/use-auth";
+import PostCard from "@/components/community/post-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
-} from "@/components/ui/accordion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import PostCard from "@/components/community/post-card";
-import { toast } from "@/hooks/use-toast";
 import { GlobalUserBadges } from "@/components/user/global-user-badges";
-import { differenceInYears, format, parseISO } from "date-fns";
+import type { User } from "@/hooks/use-auth";
+import { PrivacyLevel, useAuth } from "@/hooks/use-auth";
 import { useCommunity } from "@/hooks/use-community";
-import { cn } from "@/lib/utils";
-import { UploadButton } from "@/lib/uploadthing";
+import { toast } from "@/hooks/use-toast";
 import { validateFileUpload } from "@/lib/sanitize";
+import { UploadButton } from "@/lib/uploadthing";
+import { differenceInYears, format, parseISO } from "date-fns";
+import {
+    ArrowRight,
+    AtSign,
+    BadgeCheck,
+    Bookmark,
+    Briefcase,
+    Cake,
+    Camera,
+    ChevronRight,
+    Clock,
+    Globe,
+    Grid,
+    Home,
+    Lock,
+    Mail,
+    MapPin,
+    Phone,
+    Settings,
+    ShieldCheck,
+    Star,
+    Store,
+    UserCircle,
+    UserPlus
+} from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 const CHITTAGONG_AREAS = [
   'Akbar Shah', 'Bakalia', 'Bandar', 'Bayezid Bostami', 
@@ -120,7 +103,7 @@ export default function ProfileView() {
   };
 
   const handleSavePersonalInfo = () => {
-    const updates: any = {};
+    const updates: Partial<Pick<User, 'name' | 'nameChangeCount' | 'location' | 'dob' | 'bio'>> = {};
     
     if (editName !== user?.name) {
       if ((user?.nameChangeCount || 0) >= 3) {
@@ -423,7 +406,7 @@ export default function ProfileView() {
                 {myPosts.length > 0 ? (
                   <div className="space-y-6">
                     {myPosts.map(post => (
-                      <PostCard key={post.id} post={post as any} />
+                      <PostCard key={post.id} post={post} />
                     ))}
                   </div>
                 ) : (
@@ -447,7 +430,7 @@ export default function ProfileView() {
                 {savedPosts.length > 0 ? (
                   <div className="space-y-6">
                     {savedPosts.map(post => (
-                      <PostCard key={post.id} post={post as any} />
+                      <PostCard key={post.id} post={post} />
                     ))}
                   </div>
                 ) : (

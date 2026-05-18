@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { Prisma } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/settings/audit-log
@@ -22,7 +24,7 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    const where: any = {};
+    const where: Prisma.AuditLogWhereInput = {};
 
     if (adminId && adminId !== "all") where.adminId = adminId;
     if (action && action !== "all") where.action = action;
@@ -69,7 +71,6 @@ export async function GET(req: NextRequest) {
         }
       });
     } catch (e) {
-      console.warn("[AUDIT_LOG_FALLBACK]: AuditLog model missing in Prisma schema.");
       return NextResponse.json({
         success: true,
         data: [],
@@ -77,7 +78,13 @@ export async function GET(req: NextRequest) {
       });
     }
   } catch (err) {
-    console.error("[GET_AUDIT_LOGS_ERROR]:", err);
-    return NextResponse.json({ error: "Failed to fetch audit logs" }, { status: 500 });
+    logErrorToSentry(err, {
+      endpoint: "/api/admin/settings/audit-log",
+      method: "GET"
+    });
+    return NextResponse.json(
+      formatAPIError(err),
+      { status: 500 }
+    );
   }
 }

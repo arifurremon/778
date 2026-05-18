@@ -1,43 +1,39 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Store, 
-  MapPin, 
-  ShieldCheck, 
-  ChevronRight, 
-  ChevronLeft, 
-  FileCheck, 
-  Truck,
-  AlertCircle,
-  Building,
-  CheckCircle2,
-  Info,
-  Briefcase,
-  CreditCard,
-  History,
-  Mail,
-  Phone,
-  HelpCircle
-} from "lucide-react";
-import Layout from "../dashboard/layout";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import type { ShopDetails } from "@/hooks/use-auth";
 import { useAuth } from "@/hooks/use-auth";
-import { CHITTAGONG_AREAS } from "@/lib/mock-data";
 import { toast } from "@/hooks/use-toast";
+import { CHITTAGONG_AREAS } from "@/lib/mock-data";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    AlertCircle,
+    Briefcase,
+    Building,
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    CreditCard,
+    FileCheck,
+    Mail,
+    Phone,
+    ShieldCheck,
+    Store,
+    Truck
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
+import Layout from "../dashboard/layout";
 
 const categories = ["Grocery", "Electronics", "Fashion", "Pharmacy", "Restaurant", "Stationery", "Home Decor", "Beauty", "Others"];
 
@@ -118,7 +114,11 @@ export default function RegisterShopPage() {
 
   const prevStep = () => setStep(prev => prev - 1);
 
-  const toggleItem = (list: string[], item: string, fieldName: any) => {
+  const toggleItem = (
+    list: string[],
+    item: string,
+    fieldName: Extract<keyof RegisterFormValues, 'categories' | 'deliveryAreas'>
+  ) => {
     const newList = list.includes(item) 
       ? list.filter(i => i !== item) 
       : [...list, item];
@@ -128,7 +128,7 @@ export default function RegisterShopPage() {
   const onSubmit = (data: RegisterFormValues) => {
     updateUser({
       registrationStatus: 'Pending',
-      shopDetails: data as any
+      shopDetails: data as ShopDetails
     });
     toast({
       title: "Application Under Review",

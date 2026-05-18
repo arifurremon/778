@@ -1,25 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useBusiness } from "@/hooks/use-business";
-import { ShoppingCart, Package, MapPin, Phone as PhoneIcon, CheckCircle2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import type { MockProduct } from "@/lib/mock-data";
+import { CheckCircle2, MapPin, Phone as PhoneIcon, ShoppingCart } from "lucide-react";
+import { useState } from "react";
 
 interface OrderModalProps {
-  product: any;
+  product: MockProduct & { shopName?: string };
   shopId: string;
   isOpen: boolean;
   onClose: () => void;

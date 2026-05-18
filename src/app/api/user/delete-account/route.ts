@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -29,7 +30,13 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: "Account deleted successfully" });
   } catch (error) {
-    console.error("[DELETE_ACCOUNT]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    logErrorToSentry(error, {
+      endpoint: "/api/user/delete-account",
+      method: "DELETE"
+    });
+    return NextResponse.json(
+      formatAPIError(error),
+      { status: 500 }
+    );
   }
 }

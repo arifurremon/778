@@ -1,42 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  UserCircle, 
-  MapPin, 
-  ShieldCheck, 
-  ChevronRight, 
-  ChevronLeft, 
-  FileCheck, 
-  Stethoscope,
-  Briefcase,
-  GraduationCap,
-  Wrench,
-  Code,
-  Scale,
-  Scissors,
-  Clock,
-  CreditCard,
-  Building2,
-  CheckCircle2,
-  AlertCircle
-} from "lucide-react";
-import Layout from "../dashboard/layout";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { ServiceDetails } from "@/hooks/use-auth";
 import { useAuth } from "@/hooks/use-auth";
-import { CHITTAGONG_AREAS } from "@/lib/mock-data";
 import { toast } from "@/hooks/use-toast";
+import { CHITTAGONG_AREAS } from "@/lib/mock-data";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    Briefcase,
+    Building2,
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    Clock,
+    Code,
+    CreditCard,
+    FileCheck,
+    GraduationCap,
+    Scale,
+    Scissors,
+    ShieldCheck,
+    Stethoscope,
+    UserCircle,
+    Wrench
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
+import Layout from "../dashboard/layout";
 
 const categories = [
   { id: "Doctor", label: "Doctor", icon: <Stethoscope size={16} /> },
@@ -130,7 +126,11 @@ export default function RegisterServicePage() {
 
   const prevStep = () => setStep(prev => prev - 1);
 
-  const toggleItem = (list: string[], item: string, fieldName: any) => {
+  const toggleItem = (
+    list: string[],
+    item: string,
+    fieldName: Extract<keyof RegisterFormValues, 'serviceAreas' | 'availability'>
+  ) => {
     const newList = list.includes(item) 
       ? list.filter(i => i !== item) 
       : [...list, item];
@@ -140,7 +140,7 @@ export default function RegisterServicePage() {
   const onSubmit = (data: RegisterFormValues) => {
     updateUser({
       serviceRegistrationStatus: 'Pending',
-      serviceDetails: data as any
+      serviceDetails: data as ServiceDetails
     });
     toast({
       title: "Service Application Received",

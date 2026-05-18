@@ -14,6 +14,10 @@ export interface Provider {
   name: string;
   image?: string;
   profession: string;
+  category?: string;
+  bio?: string;
+  qualifications?: string[];
+  portfolio?: string[];
   rating: number;
   reviews: number;
   location: string;

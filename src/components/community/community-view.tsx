@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useCommunity } from "@/hooks/use-community";
-import PostCard from "./post-card";
-import CreatePost from "./create-post";
+import { AnimatePresence, motion } from "framer-motion";
 import { Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import CreatePost from "./create-post";
+import PostCard from "./post-card";
 
 export default function CommunityView() {
   const { user } = useAuth();
@@ -26,7 +26,7 @@ export default function CommunityView() {
     }
   }, []);
 
-  const handleCreatePost = (newPost: any) => {
+  const handleCreatePost = (newPost: Parameters<typeof addPost>[0]) => {
     addPost({
       author: {
         name: user?.name || "Guest User",

@@ -1,36 +1,35 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { 
-  ChevronLeft, 
-  Briefcase, 
-  ShieldCheck, 
-  ShieldAlert, 
-  Ban, 
-  Trash2, 
-  Mail, 
-  MapPin, 
-  Star,
-  Clock,
-  MoreHorizontal,
-  History,
-  CheckCircle2,
-  AlertCircle,
-  User,
-  Calendar,
-  CreditCard
+import { format } from 'date-fns';
+import {
+    AlertCircle,
+    Ban,
+    Briefcase,
+    Calendar,
+    CheckCircle2,
+    ChevronLeft,
+    Clock,
+    CreditCard,
+    History,
+    Mail,
+    MapPin,
+    MoreHorizontal,
+    ShieldAlert,
+    ShieldCheck,
+    Trash2,
+    User
 } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-import { StatusBadge } from '@/components/admin/display/StatusBadge';
 import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
 import { ActivityTimeline } from '@/components/admin/display/ActivityTimeline';
+import { StatusBadge } from '@/components/admin/display/StatusBadge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -68,7 +67,7 @@ interface AdminServiceDetail {
   auditLogs: Array<{
     id: string;
     action: string;
-    details: any;
+    details: Record<string, unknown>;
     createdAt: string;
   }>;
 }
@@ -282,7 +281,7 @@ export default function ServiceDetailPage() {
 
               {/* Sidebar: Provider Info */}
               <div className="space-y-8">
-                <Card className="border-border/50 shadow-xl shadow-black/5 bg-muted/10 border-primary/10">
+                <Card className="border-border/50 shadow-xl shadow-black/5 bg-muted/10">
                   <CardHeader>
                     <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Service Provider</CardTitle>
                   </CardHeader>

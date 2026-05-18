@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin-auth";
+import { db } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/admin/users/[id]/audit
@@ -28,7 +28,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         }
       });
     } catch (err) {
-      console.warn(`[SCHEMA_FALLBACK]: AuditLog model missing. Falling back to ActivityLog.`);
       // Optional: Try fetching from ActivityLog if it represents similar data
       try {
         logs = await db.activityLog.findMany({
