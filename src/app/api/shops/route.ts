@@ -1,9 +1,10 @@
+import { auth } from "@/lib/auth";
+import { cachedQuery, invalidateCache } from "@/lib/cache";
+import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { sanitizeUserInput } from "@/lib/sanitize";
 
 // ---------------------------------------------------------------------------
 // Shared shop select
@@ -43,21 +44,29 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const limit    = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12", 10)));
     const skip     = (page - 1) * limit;
 
-    const where = {
-      ...(category ? { category } : {}),
-      ...(location ? { location: { contains: location, mode: "insensitive" as const } } : {}),
-    };
+    const cacheKey = `shops:list:page:${page}:limit:${limit}:category:${category}:location:${location}`;
 
-    const [shops, total] = await Promise.all([
-      db.shop.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        select: shopSelect,
-      }),
-      db.shop.count({ where }),
-    ]);
+    const [shops, total] = await cachedQuery(
+      cacheKey,
+      async () => {
+        const where = {
+          ...(category ? { category } : {}),
+          ...(location ? { location: { contains: location, mode: "insensitive" as const } } : {}),
+        };
+
+        return Promise.all([
+          db.shop.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+            select: shopSelect,
+          }),
+          db.shop.count({ where }),
+        ]);
+      },
+      600
+    );
 
     return NextResponse.json({
       shops,
@@ -132,6 +141,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       where: { id: userId },
       data: { registrationStatus: "PENDING" },
     });
+
+    await invalidateCache('shops:list:*');
 
     return NextResponse.json(shop, { status: 201 });
   } catch (error) {

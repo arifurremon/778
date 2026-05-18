@@ -1,12 +1,12 @@
+import { auth } from "@/lib/auth";
+import { cachedQuery, invalidateCache } from "@/lib/cache";
+import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters } from "@/lib/rate-limit";
+import { sanitizePostContent } from "@/lib/sanitize";
+import { PrivacyLevel } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PrivacyLevel } from "@prisma/client";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { sanitizePostContent } from "@/lib/sanitize";
-import { cachedQuery } from "@/lib/cache";
-import { rateLimiters } from "@/lib/rate-limit";
 
 // ---------------------------------------------------------------------------
 // Shared author select — used by both GET and POST
@@ -152,6 +152,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         contextUrl: "/community",
       },
     });
+
+    await invalidateCache('posts:page:*');
 
     return NextResponse.json(post, { status: 201 });
   } catch (error) {

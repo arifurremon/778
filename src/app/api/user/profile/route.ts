@@ -1,9 +1,10 @@
+import { auth } from "@/lib/auth";
+import { cachedQuery, invalidateCache } from "@/lib/cache";
+import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { sanitizeUserInput } from "@/lib/sanitize";
 
 // ---------------------------------------------------------------------------
 // GET /api/user/profile  — authenticated user's full profile (no password)
@@ -15,36 +16,42 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await db.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        email: true,
-        username: true,
-        name: true,
-        preferredName: true,
-        mobile: true,
-        location: true,
-        dob: true,
-        profileImage: true,
-        nameChangeCount: true,
-        joinDate: true,
-        isAdmin: true,
-        isVerified: true,
-        isSeller: true,
-        isServiceProvider: true,
-        registrationStatus: true,
-        serviceRegistrationStatus: true,
-        verificationRequestStatus: true,
-        showShopBadge: true,
-        showExpertBadge: true,
-        showFullAge: true,
-        showBirthdayOnly: true,
-        privacySettings: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    const cacheKey = `user:${session.user.id}:profile`;
+
+    const user = await cachedQuery(
+      cacheKey,
+      () => db.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          preferredName: true,
+          mobile: true,
+          location: true,
+          dob: true,
+          profileImage: true,
+          nameChangeCount: true,
+          joinDate: true,
+          isAdmin: true,
+          isVerified: true,
+          isSeller: true,
+          isServiceProvider: true,
+          registrationStatus: true,
+          serviceRegistrationStatus: true,
+          verificationRequestStatus: true,
+          showShopBadge: true,
+          showExpertBadge: true,
+          showFullAge: true,
+          showBirthdayOnly: true,
+          privacySettings: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      900
+    );
 
     if (!user) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
@@ -149,6 +156,8 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
         updatedAt: true,
       },
     });
+
+    await invalidateCache(`user:${session.user.id}:profile`);
 
     return NextResponse.json(updated);
   } catch (error) {

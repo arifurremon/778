@@ -1,8 +1,9 @@
+import { auth } from "@/lib/auth";
+import { cachedQuery, invalidateCache } from "@/lib/cache";
+import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
 
 // ---------------------------------------------------------------------------
 // Shared expert service select
@@ -43,21 +44,29 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const limit    = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12", 10)));
     const skip     = (page - 1) * limit;
 
-    const where = {
-      ...(category ? { category } : {}),
-      ...(location ? { location: { contains: location, mode: "insensitive" as const } } : {}),
-    };
+    const cacheKey = `services:list:page:${page}:limit:${limit}:category:${category}:location:${location}`;
 
-    const [services, total] = await Promise.all([
-      db.expertService.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        select: expertSelect,
-      }),
-      db.expertService.count({ where }),
-    ]);
+    const [services, total] = await cachedQuery(
+      cacheKey,
+      async () => {
+        const where = {
+          ...(category ? { category } : {}),
+          ...(location ? { location: { contains: location, mode: "insensitive" as const } } : {}),
+        };
+
+        return Promise.all([
+          db.expertService.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+            select: expertSelect,
+          }),
+          db.expertService.count({ where }),
+        ]);
+      },
+      600
+    );
 
     return NextResponse.json({
       services,
@@ -122,6 +131,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       where: { id: userId },
       data: { serviceRegistrationStatus: "PENDING" },
     });
+
+    await invalidateCache('services:list:*');
 
     return NextResponse.json(service, { status: 201 });
   } catch (error) {

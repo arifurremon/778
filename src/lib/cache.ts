@@ -1,33 +1,75 @@
-import { redis } from "./rate-limit";
+import { Redis } from '@upstash/redis';
+
+let redis: Redis | null = null;
+
+function getRedis(): Redis | null {
+  if (
+    !process.env.UPSTASH_REDIS_REST_URL ||
+    !process.env.UPSTASH_REDIS_REST_TOKEN
+  ) {
+    return null;
+  }
+  if (!redis) redis = Redis.fromEnv();
+  return redis;
+}
 
 export async function cachedQuery<T>(
   key: string,
-  queryFn: () => Promise<T>,
-  ttlSeconds: number = 60
+  fetcher: () => Promise<T>,
+  ttlSeconds: number = 300
 ): Promise<T> {
-  // If Redis is not configured or available, fallback to direct query
-  if (!redis) {
-    return queryFn();
-  }
+  const client = getRedis();
 
-  try {
-    const cachedData = await redis.get<T>(key);
-    if (cachedData) {
-      return cachedData;
+  if (client) {
+    try {
+      const cached = await client.get<string>(key);
+      if (cached !== null && cached !== undefined) {
+        // Upstash may return a string or already-parsed object
+        // Handle both cases safely:
+        if (typeof cached === 'string') {
+          try {
+            return JSON.parse(cached) as T;
+          } catch {
+            return cached as unknown as T;
+          }
+        }
+        return cached as unknown as T;
+      }
+    } catch {
+      // Redis unavailable — fall through to database
     }
-  } catch (error) {
-    console.error("[CACHE_GET_ERROR]", error);
   }
 
-  const freshData = await queryFn();
+  const fresh = await fetcher();
 
-  try {
-    if (freshData) {
-      await redis.set(key, freshData, { ex: ttlSeconds });
+  if (client) {
+    try {
+      // Use client.set with ex option — more standard than setex
+      await client.set(key, JSON.stringify(fresh), { ex: ttlSeconds });
+    } catch {
+      // Cache write failed — return fresh data anyway
     }
-  } catch (error) {
-    console.error("[CACHE_SET_ERROR]", error);
   }
 
-  return freshData;
+  return fresh;
+}
+
+export async function invalidateCache(...patterns: string[]): Promise<void> {
+  const client = getRedis();
+  if (!client) return;
+
+  for (const pattern of patterns) {
+    try {
+      if (pattern.includes('*')) {
+        const keys = await client.keys(pattern);
+        if (keys.length > 0) {
+          await client.del(...(keys as [string, ...string[]]));
+        }
+      } else {
+        await client.del(pattern);
+      }
+    } catch {
+      // Ignore cache invalidation failures
+    }
+  }
 }
