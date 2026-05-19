@@ -91,15 +91,7 @@ export default function AuthContainer() {
         </div>
       </div>
       
-      {/* Footer */}
-      <motion.p 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="mt-12 text-center text-sm text-gray-600/80 font-medium"
-      >
-        🚀 Premium Digital Excellence | &copy; 2026 The Chattala
-      </motion.p>
+
     </div>
   );
 }
