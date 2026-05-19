@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { render } from '@/lib/test-utils';
 import LoginForm from '@/components/auth/login-form';
 import { useAuth } from '@/hooks/use-auth';
-import { signIn } from 'next-auth/react';
+import { render } from '@/lib/test-utils';
+import { fireEvent, screen, waitFor } from '@testing-library/dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('LoginForm Component', () => {
   beforeEach(() => {
@@ -80,11 +79,11 @@ describe('LoginForm Component', () => {
     });
   });
   
-  it('should allow Google sign in', () => {
+  it('should have a forgot password link', () => {
     render(<LoginForm onSwitch={() => {}} />);
-    const googleButton = screen.getByRole('button', { name: /Google/i });
+    const forgotLink = screen.getByRole('link', { name: /forgot password/i });
     
-    fireEvent.click(googleButton);
-    expect(signIn).toHaveBeenCalledWith('google', expect.objectContaining({ callbackUrl: '/dashboard' }));
+    expect(forgotLink).toBeInTheDocument();
+    expect(forgotLink).toHaveAttribute('href', '/forgot-password');
   });
 });

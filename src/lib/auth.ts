@@ -1,26 +1,22 @@
-import NextAuth from "next-auth";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { compare } from "bcryptjs";
-import { db } from "@/lib/db";
 import { authConfig } from "@/auth.config";
+import { db } from "@/lib/db";
 import { sendWelcomeEmail } from "@/lib/mail";
 import { rateLimiters } from "@/lib/rate-limit";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { compare } from "bcryptjs";
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { headers } from "next/headers";
 
 /**
  * Full Auth.js configuration including Node.js-only providers and adapters.
+ * Only credentials-based authentication (email + password) is enabled.
+ * Google OAuth has been removed.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(db),
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
-    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {

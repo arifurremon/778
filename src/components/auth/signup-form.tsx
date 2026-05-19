@@ -1,25 +1,23 @@
 "use client";
 
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, MapPin, Phone, Mail, User, Lock, AtSign, Calendar, Heart, AlertCircle } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
-import Logo from "@/components/brand/logo";
-import { signIn } from "next-auth/react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/hooks/use-auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion } from "framer-motion";
+import { AlertCircle, AtSign, Calendar, Lock, Mail, MapPin, Phone, User, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import * as z from "zod";
 
 const CHITTAGONG_AREAS = [
   'Akbar Shah', 'Bakalia', 'Bandar', 'Bayezid Bostami', 
@@ -29,16 +27,20 @@ const CHITTAGONG_AREAS = [
 ] as const;
 
 const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  preferredName: z.string().min(2, "Nickname must be at least 2 characters"),
+  name: z.string().min(2, "Full name must be at least 2 characters"),
   username: z.string().min(3, "Username must be at least 3 characters").regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers and underscores"),
-  email: z.string().email("Please enter a valid email address"),
   mobile: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Enter a valid Bangladesh mobile number"),
+  email: z.string().email("Please enter a valid email address"),
   location: z.enum(CHITTAGONG_AREAS, {
     errorMap: () => ({ message: "Please select your Thana" }),
   }),
+  profession: z.string().optional(),
   dob: z.string().min(1, "Date of birth is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Please confirm your password"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -64,11 +66,11 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         email: data.email,
         pass: data.password,
         name: data.name,
-        preferredName: data.preferredName,
         username: data.username,
         mobile: data.mobile,
         location: data.location,
-        dob: data.dob
+        dob: data.dob,
+        profession: data.profession || "Not specified"
       });
       router.refresh();
       router.push("/dashboard");
@@ -80,142 +82,119 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col items-center gap-6">
-        <Link href="/dashboard" className="transition-opacity hover:opacity-90">
-          <Logo width={180} className="cursor-pointer mx-auto" />
-        </Link>
-        <div className="space-y-2 text-center">
-          <h2 className="text-2xl font-headline font-bold tracking-tight text-foreground">Join the Community</h2>
-          <p className="text-sm text-muted-foreground">Discover Chittagong like never before</p>
-        </div>
-      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {signupError && (
-          <div className="flex items-center gap-2 rounded-md bg-destructive/10 border border-destructive/30 p-3 text-sm text-destructive">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {signupError}
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-3 rounded-xl bg-red-50/80 border border-red-200/50 p-4 text-sm text-red-700 backdrop-blur-sm"
+          >
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <span className="font-medium">{signupError}</span>
+          </motion.div>
         )}
         {/* Full Name */}
         <div className="space-y-2 text-left">
-          <Label htmlFor="name" className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">
-            <User className="w-4 h-4 text-primary" /> Full Name
+          <Label htmlFor="name" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+            <User className="w-4 h-4 text-blue-600" /> Full Name *
           </Label>
           <Input
             id="name"
             type="text"
-            placeholder=""
-            className="bg-background/40 border-border h-11 focus:ring-primary"
+            placeholder="Your full name"
+            className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
             {...register("name")}
           />
           {errors.name && (
-            <p className="text-xs text-destructive">{errors.name.message}</p>
+            <p className="text-xs text-red-600 font-medium">{errors.name.message}</p>
           )}
         </div>
 
-        {/* Preferred Name */}
-        <div className="space-y-2 text-left">
-          <Label htmlFor="preferredName" className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">
-            <Heart className="w-4 h-4 text-accent" /> What should we call you?
-          </Label>
-          <Input
-            id="preferredName"
-            type="text"
-            placeholder=""
-            className="bg-background/40 border-border h-11 focus:ring-primary"
-            {...register("preferredName")}
-          />
-          {errors.preferredName && (
-            <p className="text-xs text-destructive">{errors.preferredName.message}</p>
-          )}
-        </div>
-
-        {/* Username & Email Row */}
+        {/* Username & Phone Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2 text-left">
-            <Label htmlFor="username" className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">
-              <AtSign className="w-4 h-4 text-primary" /> Username
+            <Label htmlFor="username" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+              <AtSign className="w-4 h-4 text-blue-600" /> Username *
             </Label>
             <Input
               id="username"
               type="text"
-              placeholder=""
-              className="bg-background/40 border-border h-11 focus:ring-primary"
+              placeholder="username"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
               {...register("username")}
             />
             {errors.username && (
-              <p className="text-xs text-destructive">{errors.username.message}</p>
+              <p className="text-xs text-red-600 font-medium">{errors.username.message}</p>
             )}
           </div>
           <div className="space-y-2 text-left">
-            <Label htmlFor="email" className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">
-              <Mail className="w-4 h-4 text-primary" /> Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder=""
-              className="bg-background/40 border-border h-11 focus:ring-primary"
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Mobile Number */}
-          <div className="space-y-2 text-left">
-            <Label htmlFor="mobile" className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">
-              <Phone className="w-4 h-4 text-primary" /> Mobile
+            <Label htmlFor="mobile" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+              <Phone className="w-4 h-4 text-blue-600" /> Phone *
             </Label>
             <Input
               id="mobile"
               type="tel"
-              placeholder=""
-              className="bg-background/40 border-border h-11 focus:ring-primary"
+              placeholder="01XXXXXXXXX"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
               {...register("mobile")}
             />
             {errors.mobile && (
-              <p className="text-xs text-destructive">{errors.mobile.message}</p>
-            )}
-          </div>
-
-          {/* Date of Birth */}
-          <div className="space-y-2 text-left">
-            <Label htmlFor="dob" className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">
-              <Calendar className="w-4 h-4 text-primary" /> DOB
-            </Label>
-            <Input
-              id="dob"
-              type="date"
-              className="bg-background/40 border-border h-11 focus:ring-primary block w-full"
-              {...register("dob")}
-            />
-            {errors.dob && (
-              <p className="text-xs text-destructive">{errors.dob.message}</p>
+              <p className="text-xs text-red-600 font-medium">{errors.mobile.message}</p>
             )}
           </div>
         </div>
 
-        {/* Location Dropdown */}
+        {/* Email & DOB Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2 text-left">
+            <Label htmlFor="email" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+              <Mail className="w-4 h-4 text-blue-600" /> Email *
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+              {...register("email")}
+            />
+            {errors.email && (
+              <p className="text-xs text-red-600 font-medium">{errors.email.message}</p>
+            )}
+          </div>
+          <div className="space-y-2 text-left">
+            <Label htmlFor="dob" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+              <Calendar className="w-4 h-4 text-blue-600" /> Date of Birth *
+            </Label>
+            <Input
+              id="dob"
+              type="date"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 block w-full font-medium shadow-sm hover:border-slate-300/80"
+              {...register("dob")}
+            />
+            {errors.dob && (
+              <p className="text-xs text-red-600 font-medium">{errors.dob.message}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Location Dropdown - Full Width for Better Visibility */}
         <div className="space-y-2 text-left">
-          <Label htmlFor="location" className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">
-            <MapPin className="w-4 h-4 text-primary" /> Location (Thana)
+          <Label htmlFor="location" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+            <MapPin className="w-4 h-4 text-blue-600" /> Select Your Thana (Area) *
           </Label>
           <Controller
             name="location"
             control={control}
             render={({ field }) => (
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger className="bg-background/40 border-border h-11 w-full text-left focus:ring-primary">
-                  <SelectValue placeholder="Select your area" />
+                <SelectTrigger className="h-13 px-5 rounded-2xl bg-white/70 border-2 border-slate-200/80 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 w-full text-left font-bold shadow-md hover:border-slate-300/80 text-base">
+                  <SelectValue placeholder="Choose your Thana from the list below" />
                 </SelectTrigger>
-                <SelectContent className="bg-popover border-border max-h-[300px]">
+                <SelectContent className="bg-white border border-slate-200/80 shadow-xl max-h-[400px]">
                   {CHITTAGONG_AREAS.map((area) => (
-                    <SelectItem key={area} value={area} className="cursor-pointer">
+                    <SelectItem key={area} value={area} className="cursor-pointer hover:bg-blue-100 font-medium py-2">
                       {area}
                     </SelectItem>
                   ))}
@@ -224,91 +203,86 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             )}
           />
           {errors.location && (
-            <p className="text-xs text-destructive">{errors.location.message}</p>
+            <p className="text-xs text-red-600 font-medium">{errors.location.message}</p>
           )}
         </div>
 
-        {/* Password */}
+        {/* Profession - Optional */}
         <div className="space-y-2 text-left">
-          <Label htmlFor="password" className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-muted-foreground">
-            <Lock className="w-4 h-4 text-primary" /> Password
+          <Label htmlFor="profession" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+            <UserPlus className="w-4 h-4 text-green-600" /> Profession (Optional)
           </Label>
           <Input
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            className="bg-background/40 border-border h-11 focus:ring-primary"
-            {...register("password")}
+            id="profession"
+            type="text"
+            placeholder="e.g., Engineer, Doctor, Student, Business Owner"
+            className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+            {...register("profession")}
           />
-          {errors.password && (
-            <p className="text-xs text-destructive">{errors.password.message}</p>
-          )}
+        </div>
+
+        {/* Password & Confirm Password Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2 text-left">
+            <Label htmlFor="password" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+              <Lock className="w-4 h-4 text-blue-600" /> Password *
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Min 6 characters"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+              {...register("password")}
+            />
+            {errors.password && (
+              <p className="text-xs text-red-600 font-medium">{errors.password.message}</p>
+            )}
+          </div>
+          <div className="space-y-2 text-left">
+            <Label htmlFor="confirmPassword" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+              <Lock className="w-4 h-4 text-blue-600" /> Confirm Password *
+            </Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Re-enter your password"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+              {...register("confirmPassword")}
+            />
+            {errors.confirmPassword && (
+              <p className="text-xs text-red-600 font-medium">{errors.confirmPassword.message}</p>
+            )}
+          </div>
         </div>
 
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest py-6 h-auto transition-smooth mt-6 shadow-lg shadow-primary/20"
+          className="w-full h-13 mt-8 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 hover:from-blue-700 hover:via-blue-700 hover:to-blue-800 text-white font-bold text-base shadow-lg hover:shadow-2xl transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed tracking-wide uppercase"
         >
           {isSubmitting ? (
             <div className="flex items-center gap-2">
-               <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-               Processing...
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Creating Account...
             </div>
           ) : (
-            <span className="flex items-center gap-2 text-base">
-              Create My Account <UserPlus className="w-5 h-5" />
+            <span className="flex items-center justify-center gap-2">
+              Create Account <UserPlus className="w-5 h-5" />
             </span>
           )}
         </Button>
       </form>
 
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Or sign up with
-          </span>
-        </div>
-      </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full h-12 bg-background border-border hover:bg-muted font-medium"
-        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-      >
-        <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-          <path
-            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            fill="#4285F4"
-          />
-          <path
-            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            fill="#34A853"
-          />
-          <path
-            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            fill="#FBBC05"
-          />
-          <path
-            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            fill="#EA4335"
-          />
-        </svg>
-        Google
-      </Button>
 
-      <div className="pt-4 border-t border-border text-center">
-        <p className="text-sm text-muted-foreground">
-          Already a resident?{" "}
+      <div className="pt-6 border-t border-gray-200/50 text-center">
+        <p className="text-sm text-gray-600 font-medium">
+          Already a member?{" "}
           <button
             onClick={onSwitch}
-            className="text-primary font-black uppercase text-[11px] tracking-widest hover:underline transition-all"
+            className="text-blue-600 font-bold hover:text-blue-700 transition-all hover:underline"
           >
-            Sign in here
+            Sign in
           </button>
         </p>
       </div>

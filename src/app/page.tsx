@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import AuthContainer from "@/components/auth/auth-container";
 import CityBackground from "@/components/ui/city-background";
 import { useAuth } from "@/hooks/use-auth";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
   const { user, isLoading } = useAuth();
@@ -33,11 +33,21 @@ export default function Home() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-background"
+        className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
+        style={{ background: '#137ece' }}
       >
+        {/* City background overlay with blue base */}
         <CityBackground />
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
+        
+        {/* Professional overlay gradient for text readability */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-600/5 via-transparent to-blue-700/5 pointer-events-none"></div>
+        
+        {/* Subtle light rays effect */}
+        <div className="absolute inset-0 z-5 pointer-events-none overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+        </div>
+        
         <AuthContainer />
       </motion.div>
     </AnimatePresence>

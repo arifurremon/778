@@ -94,7 +94,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<void>;
-  signup: (data: { email: string, pass: string, name: string, preferredName: string, username: string, mobile: string, location: string, dob: string }) => Promise<void>;
+  signup: (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string }) => Promise<void>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => Promise<void>;
 }
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (data: { email: string, pass: string, name: string, preferredName: string, username: string, mobile: string, location: string, dob: string }) => {
+  const signup = async (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string }) => {
     await api.post('/api/auth/register', { ...data, password: data.pass });
     await login(data.email, data.pass);
   };

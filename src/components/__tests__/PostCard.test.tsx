@@ -1,7 +1,7 @@
 import PostCard from '@/components/community/post-card';
 import { render } from '@/lib/test-utils';
 import { PrivacyLevel } from '@prisma/client';
-import { screen } from '@testing-library/react';
+import { screen } from '@testing-library/dom';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/hooks/use-community', () => ({
