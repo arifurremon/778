@@ -173,7 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex flex-col h-full bg-card/10 backdrop-blur-xl">
       <div className="px-8 pt-8 mb-12 shrink-0">
         <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="transition-opacity hover:opacity-90">
-          <Logo width={120} className="cursor-pointer" />
+          <Logo width={140} className="cursor-pointer" />
         </Link>
       </div>
       
@@ -365,7 +365,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <header className="h-20 border-b border-border flex items-center justify-between px-4 md:px-10 bg-background sticky top-0 z-50 w-full shrink-0">
           <div className="flex items-center gap-4">
             <Link href="/dashboard" className="md:hidden block transition-opacity hover:opacity-90">
-              <Logo width={110} className="cursor-pointer" />
+              <Logo width={130} className="cursor-pointer" />
             </Link>
             
             {/* Desktop Welcome Section */}
