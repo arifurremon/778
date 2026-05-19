@@ -42,9 +42,16 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch('/api/admin/dashboard-data');
-        const json = await response.json();
-        setData(json);
+        const [statsRes, activityRes] = await Promise.all([
+          fetch('/api/admin/dashboard/stats'),
+          fetch('/api/admin/audit-log?limit=10'),
+        ]);
+        const stats = await statsRes.json();
+        const activityJson = await activityRes.json();
+        setData({
+          stats,
+          recentActivity: activityJson.logs ?? [],
+        });
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
