@@ -46,10 +46,7 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-4 text-center">
-        <h1 className="text-5xl lg:text-6xl font-black bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 bg-clip-text text-transparent leading-tight tracking-tight">Welcome Back</h1>
-        <p className="text-lg text-slate-700/95 font-medium leading-relaxed max-w-md">Access your exclusive dashboard and discover premium digital excellence</p>
-      </div>
+
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {loginError && (
