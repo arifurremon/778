@@ -17,10 +17,10 @@ export default function SplashProvider({ children }: { children: React.ReactNode
       setShowSplash(true);
       sessionStorage.setItem(SESSION_KEY, "true");
 
-      // Hide splash after 2500ms + 900ms exit animation buffer
+      // Hide splash after 1000ms
       const timer = setTimeout(() => {
         setShowSplash(false);
-      }, 2500);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }
