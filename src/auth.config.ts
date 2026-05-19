@@ -3,6 +3,11 @@ import { NextAuthConfig } from "next-auth";
 /**
  * Shared Auth.js configuration that is Edge-compatible.
  * This file should NOT import the database or any Node.js-only APIs.
+ *
+ * IMPORTANT: Do NOT set session.strategy here when using PrismaAdapter
+ * in lib/auth.ts. The adapter requires the default "database" strategy.
+ * JWT callbacks below are used only for enriching the session token
+ * with extra fields (id, username, isAdmin, profileImage).
  */
 export const authConfig: NextAuthConfig = {
   providers: [],
@@ -66,6 +71,7 @@ export const authConfig: NextAuthConfig = {
     signIn: "/",
     error: "/",
   },
+  // Enable debug logs in development for troubleshooting
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET,
   trustHost: true,
@@ -82,5 +88,5 @@ export const authConfig: NextAuthConfig = {
       },
     },
   },
-  debug: false,
+  debug: process.env.NODE_ENV === "development"
 };

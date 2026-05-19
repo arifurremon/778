@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface LogoProps {
   className?: string;
@@ -9,8 +9,8 @@ interface LogoProps {
   width?: number;
 }
 
-const DARK_LOGO = "https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768013/logo_tuvebp.png";
-const LIGHT_LOGO = "https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768230/L_y571qq.png";
+const DARK_LOGO = "https://res.cloudinary.com/det1qnlrh/image/upload/v1779151183/NEW_m0r8wa.png";
+const LIGHT_LOGO = "https://res.cloudinary.com/det1qnlrh/image/upload/v1779151183/NEW_m0r8wa.png";
 
 export default function Logo({ className, animate, width = 140 }: LogoProps) {
   const height = Math.round(width * 0.35); // maintain aspect ratio

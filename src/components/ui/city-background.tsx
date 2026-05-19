@@ -1,33 +1,21 @@
 
 "use client";
 
-import { motion } from "framer-motion";
 import Image from "next/image";
 
 export default function CityBackground() {
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      <motion.div
-        initial={{ x: "-5%", y: "-2%", scale: 1.1 }}
-        animate={{ 
-          x: ["-5%", "5%", "-5%"],
-          y: ["-2%", "2%", "-2%"],
-        }}
-        transition={{
-          duration: 60,
-          ease: "linear",
-          repeat: Infinity,
-        }}
-        className="relative w-[110%] h-[110%] opacity-[0.05] dark:opacity-[0.08]"
-      >
+    <div className="fixed inset-0 z-5 pointer-events-none overflow-hidden opacity-40">
+      <div className="relative w-full h-full">
         <Image
-          src="/city_background.png"
-          alt="City Sketch Overlay"
+          src="https://res.cloudinary.com/det1qnlrh/image/upload/v1779151417/city_background_uyzhca.png"
+          alt="City Background"
           fill
-          className="object-contain dark:invert select-none"
+          className="object-cover object-center select-none"
           priority
+          quality={85}
         />
-      </motion.div>
+      </div>
     </div>
   );
 }

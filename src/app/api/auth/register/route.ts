@@ -25,10 +25,10 @@ const registerSchema = z.object({
     .max(20, "Username cannot exceed 20 characters.")
     .regex(/^\w+$/, "Username may only contain letters, numbers, and underscores."),
   name: z.string().min(1, "Name is required."),
-  preferredName: z.string().min(1, "Preferred name is required."),
   mobile: z.string().min(1, "Mobile is required."),
   location: z.string().min(1, "Location is required."),
   dob: z.string().min(1, "Date of birth is required."),
+  profession: z.string().optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -61,13 +61,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    let { email, password, username, name, preferredName, mobile, location, dob } =
+    let { email, password, username, name, mobile, location, dob, profession } =
       parsed.data;
       
     name = sanitizeUserInput(name);
-    preferredName = sanitizeUserInput(preferredName);
     location = sanitizeUserInput(location);
     username = sanitizeUserInput(username);
+    if (profession) profession = sanitizeUserInput(profession);
 
     // --- Duplicate checks ---------------------------------------------------
     const existingEmail = await db.user.findUnique({
@@ -106,10 +106,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         username,
         password: hashedPassword,
         name,
-        preferredName,
         mobile,
         location,
         dob,
+        profession: profession || "Not specified",
         joinDate,
         emailToken,
       },
