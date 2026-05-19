@@ -105,20 +105,28 @@ export default function AdminUsersPage() {
   };
 
   const handleSuspend = async (userId: string) => {
-    // This would call PATCH /api/admin/users/[id]
-    toast({ title: "Success", description: "User suspension status updated." });
-    fetchUsers();
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/suspend`, { method: 'PATCH' });
+      if (!res.ok) throw new Error('Failed to suspend user');
+      toast({ title: "Success", description: "User suspension status updated." });
+      fetchUsers();
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to update user status." });
+    }
     setConfirmSuspend({ open: false, id: null });
   };
 
   const handleDelete = async (userId: string | null, isBulk: boolean) => {
     const idsToDelete = isBulk ? selectedIds : [userId!];
-    
     try {
-      // Simulation of DELETE /api/admin/users
+      await Promise.all(
+        idsToDelete.map(id =>
+          fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
+        )
+      );
       toast({ 
         title: "Deleted", 
-        description: `${idsToDelete.length} user(s) have been soft-deleted.` 
+        description: `${idsToDelete.length} user(s) have been removed.` 
       });
       setSelectedIds([]);
       fetchUsers();
