@@ -26,7 +26,7 @@ export const sendWelcomeEmail = async ({ to, name }: SendWelcomeEmailParams) => 
             
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 30px;">
-              <img src="https://res.cloudinary.com/dp5ap39r6/image/upload/v1777768055/LOGOICON_swfpo9.png" alt="The Chattala Logo" style="width: 80px; height: auto;" />
+              <img src="https://res.cloudinary.com/det1qnlrh/image/upload/v1779171235/NEW_af42tm.png" alt="The Chattala Logo" style="width: 140px; height: auto;" />
             </div>
 
             <!-- Body -->

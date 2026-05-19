@@ -7,7 +7,7 @@ interface SplashScreenProps {
   isVisible: boolean;
 }
 
-const CHATTALA_LOGO = "https://res.cloudinary.com/det1qnlrh/image/upload/v1779151183/NEW_m0r8wa.png";
+const CHATTALA_LOGO = "https://res.cloudinary.com/det1qnlrh/image/upload/v1779171235/NEW_af42tm.png";
 
 export default function SplashScreen({ isVisible }: SplashScreenProps) {
   return (
