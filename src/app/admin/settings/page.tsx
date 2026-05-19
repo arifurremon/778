@@ -44,33 +44,12 @@ export default function GeneralSettingsPage() {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      // In a real app, this would be an actual API call
-      // const res = await fetch('/api/admin/settings');
-      // const json = await res.json();
-      // setSettings(json.data);
-      
-      // Mocked for UI development, replace with real API call
-      const mockData: SettingsData = {
-        siteName: "The Chattala",
-        siteDescription: "A hyper-local community platform for Chittagong.",
-        contactEmail: "support@thechattala.com",
-        supportPhone: "+880 1712 345678",
-        registrationOpen: true,
-        emailVerificationReq: true,
-        defaultPostVisibility: "PUBLIC",
-        featuresEnabled: {
-          posts: true,
-          marketplace: true,
-          services: true,
-          messaging: false
-        },
-        maintenanceMode: false
-      };
-      
-      // Simulate network
-      await new Promise(r => setTimeout(r, 600));
-      setSettings(mockData);
-      setMaintenanceMode(mockData.maintenanceMode);
+      const res = await fetch('/api/admin/settings');
+      if (!res.ok) throw new Error('Failed to load settings');
+      const json = await res.json();
+      const data = json.data ?? json;
+      setSettings(data);
+      setMaintenanceMode(data.maintenanceMode ?? false);
     } catch (err) {
       toast({ variant: "destructive", title: "Error", description: "Failed to load settings." });
     } finally {
@@ -79,14 +58,12 @@ export default function GeneralSettingsPage() {
   };
 
   const handleSaveSettings = async (endpoint: string, data: Record<string, unknown>) => {
-    try {
-      // Simulated API call
-      // await fetch(`/api/admin/settings/${endpoint}`, { method: 'PATCH', body: JSON.stringify(data) });
-      await new Promise(r => setTimeout(r, 800));
-      return Promise.resolve();
-    } catch (error) {
-      return Promise.reject(error);
-    }
+    const res = await fetch('/api/admin/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to save settings');
   };
 
   const handleMaintenanceToggle = (checked: boolean) => {
