@@ -13,7 +13,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { AlertCircle, AtSign, Calendar, Lock, Mail, MapPin, Phone, User, UserPlus } from "lucide-react";
+import { AlertCircle, AtSign, Calendar, Lock, Mail, MapPin, Phone, User, UserPlus, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -58,6 +58,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
   });
 
   const [signupError, setSignupError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = async (data: SignupFormValues) => {
     setSignupError(null);
@@ -227,13 +229,22 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             <Label htmlFor="password" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
               <Lock className="w-4 h-4 text-blue-600" /> Password *
             </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Min 6 characters"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
-              {...register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Min 6 characters"
+                className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80 pr-12"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-xs text-red-600 font-medium">{errors.password.message}</p>
             )}
@@ -242,13 +253,22 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             <Label htmlFor="confirmPassword" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
               <Lock className="w-4 h-4 text-blue-600" /> Confirm Password *
             </Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="Re-enter your password"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
-              {...register("confirmPassword")}
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Re-enter your password"
+                className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80 pr-12"
+                {...register("confirmPassword")}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {errors.confirmPassword && (
               <p className="text-xs text-red-600 font-medium">{errors.confirmPassword.message}</p>
             )}
