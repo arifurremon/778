@@ -1,7 +1,7 @@
 import LoginForm from '@/components/auth/login-form';
 import { useAuth } from '@/hooks/use-auth';
 import { render } from '@/lib/test-utils';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('LoginForm Component', () => {
