@@ -15,6 +15,7 @@ model User {
   username             String?              @unique
   password             String?
   name                 String?
+  preferredName        String?
   mobile               String?
   location             String?
   profession           String?              @default("Not specified")
