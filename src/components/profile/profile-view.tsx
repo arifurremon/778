@@ -90,22 +90,31 @@ export default function ProfileView() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const updates: Partial<User & { profession?: string }> = {};
-    if (editName !== user?.name) {
-      if ((user?.nameChangeCount || 0) >= 3) {
-        toast({ variant: "destructive", title: "Name change limit reached", description: "You have used all 3 name changes." });
-        setIsSaving(false); return;
+    try {
+      const updates: Partial<User & { profession?: string }> = {};
+      if (editName !== user?.name) {
+        if ((user?.nameChangeCount || 0) >= 3) {
+          toast({ variant: "destructive", title: "Name change limit reached", description: "You have used all 3 name changes." });
+          setIsSaving(false); return;
+        }
+        updates.name = editName;
+        updates.nameChangeCount = (user?.nameChangeCount || 0) + 1;
       }
-      updates.name = editName;
-      updates.nameChangeCount = (user?.nameChangeCount || 0) + 1;
+      updates.location  = editLocation;
+      updates.dob       = editDob;
+      updates.bio       = editBio;
+      (updates as any).profession = editProfession;
+      await updateUser(updates as any);
+      toast({ title: "Profile saved", description: "Your changes have been updated." });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to save profile",
+        description: err?.message || "An unexpected error occurred while saving.",
+      });
+    } finally {
+      setIsSaving(false);
     }
-    updates.location  = editLocation;
-    updates.dob       = editDob;
-    updates.bio       = editBio;
-    (updates as any).profession = editProfession;
-    await updateUser(updates as any);
-    toast({ title: "Profile saved", description: "Your changes have been updated." });
-    setIsSaving(false);
   };
 
   const handlePrivacyChange = (field: keyof NonNullable<typeof user>["privacySettings"], value: PrivacyLevel) => {

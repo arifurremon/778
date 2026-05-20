@@ -122,7 +122,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
         return NextResponse.json({ error: "User not found." }, { status: 404 });
       }
 
-      if (current.nameChangeCount >= 2) {
+      if (current.nameChangeCount >= 3) {
         return NextResponse.json(
           { error: "Name change limit reached." },
           { status: 403 }
