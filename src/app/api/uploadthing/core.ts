@@ -7,7 +7,7 @@ const f = createUploadthing();
 const utapi = new UTApi();
 
 export const ourFileRouter = {
-  profileImage: f({ image: { maxFileSize: "10MB", maxFileCount: 1 } })
+  profileImage: f({ image: { maxFileSize: "16MB", maxFileCount: 1 } })
     .middleware(async () => {
       const session = await auth();
       if (!session?.user?.id) throw new UploadThingError("Unauthorized");
