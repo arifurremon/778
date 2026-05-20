@@ -7,6 +7,9 @@ import { CommunityProvider } from '@/hooks/use-community';
 import { MessagesProvider } from '@/hooks/use-messages';
 import { ServicesProvider } from '@/hooks/use-services';
 import { ThemeProvider } from '@/hooks/use-theme';
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/app/api/uploadthing/core";
 import "@uploadthing/react/styles.css";
 import type { Metadata } from 'next';
 import { SessionProvider } from 'next-auth/react';
@@ -31,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-body antialiased min-h-screen bg-background overflow-x-hidden`}>
+        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <SessionProvider>
           <AuthProvider>
             <ThemeProvider>
@@ -55,3 +59,4 @@ export default function RootLayout({
     </html>
   );
 }
+
