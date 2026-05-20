@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardLayout from "@/components/dashboard/dashboard-view";
+import { GlobalLoader } from "@/components/ui/global-loader";
 import { useAuth } from "@/hooks/use-auth";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -22,11 +23,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // Show spinner while session is loading OR profile is being fetched
   if (status === "loading" || isLoading || (status === "authenticated" && !user)) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <GlobalLoader />;
   }
 
   // Render nothing while redirect to "/" is in-flight

@@ -3,6 +3,7 @@
 
 import AuthContainer from "@/components/auth/auth-container";
 import CityBackground from "@/components/ui/city-background";
+import { GlobalLoader } from "@/components/ui/global-loader";
 import { useAuth } from "@/hooks/use-auth";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -19,11 +20,7 @@ export default function Home() {
   }, [user, router]);
 
   if (isLoading) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <GlobalLoader />;
   }
 
   return (
