@@ -133,13 +133,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return true;
   });
 
-  const getGreeting = () => {
+  const [greeting, setGreeting] = useState("Welcome,");
+
+  useEffect(() => {
     const hour = new Date().getHours();
-    if (hour >= 6 && hour < 12) return 'Good Morning,';
-    if (hour >= 12 && hour < 17) return 'Good Afternoon,';
-    if (hour >= 17 && hour < 20) return 'Good Evening,';
-    return 'Good Night,';
-  };
+    if (hour >= 5 && hour < 12) setGreeting('Good Morning,');
+    else if (hour >= 12 && hour < 17) setGreeting('Good Afternoon,');
+    else if (hour >= 17 && hour < 20) setGreeting('Good Evening,');
+    else setGreeting('Good Night,');
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -371,7 +373,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Desktop Welcome Section */}
             <div className="hidden md:flex flex-col text-left shrink-0">
               <h2 className="text-xl font-bold tracking-tight">
-                {getGreeting()} <span className="text-accent">{user?.preferredName || user?.name?.split(' ')[0]}</span>
+                {greeting} <span className="text-accent">{user?.preferredName || user?.name?.split(' ')[0]}</span>
               </h2>
             </div>
           </div>
