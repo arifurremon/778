@@ -19,6 +19,7 @@ model User {
   mobile               String?
   location             String?
   profession           String?              @default("Not specified")
+  bio                  String?
   dob                  String?
   profileImage         String?
   image                String?

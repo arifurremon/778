@@ -30,7 +30,7 @@ import {
   Save, Settings, ShieldCheck, Star, Store, Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const CHITTAGONG_AREAS = [
   'Akbar Shah','Bakalia','Bandar','Bayezid Bostami','Chandgaon',
@@ -73,6 +73,17 @@ export default function ProfileView() {
     const d = parseISO(user.dob);
     return { age: differenceInYears(new Date(), d), birthday: format(d, "d MMMM") };
   }, [user?.dob]);
+
+  // Sync edit states when user profile loads or updates
+  useEffect(() => {
+    if (user) {
+      setEditName(user.name || "");
+      setEditLocation(user.location || "");
+      setEditDob(user.dob || "");
+      setEditBio(user.bio || "");
+      setEditProfession((user as any).profession || "");
+    }
+  }, [user]);
 
   const myPosts   = useMemo(() => posts.filter(p => p.author.username === user?.username), [posts, user?.username]);
   const savedPosts = useMemo(() => posts.filter(p => p.isSaved), [posts]);

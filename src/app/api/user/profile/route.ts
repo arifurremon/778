@@ -30,6 +30,8 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
           preferredName: true,
           mobile: true,
           location: true,
+          profession: true,
+          bio: true,
           dob: true,
           profileImage: true,
           nameChangeCount: true,
@@ -72,6 +74,8 @@ const updateProfileSchema = z.object({
   preferredName:   z.string().min(1).optional(),
   mobile:          z.string().optional(),
   location:        z.string().optional(),
+  profession:      z.string().optional(),
+  bio:             z.string().max(500, "Bio must be 500 characters or less.").optional(),
   dob:             z.string().optional(),
   profileImage:    z.string().url("Profile image must be a valid URL.").optional(),
   privacySettings: z.record(z.string(), z.string()).optional(),
@@ -97,12 +101,14 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    let { name, preferredName, mobile, location, dob, profileImage, ...rest } = parsed.data;
+    let { name, preferredName, mobile, location, profession, bio, dob, profileImage, ...rest } = parsed.data;
 
     if (name) name = sanitizeUserInput(name);
     if (preferredName) preferredName = sanitizeUserInput(preferredName);
     if (mobile) mobile = sanitizeUserInput(mobile);
     if (location) location = sanitizeUserInput(location);
+    if (profession) profession = sanitizeUserInput(profession);
+    if (bio) bio = sanitizeUserInput(bio);
     if (dob) dob = sanitizeUserInput(dob);
 
     // Enforce name change limit
@@ -131,6 +137,8 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
         preferredName,
         mobile,
         location,
+        profession,
+        bio,
         dob,
         profileImage,
         ...(name !== undefined
@@ -145,6 +153,8 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
         preferredName: true,
         mobile: true,
         location: true,
+        profession: true,
+        bio: true,
         dob: true,
         profileImage: true,
         nameChangeCount: true,
