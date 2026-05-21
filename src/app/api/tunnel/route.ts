@@ -10,34 +10,39 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const header = JSON.parse(piece) as { dsn?: string };
 
     if (typeof header.dsn !== "string") {
-      return NextResponse.json({ error: "Missing or invalid DSN" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid DSN" }, { status: 400 });
     }
 
     const dsn = new URL(header.dsn);
-
     if (dsn.hostname !== SENTRY_HOST) {
       return NextResponse.json({ error: "Invalid host" }, { status: 403 });
     }
 
     const projectId = dsn.pathname.replace("/", "");
-
     if (projectId !== SENTRY_PROJECT_ID) {
       return NextResponse.json({ error: "Invalid project" }, { status: 403 });
     }
 
     const upstreamUrl = `https://${SENTRY_HOST}/api/${SENTRY_PROJECT_ID}/envelope/`;
 
-    const upstreamRes = await fetch(upstreamUrl, {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1000);
+
+    fetch(upstreamUrl, {
       method: "POST",
       headers: { "Content-Type": "application/x-sentry-envelope" },
       body: envelope,
-    });
+      signal: controller.signal,
+    })
+      .then(() => {
+        clearTimeout(timeoutId);
+      })
+      .catch(() => {
+        clearTimeout(timeoutId);
+      });
 
-    return new NextResponse(upstreamRes.body, {
-      status: upstreamRes.status,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json({ status: "ok" }, { status: 200 });
   } catch {
-    return NextResponse.json({ error: "Tunnel error" }, { status: 500 });
+    return NextResponse.json({ status: "error" }, { status: 200 });
   }
 }
