@@ -23,7 +23,6 @@ export async function POST(
       return NextResponse.json({ error: "Invalid reaction type" }, { status: 400 });
     }
 
-    // Update the comment
     const comment = await db.comment.update({
       where: { id: commentId },
       data: {
@@ -35,11 +34,10 @@ export async function POST(
       }
     });
 
-    // Create Notification (ActivityLog) for the comment author
     if (comment.authorId !== session.user.id) {
       const sender = await db.user.findUnique({ where: { id: session.user.id } });
       const actionDesc = type === 'like' ? 'liked' : 'disliked';
-      
+
       await db.activityLog.create({
         data: {
           userId: comment.authorId,
@@ -52,7 +50,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, likes: comment.likes, unlikes: comment.unlikes });
   } catch (error) {
-    logErrorToSentry(error, { route: `[POST /api/posts/[id]/comments/[commentId]/react]` });
+    logErrorToSentry(error, { route: `[POST /api/posts/[postId]/comments/[commentId]/react]` });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

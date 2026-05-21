@@ -4,13 +4,9 @@ import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
-/**
- * GET /api/admin/users
- * Paginated list of users with filtering and search.
- */
 export async function GET(req: NextRequest) {
   try {
-    const { session, error } = await requireAdmin();
+    const { error } = await requireAdmin();
     if (error) return error;
 
     const { searchParams } = new URL(req.url);
@@ -22,11 +18,10 @@ export async function GET(req: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
 
-    const where: Record<string, unknown> = {
-      deletedAt: null // Only active users
+    const where: Prisma.UserWhereInput = {
+      deletedAt: null,
     };
 
-    // Search logic
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -35,7 +30,6 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    // Role filtering
     if (role === "admin") where.isAdmin = true;
     else if (role === "seller") where.isSeller = true;
     else if (role === "provider") where.isServiceProvider = true;
@@ -45,24 +39,16 @@ export async function GET(req: NextRequest) {
       where.isServiceProvider = false;
     }
 
-    // Status filtering
-    if (status === "suspended") {
-      // SCHEMA-FALLBACK: 'suspendedAt' may not exist — verify schema
-      try {
-        where.suspendedAt = { not: null };
-      } catch (e) {
-        // If field doesn't exist, we can't filter by it accurately
-      }
-    } else if (status === "unverified") {
+    if (status === "unverified") {
       where.emailVerified = null;
     }
 
     const [users, total] = await Promise.all([
       db.user.findMany({
-        where: where as Prisma.UserWhereInput,
+        where,
         take: limit,
         skip: (page - 1) * limit,
-        orderBy: { [sortBy]: sortOrder },
+        orderBy: { [sortBy]: sortOrder } as Prisma.UserOrderByWithRelationInput,
         select: {
           id: true,
           name: true,
@@ -74,34 +60,21 @@ export async function GET(req: NextRequest) {
           isServiceProvider: true,
           emailVerified: true,
           createdAt: true,
-          // SCHEMA-FALLBACK: 'suspendedAt' may not exist — verify schema
-          // We'll wrap the entire select if needed, but Prisma select handles missing fields gracefully if typed as any
-          suspendedAt: true,
+          deletedAt: true,
           _count: {
-            select: { 
+            select: {
               posts: true,
               comments: true,
-            }
-          }
-        }
-      } as any), // Cast to any to handle potential missing fields in types
-      db.user.count({ where: where as Prisma.UserWhereInput })
+            },
+          },
+        },
+      }),
+      db.user.count({ where }),
     ]);
 
-    return NextResponse.json({
-      users,
-      total,
-      page,
-      limit
-    });
+    return NextResponse.json({ users, total, page, limit });
   } catch (err) {
-    logErrorToSentry(err, {
-      endpoint: "/api/admin/users",
-      method: "GET"
-    });
-    return NextResponse.json(
-      formatAPIError(err),
-      { status: 500 }
-    );
+    logErrorToSentry(err, { endpoint: "/api/admin/users", method: "GET" });
+    return NextResponse.json(formatAPIError(err), { status: 500 });
   }
 }
