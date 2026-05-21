@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMessages } from "@/hooks/use-messages";
+import { useNotifications } from "@/hooks/use-notifications";
+import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Logo from "@/components/brand/logo";
@@ -62,38 +64,6 @@ import {
 } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type Notification = {
-  id: string;
-  type: 'popular' | 'like' | 'comment' | 'system';
-  message: string;
-  timestamp: string;
-  isUnread: boolean;
-};
-
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: "n1",
-    type: 'popular',
-    message: "Congratulations! Your post is now Popular.",
-    timestamp: "Just now",
-    isUnread: true,
-  },
-  {
-    id: "n2",
-    type: 'like',
-    message: "Ahmed Kabir and 4 others liked your post.",
-    timestamp: "2 hrs ago",
-    isUnread: true,
-  },
-  {
-    id: "n3",
-    type: 'comment',
-    message: "Zoya Rahman replied to your comment in Chawkbazar Hub.",
-    timestamp: "5 hrs ago",
-    isUnread: false,
-  }
-];
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { logout, user } = useAuth();
   const { totalUnread } = useMessages();
@@ -106,11 +76,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSearchOverlay, setShowSearchOverlay] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  
+  const { notifications, unreadCount: unreadNotificationsCount, markAllAsRead, markAsRead } = useNotifications();
   
   const searchRef = useRef<HTMLDivElement>(null);
-
-  const unreadNotificationsCount = notifications.filter(n => n.isUnread).length;
 
   const NAV_ITEMS = [
     { icon: <LayoutDashboard size={18} />, label: "Overview", href: "/dashboard" },
@@ -148,9 +117,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push('/');
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isUnread: false })));
-  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -252,39 +218,52 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">No new alerts</p>
             </div>
           ) : (
-            notifications.map((n) => (
-              <div 
-                key={n.id}
-                className={cn(
-                  "px-4 py-4 flex gap-4 transition-colors relative cursor-pointer group",
-                  n.isUnread ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
-                )}
-              >
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-border/30",
-                  n.type === 'popular' ? "bg-rose-500/10 text-rose-500" :
-                  n.type === 'like' ? "bg-blue-500/10 text-blue-500" :
-                  n.type === 'comment' ? "bg-emerald-500/10 text-emerald-500" :
-                  "bg-muted text-muted-foreground"
-                )}>
-                  {n.type === 'popular' ? <Flame size={18} className="fill-current" /> :
-                   n.type === 'like' ? <Heart size={18} className="fill-current" /> :
-                   n.type === 'comment' ? <MessageCircle size={18} className="fill-current" /> :
-                   <Bell size={18} />}
+            notifications.map((n) => {
+              const isLike = n.type === 'LIKE' || n.type === 'COMMENT_LIKE';
+              const isComment = n.type === 'COMMENT';
+              const isConnection = n.type === 'CONNECTION_REQUEST' || n.type === 'CONNECTION_ACCEPTED';
+              const isPopular = n.type === 'POPULAR';
+
+              return (
+                <div 
+                  key={n.id}
+                  onClick={() => {
+                    if (n.isRead === false) markAsRead(n.id);
+                    if (n.contextUrl) router.push(n.contextUrl);
+                  }}
+                  className={cn(
+                    "px-4 py-4 flex gap-4 transition-colors relative cursor-pointer group",
+                    !n.isRead ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
+                  )}
+                >
+                  <div className={cn(
+                    "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-border/30",
+                    isPopular ? "bg-rose-500/10 text-rose-500" :
+                    isLike ? "bg-blue-500/10 text-blue-500" :
+                    isComment ? "bg-emerald-500/10 text-emerald-500" :
+                    isConnection ? "bg-purple-500/10 text-purple-500" :
+                    "bg-muted text-muted-foreground"
+                  )}>
+                    {isPopular ? <Flame size={18} className="fill-current" /> :
+                     isLike ? <Heart size={18} className="fill-current" /> :
+                     isComment ? <MessageCircle size={18} className="fill-current" /> :
+                     isConnection ? <Users size={18} className="fill-current" /> :
+                     <Bell size={18} />}
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className={cn("text-xs leading-relaxed font-bold", !n.isRead ? "text-foreground" : "text-muted-foreground")}>
+                      {n.description}
+                    </p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+                      {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
+                    </p>
+                  </div>
+                  {!n.isRead && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
+                  )}
                 </div>
-                <div className="flex-1 min-w-0 space-y-1">
-                  <p className={cn("text-xs leading-relaxed font-bold", n.isUnread ? "text-foreground" : "text-muted-foreground")}>
-                    {n.message}
-                  </p>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                    {n.timestamp}
-                  </p>
-                </div>
-                {n.isUnread && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary" />
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
         <div className="p-4 border-t border-border/50 bg-muted/20 shrink-0">

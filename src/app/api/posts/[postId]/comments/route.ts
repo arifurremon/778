@@ -118,14 +118,29 @@ export async function POST(
     });
 
     if (post.authorId !== commenterId) {
+      const postAuthor = await db.user.findUnique({ where: { id: post.authorId } });
+      const commenterName = comment.author.preferredName || comment.author.name || "A user";
+      
       await db.activityLog.create({
         data: {
           userId: post.authorId,
           type: "COMMENT",
-          description: `Someone commented on your post.`,
-          contextUrl: `/community`,
+          description: `${commenterName} commented on your post.`,
+          contextUrl: `/community#post-${postId}`,
         },
       });
+
+      if (postAuthor?.email) {
+        const { sendNotificationEmail } = await import("@/lib/mail");
+        await sendNotificationEmail(
+          postAuthor.email,
+          "New Comment on Your Post",
+          "Someone left a comment!",
+          `${commenterName} commented: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/community`,
+          "View Comment"
+        );
+      }
     }
 
     return NextResponse.json(comment, { status: 201 });

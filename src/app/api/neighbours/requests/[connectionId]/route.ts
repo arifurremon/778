@@ -65,14 +65,32 @@ export async function PATCH(
         where: { id: connectionId },
         data: { status: "ACCEPTED" },
       });
+      
+      const sender = await db.user.findUnique({ where: { id: connection.senderId } });
+      const receiver = connection.receiver;
+      const receiverName = receiver.preferredName || receiver.name || "A user";
+
       await db.activityLog.create({
         data: {
           userId: connection.senderId,
-          type: "SYSTEM",
+          type: "CONNECTION_ACCEPTED",
           description: `${receiverName} accepted your neighbour request.`,
-          contextUrl: "/neighbours",
+          contextUrl: `/profile/${session.user.username || 'me'}`,
         },
       });
+
+      if (sender?.email) {
+        const { sendNotificationEmail } = await import("@/lib/mail");
+        await sendNotificationEmail(
+          sender.email,
+          "Trust Request Accepted!",
+          "You have a new Neighbour!",
+          `${receiverName} has accepted your trust request. You can now view their private contact information and interact closely with them on The Chattala.`,
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${session.user.username || 'me'}`,
+          "View Profile"
+        );
+      }
+
       return NextResponse.json({ success: true, message: "Request accepted." });
     } else {
       await db.neighbourConnection.delete({ where: { id: connectionId } });

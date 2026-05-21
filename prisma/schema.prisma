@@ -240,6 +240,11 @@ enum ActivityType {
   SAVED
   SYSTEM
   POPULAR
+  CONNECTION_REQUEST
+  CONNECTION_ACCEPTED
+  COMMENT_LIKE
+  COMMENT_DISLIKE
+  POST_DISLIKE
 }
 
 // -----------------------------------------------------------------------------

@@ -180,7 +180,8 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const likeComment = (postId: string, commentId: string) => {
+  const likeComment = async (postId: string, commentId: string) => {
+    // Optimistic Update
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         return {
@@ -203,9 +204,18 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
       }
       return p;
     }));
+    
+    // Background API call
+    try {
+      await api.post(`/api/posts/${postId}/comments/${commentId}/react`, { type: 'like' });
+    } catch (error) {
+      console.error("Failed to like comment", error);
+      fetchPosts(); // Revert on fail
+    }
   };
 
-  const unlikeComment = (postId: string, commentId: string) => {
+  const unlikeComment = async (postId: string, commentId: string) => {
+    // Optimistic Update
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         return {
@@ -228,6 +238,14 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
       }
       return p;
     }));
+
+    // Background API call
+    try {
+      await api.post(`/api/posts/${postId}/comments/${commentId}/react`, { type: 'unlike' });
+    } catch (error) {
+      console.error("Failed to unlike comment", error);
+      fetchPosts(); // Revert on fail
+    }
   };
 
   const interactPost = async (postId: string, type: 'helpful' | 'not-helpful') => {

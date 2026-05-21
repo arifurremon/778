@@ -60,8 +60,22 @@ export async function POST(
         id: true,
         helpfulCount: true,
         notHelpfulCount: true,
+        authorId: true,
       },
     });
+
+    if (updated.authorId !== session.user.id) {
+      const sender = await db.user.findUnique({ where: { id: session.user.id } });
+      const actionDesc = type === 'helpful' ? 'found your post helpful' : 'did not find your post helpful';
+      await db.activityLog.create({
+        data: {
+          userId: updated.authorId,
+          type: type === 'helpful' ? 'LIKE' : 'POST_DISLIKE',
+          description: `${sender?.name || 'Someone'} ${actionDesc}.`,
+          contextUrl: `/community#post-${postId}`,
+        }
+      });
+    }
 
     return NextResponse.json({
       id: updated.id,

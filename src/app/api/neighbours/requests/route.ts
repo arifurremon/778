@@ -109,6 +109,34 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       },
     });
 
+    const sender = await db.user.findUnique({ where: { id: senderId } });
+    const receiver = await db.user.findUnique({ where: { id: receiverId } });
+
+    if (receiver && sender) {
+      await db.activityLog.create({
+        data: {
+          userId: receiver.id,
+          type: "CONNECTION_REQUEST",
+          description: `@${sender.username || sender.name} wants to connect with you.`,
+          contextUrl: `/profile/${sender.username}`,
+        }
+      });
+
+      // Send email if possible
+      if (receiver.email) {
+        // dynamic import or imported at top
+        const { sendNotificationEmail } = await import("@/lib/mail");
+        await sendNotificationEmail(
+          receiver.email,
+          "New Trust Request on The Chattala",
+          "You have a new Neighbour Request!",
+          `${sender.name || '@'+sender.username} wants to add you to their trust network on The Chattala. Accept their request to unlock private contact information.`,
+          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${sender.username}`,
+          "View Request"
+        );
+      }
+    }
+
     return NextResponse.json(connection, { status: 201 });
   } catch (error) {
     logErrorToSentry(error, { route: "[POST /api/neighbours/requests]" });

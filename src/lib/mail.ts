@@ -131,3 +131,41 @@ export const sendVerificationEmail = async (to: string, verifyLink: string) => {
   }
 };
 
+export const sendNotificationEmail = async (to: string, subject: string, title: string, message: string, actionLink?: string, actionText?: string) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT),
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: `"The Chattala" <${process.env.SMTP_FROM}>`,
+      to,
+      subject,
+      html: `
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background-color: #f9fafb;">
+          <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 12px; border: 1px solid #e5e7eb;">
+            <h2 style="color: #111827; margin-top: 0;">${title}</h2>
+            <p style="color: #4b5563; font-size: 15px; line-height: 1.6;">${message}</p>
+            ${actionLink && actionText ? `
+              <div style="margin-top: 25px;">
+                <a href="${actionLink}" style="display: inline-block; padding: 12px 24px; background-color: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold;">${actionText}</a>
+              </div>
+            ` : ''}
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0 20px 0;" />
+            <p style="color: #9ca3af; font-size: 12px; margin: 0;">You are receiving this because you have push notifications enabled on The Chattala.</p>
+          </div>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error("Error sending notification email:", error);
+  }
+};
+
