@@ -27,13 +27,13 @@ export type Notification = {
 };
 
 export function useNotifications(pollingIntervalMs = 15000) {
-  const { status } = useAuth();
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchNotifications = useCallback(async () => {
-    if (status !== "authenticated") return;
+    if (!user) return;
     try {
       const data = await api.get<{ notifications: Notification[] }>("/api/notifications");
       setNotifications(data.notifications || []);
@@ -43,7 +43,7 @@ export function useNotifications(pollingIntervalMs = 15000) {
     } finally {
       setIsLoading(false);
     }
-  }, [status]);
+  }, [user]);
 
   useEffect(() => {
     fetchNotifications();
