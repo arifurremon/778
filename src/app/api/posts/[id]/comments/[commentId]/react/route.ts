@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 
-type RouteContext = { params: Promise<{ id: string; commentId: string }> };
+type RouteContext = { params: Promise<{ postId: string; commentId: string }> };
 
 export async function POST(
   req: NextRequest,
@@ -15,7 +15,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: postId, commentId } = await params;
+    const { postId, commentId } = await params;
     const body = await req.json();
     const { type } = body as { type: 'like' | 'unlike' };
 
