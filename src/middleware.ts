@@ -15,10 +15,11 @@ const securityHeaders: Record<string, string> = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Content-Security-Policy": [
     "default-src 'self'",
-    "connect-src 'self' https://uploadthing.com https://*.uploadthing.com",
+    "connect-src 'self' https://uploadthing.com https://*.uploadthing.com https://*.ingest.sentry.io https://*.sentry.io",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' vercel.live",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https://res.cloudinary.com https://utfs.io https://*.uploadthing.com",
+    "img-src 'self' data: blob: https://res.cloudinary.com https://utfs.io https://*.uploadthing.com",
+    "font-src 'self' data:",
   ].join("; "),
 };
 
