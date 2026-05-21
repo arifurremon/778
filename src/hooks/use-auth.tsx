@@ -106,6 +106,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, status, update } = useSession();
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [timeoutReached, setTimeoutReached] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTimeoutReached(true);
+      setIsProfileLoading(false);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -191,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ 
       user: userProfile, 
-      isLoading: status === "loading" || isProfileLoading, 
+      isLoading: !timeoutReached && (status === "loading" || isProfileLoading), 
       login, 
       signup, 
       logout, 

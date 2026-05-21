@@ -28,9 +28,8 @@ export function GlobalLoader() {
           transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
           className="relative w-12 h-12 drop-shadow-[0_0_15px_rgba(var(--primary),0.5)]"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img 
-            src="https://res.cloudinary.com/det1qnlrh/image/upload/v1779150538/LOGOICON_chfprq.png" 
+            src="/logo-icon.png" 
             alt="The Chattala Logo" 
             className="w-full h-full object-contain" 
           />

@@ -13,21 +13,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Only redirect when we are CERTAIN the user is unauthenticated.
-    // Never redirect during loading — this was causing authenticated users
-    // to be sent back to "/" if the profile API was slow or failed.
-    if (status === "unauthenticated") {
+    if (status === "unauthenticated" || (status === "authenticated" && !isLoading && !user)) {
       router.push("/");
     }
-  }, [status, router]);
+  }, [status, isLoading, user, router]);
 
-  // Show spinner while session is loading OR profile is being fetched
-  if (status === "loading" || isLoading || (status === "authenticated" && !user)) {
+  if (status === "loading" || isLoading || (status === "authenticated" && !user && isLoading)) {
     return <GlobalLoader />;
   }
 
-  // Render nothing while redirect to "/" is in-flight
-  if (status === "unauthenticated") {
+  if (status === "unauthenticated" || (status === "authenticated" && !user)) {
     return null;
   }
 
