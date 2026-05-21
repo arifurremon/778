@@ -6,6 +6,7 @@ export const api = {
       headers: {
         "Content-Type": "application/json",
       },
+      cache: 'no-store',
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));

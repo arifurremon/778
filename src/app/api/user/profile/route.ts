@@ -9,6 +9,8 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 // GET /api/user/profile  — authenticated user's full profile (no password)
 // ---------------------------------------------------------------------------
+export const dynamic = 'force-dynamic';
+
 export async function GET(_req: NextRequest): Promise<NextResponse> {
   try {
     const session = await auth();
