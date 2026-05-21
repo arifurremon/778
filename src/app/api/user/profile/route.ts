@@ -11,19 +11,19 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 export const dynamic = 'force-dynamic';
 
-export async function GET(_req: NextRequest): Promise<NextResponse> {
+export const GET = auth(async (req) => {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = req.auth?.user?.id;
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const cacheKey = `user:${session.user.id}:profile`;
+    const cacheKey = `user:${userId}:profile`;
 
     const user = await cachedQuery(
       cacheKey,
       () => db.user.findUnique({
-        where: { id: session.user.id },
+        where: { id: userId },
         select: {
           id: true,
           email: true,
@@ -64,7 +64,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     const neighboursCount = await db.neighbourConnection.count({
       where: {
         status: "ACCEPTED",
-        OR: [{ senderId: session.user.id }, { receiverId: session.user.id }],
+        OR: [{ senderId: userId }, { receiverId: userId }],
       },
     });
 
@@ -73,7 +73,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     logErrorToSentry(error, { route: "[GET /api/user/profile]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
+});
 
 // ---------------------------------------------------------------------------
 // PATCH /api/user/profile  — update profile fields
@@ -94,10 +94,10 @@ const updateProfileSchema = z.object({
   showBirthdayOnly:z.boolean().optional(),
 }).strict();
 
-export async function PATCH(req: NextRequest): Promise<NextResponse> {
+export const PATCH = auth(async (req) => {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = req.auth?.user?.id;
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -123,7 +123,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     // Enforce name change limit
     if (name !== undefined) {
       const current = await db.user.findUnique({
-        where: { id: session.user.id },
+        where: { id: userId },
         select: { nameChangeCount: true, name: true },
       });
 
@@ -140,7 +140,7 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     }
 
     const updated = await db.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: {
         ...rest,
         preferredName,
@@ -176,11 +176,11 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       },
     });
 
-    await invalidateCache(`user:${session.user.id}:profile`);
+    await invalidateCache(`user:${userId}:profile`);
 
     return NextResponse.json(updated);
   } catch (error) {
     logErrorToSentry(error, { route: "[PATCH /api/user/profile]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
+});
