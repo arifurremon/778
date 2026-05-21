@@ -210,7 +210,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
       await api.post(`/api/posts/${postId}/comments/${commentId}/react`, { type: 'like' });
     } catch (error) {
       console.error("Failed to like comment", error);
-      fetchPosts(); // Revert on fail
+      // Silently fail — optimistic update stays
     }
   };
 
@@ -244,7 +244,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
       await api.post(`/api/posts/${postId}/comments/${commentId}/react`, { type: 'unlike' });
     } catch (error) {
       console.error("Failed to unlike comment", error);
-      fetchPosts(); // Revert on fail
+      // Silently fail — optimistic update stays
     }
   };
 
