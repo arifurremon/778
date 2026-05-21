@@ -74,8 +74,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         dob: data.dob,
         profession: data.profession || "Not specified"
       });
-      router.refresh();
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } catch (err) {
       const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
       setSignupError(message);

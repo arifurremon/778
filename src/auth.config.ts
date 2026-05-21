@@ -75,18 +75,5 @@ export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET,
   trustHost: true,
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === "production" 
-        ? `__Secure-authjs.session-token` 
-        : `authjs.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
   debug: process.env.NODE_ENV === "development"
 };
