@@ -7,7 +7,9 @@ import { neonConfig } from "@neondatabase/serverless";
  * We avoid using 'ws' in the Edge runtime.
  */
 const getPrismaClient = () => {
-  const connectionString = process.env.DATABASE_URL;
+  // The Neon Serverless driver handles connection pooling natively.
+  // Using the pooled DATABASE_URL (-pooler) can cause deadlocks and timeouts.
+  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
   
   // Detect runtime
   const isEdge = process.env.NEXT_RUNTIME === "edge";
