@@ -44,6 +44,7 @@ import {
     Trash2
 } from "lucide-react";
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface PostCardProps {
   post: Post;
@@ -70,6 +71,7 @@ const MessengerLogo = () => (
 
 export default function PostCard({ post }: PostCardProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const { 
     interactPost, 
     addComment, 
@@ -173,13 +175,21 @@ export default function PostCard({ post }: PostCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex gap-3">
-            <Avatar className="w-10 h-10 border border-border/50 ring-2 ring-background">
+            <Avatar 
+              onClick={() => router.push(`/profile/${post.author.username}`)}
+              className="w-10 h-10 border border-border/50 ring-2 ring-background hover:ring-accent transition-all cursor-pointer"
+            >
               <AvatarImage src={post.author.avatar} />
               <AvatarFallback className="font-bold">{post.author.name[0]}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
               <div className="flex flex-wrap items-center">
-                <h4 className="text-sm font-bold tracking-tight text-foreground">{post.author.name}</h4>
+                <h4 
+                  onClick={() => router.push(`/profile/${post.author.username}`)}
+                  className="text-sm font-bold tracking-tight text-foreground hover:text-accent hover:underline cursor-pointer"
+                >
+                  {post.author.name}
+                </h4>
                 {post.checkInLocation && (
                   <span className="text-xs font-medium text-muted-foreground ml-1">
                     is at <span className="text-foreground font-bold">{post.checkInLocation}</span>
@@ -342,14 +352,22 @@ export default function PostCard({ post }: PostCardProps) {
               <div className="mt-4 pt-4 border-t border-border/10 space-y-4">
                 {post.comments.map((comment) => (
                   <div key={comment.id} className="flex gap-3 text-left">
-                    <Avatar className="w-7 h-7 shrink-0">
+                    <Avatar 
+                      onClick={() => router.push(`/profile/${comment.author.username}`)}
+                      className="w-7 h-7 shrink-0 cursor-pointer hover:ring-2 hover:ring-accent transition-all"
+                    >
                       <AvatarImage src={comment.author.avatar} />
                       <AvatarFallback className="text-[10px] font-bold">{comment.author.name[0]}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-1.5 min-w-0">
                       <div className="bg-muted/30 rounded-2xl px-4 py-2.5 border border-border/20">
                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-[11px] font-black">{comment.author.name}</span>
+                            <span 
+                              onClick={() => router.push(`/profile/${comment.author.username}`)}
+                              className="text-[11px] font-black cursor-pointer hover:text-accent hover:underline"
+                            >
+                              {comment.author.name}
+                            </span>
                             <span className="text-[9px] text-muted-foreground uppercase font-bold">{comment.timestamp}</span>
                          </div>
                          <p className="text-xs text-foreground/80 font-bold leading-relaxed">{comment.text}</p>

@@ -59,7 +59,14 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    const neighboursCount = await db.neighbourConnection.count({
+      where: {
+        status: "ACCEPTED",
+        OR: [{ senderId: session.user.id }, { receiverId: session.user.id }],
+      },
+    });
+
+    return NextResponse.json({ ...user, neighboursCount });
   } catch (error) {
     logErrorToSentry(error, { route: "[GET /api/user/profile]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

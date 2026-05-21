@@ -237,7 +237,7 @@ export default function ProfileView() {
             {/* Stats row */}
             <div className="flex gap-6 mt-5 pt-4 border-t border-border/40">
               <Link href="/neighbours" className="group text-center">
-                <p className="text-lg font-black group-hover:text-primary transition-colors">{user?.neighbours?.length ?? 0}</p>
+                <p className="text-lg font-black group-hover:text-primary transition-colors">{user?.neighboursCount ?? 0}</p>
                 <p className="text-[11px] text-muted-foreground font-medium flex items-center gap-1"><Users size={10}/>Neighbours</p>
               </Link>
               <div className="text-center">

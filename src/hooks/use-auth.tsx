@@ -88,6 +88,7 @@ export interface User {
   neighbours: string[];
   neighbourRequestsSent: string[];
   neighbourRequestsReceived: string[];
+  neighboursCount?: number;
 }
 
 interface AuthContextType {
@@ -99,17 +100,19 @@ interface AuthContextType {
   updateUser: (updates: Partial<User>) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, status, update } = useSession();
   const [userProfile, setUserProfile] = useState<User | null>(null);
-  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      setIsProfileLoading(true);
-      api.get<Record<string, any>>('/api/user/profile')
+    if (status === 'unauthenticated') {
+      setUserProfile(null);
+      setIsProfileLoading(false);
+    } else if (status === 'authenticated' && session?.user) {
+      api.get<any>('/api/user/profile')
         .then(data => {
           
           const mapRegStatus = (s: string) => {
@@ -136,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             neighbours: [],
             neighbourRequestsSent: [],
             neighbourRequestsReceived: [],
+            neighboursCount: data.neighboursCount || 0,
           } as any);
           setIsProfileLoading(false);
         })
@@ -143,8 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Failed to load user profile:", err);
           setIsProfileLoading(false);
         });
-    } else if (status === "unauthenticated") {
-      setUserProfile(null);
     }
   }, [session, status]);
 
