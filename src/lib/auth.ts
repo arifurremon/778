@@ -29,8 +29,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const headersList = await headers();
         const ip = headersList.get("x-forwarded-for") || "unknown";
 
-        const { success } = await rateLimiters.signin.limit(ip);
-        if (!success) {
+        let rateLimitSuccess = true;
+        try {
+          const result = await Promise.race([
+            rateLimiters.signin.limit(ip),
+            new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000))
+          ]);
+          rateLimitSuccess = result.success;
+        } catch (err) {
+          console.error("[Auth] Rate limit skipped due to timeout or error:", err);
+        }
+
+        if (!rateLimitSuccess) {
           throw new Error("Too many attempts. Please try again later.");
         }
 

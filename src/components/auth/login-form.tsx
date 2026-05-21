@@ -41,7 +41,7 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
       router.refresh();
       router.push("/dashboard");
     } catch (err) {
-      setLoginError("Invalid email or password. Please try again.");
+      setLoginError(err instanceof Error ? err.message : "Invalid email or password. Please try again.");
     }
   };
 

@@ -160,7 +160,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session, status]);
 
   const login = async (email: string, pass: string) => {
-    const result = await signIn('credentials', { email, password: pass, redirect: false });
+    const result = await Promise.race([
+      signIn('credentials', { email, password: pass, redirect: false }),
+      new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Server response timeout. Please refresh or try again.")), 8000))
+    ]);
     if (result?.error) {
       throw new Error(result.error);
     }
