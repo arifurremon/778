@@ -9,8 +9,8 @@ interface LogoProps {
   width?: number;
 }
 
-const DARK_LOGO = "https://res.cloudinary.com/det1qnlrh/image/upload/v1779171235/NEW_af42tm.png";
-const LIGHT_LOGO = "https://res.cloudinary.com/det1qnlrh/image/upload/v1779171235/NEW_af42tm.png";
+const DARK_LOGO = "/logo-full.png?v=2";
+const LIGHT_LOGO = "/logo-full.png?v=2";
 
 export default function Logo({ className, animate, width = 140 }: LogoProps) {
   const height = Math.round(width * 0.35); // maintain aspect ratio

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   title: 'The Chattala | Premium Digital Excellence',
   description: 'Experience a sophisticated web platform built for high-end professional needs.',
   icons: {
-    icon: 'https://res.cloudinary.com/det1qnlrh/image/upload/v1779150538/LOGOICON_chfprq.png',
+    icon: '/logo-icon.png?v=2',
   },
 };
 
