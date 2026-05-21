@@ -26,20 +26,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const upstreamUrl = `https://${SENTRY_HOST}/api/${SENTRY_PROJECT_ID}/envelope/`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1000);
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
 
-    fetch(upstreamUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-sentry-envelope" },
-      body: envelope,
-      signal: controller.signal,
-    })
-      .then(() => {
-        clearTimeout(timeoutId);
-      })
-      .catch(() => {
-        clearTimeout(timeoutId);
+    try {
+      await fetch(upstreamUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-sentry-envelope" },
+        body: envelope,
+        signal: controller.signal,
       });
+    } catch (e) {
+      // Ignore fetch errors (including aborts) to always return 200 OK
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     return NextResponse.json({ status: "ok" }, { status: 200 });
   } catch {

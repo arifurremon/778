@@ -162,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, pass: string) => {
     const result = await Promise.race([
       signIn('credentials', { email, password: pass, redirect: false }),
-      new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Server response timeout. Please refresh or try again.")), 8000))
+      new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Server is waking up or busy. Please try again.")), 15000))
     ]);
     if (result?.error) {
       throw new Error(result.error);
