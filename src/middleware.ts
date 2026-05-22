@@ -4,39 +4,7 @@ import { authConfig } from "./auth.config";
 
 const { auth } = NextAuth(authConfig);
 
-// ---------------------------------------------------------------------------
-// Security Headers
-// ---------------------------------------------------------------------------
-const securityHeaders: Record<string, string> = {
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "X-XSS-Protection": "1; mode=block",
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Content-Security-Policy": [
-    "default-src 'self'",
-    "connect-src 'self' https://uploadthing.com https://*.uploadthing.com",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' vercel.live",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://res.cloudinary.com https://utfs.io https://*.uploadthing.com",
-    "font-src 'self' data:",
-  ].join("; "),
-};
-
-export default auth((req) => {
-  // NOTE: Auth.js v5 handles CSRF validation itself for OAuth and credentials flows.
-  // Custom CSRF validation in middleware interferes with /api/auth/callback/* routes.
-  // Removing custom CSRF logic allows Auth.js to manage security properly.
-  
-  const res = NextResponse.next();
-
-  // Apply Security Headers to all responses
-  Object.entries(securityHeaders).forEach(([key, value]) => {
-    res.headers.set(key, value);
-  });
-
-  return res;
-});
+export default auth;
 
 export const config = {
   matcher: [
