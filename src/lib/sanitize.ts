@@ -1,13 +1,15 @@
-import DOMPurify from 'isomorphic-dompurify';
+import sanitizeHtml from 'sanitize-html';
 
 /**
  * Sanitizes post content allowing safe formatting (bold, italic, etc).
  */
 export function sanitizePostContent(input: string): string {
   if (!input) return '';
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre'],
-    ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+  return sanitizeHtml(input, {
+    allowedTags: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre'],
+    allowedAttributes: {
+      'a': ['href', 'title', 'target', 'rel']
+    },
   });
 }
 
@@ -16,9 +18,9 @@ export function sanitizePostContent(input: string): string {
  */
 export function sanitizeUserInput(input: string): string {
   if (!input) return '';
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [],
-    ALLOWED_ATTR: [],
+  return sanitizeHtml(input, {
+    allowedTags: [],
+    allowedAttributes: {},
   });
 }
 
