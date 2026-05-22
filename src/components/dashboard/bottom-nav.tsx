@@ -39,12 +39,12 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
             >
               <div className={cn(
                 "flex items-center justify-center transition-colors",
-                isActive ? "text-foreground" : "text-muted-foreground"
+                isActive ? "text-foreground" : "text-muted-foreground/70"
               )}>
                 <Icon 
-                  size={26} 
-                  strokeWidth={isActive ? 2.5 : 2}
-                  className={cn("transition-all duration-200", isActive && "fill-current scale-110")}
+                  size={24} 
+                  strokeWidth={isActive ? 2 : 1.5}
+                  className={cn("transition-all duration-200", isActive && "fill-current")}
                 />
               </div>
             </Link>
@@ -52,10 +52,10 @@ export function BottomNav({ onMenuClick }: BottomNavProps) {
         })}
         <button
           onClick={onMenuClick}
-          className="flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground active:scale-95 transition-transform"
+          className="flex flex-col items-center justify-center flex-1 h-full gap-1 text-muted-foreground/70 active:scale-95 transition-transform hover:text-foreground"
         >
           <div className="flex items-center justify-center">
-            <Menu size={28} strokeWidth={2} />
+            <Menu size={24} strokeWidth={1.5} />
           </div>
         </button>
       </div>
