@@ -1,28 +1,26 @@
-import { GlobalErrorBoundary } from '@/components/error-boundary';
-import SplashProvider from '@/components/splash/splash-provider';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/hooks/use-auth';
-import { BusinessProvider } from '@/hooks/use-business';
-import { CommunityProvider } from '@/hooks/use-community';
-import { MessagesProvider } from '@/hooks/use-messages';
-import { ServicesProvider } from '@/hooks/use-services';
-import { ThemeProvider } from '@/hooks/use-theme';
+/**
+ * Root Layout — Next.js 15 Server Component.
+ * All client-side context is isolated inside <Providers>.
+ * NextSSRPlugin runs server-side only (uploadthing SSR optimization).
+ */
+
+import { Providers } from "@/components/providers";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import "@uploadthing/react/styles.css";
-import type { Metadata } from 'next';
-import { SessionProvider } from 'next-auth/react';
-import { Inter } from 'next/font/google';
-import './globals.css';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: 'The Chattala | Premium Digital Excellence',
-  description: 'Experience a sophisticated web platform built for high-end professional needs.',
+  title: "The Chattala | Your Neighbourhood, Connected",
+  description:
+    "The hyperlocal community platform for Chittagong — discover local shops, services, neighbours, and emergency contacts.",
   icons: {
-    icon: '/logo-icon.png?v=2',
+    icon: "/logo-icon.png?v=2",
   },
 };
 
@@ -32,31 +30,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} font-body antialiased min-h-screen bg-background overflow-x-hidden`}>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${inter.variable} font-body antialiased min-h-screen bg-background overflow-x-hidden`}
+      >
+        {/* Server-side uploadthing SSR plugin — must stay outside the client boundary */}
         <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-        <SessionProvider>
-          <AuthProvider>
-            <ThemeProvider>
-              <BusinessProvider>
-                <ServicesProvider>
-                  <MessagesProvider>
-                    <CommunityProvider>
-                      <SplashProvider>
-                        <GlobalErrorBoundary>
-                          {children}
-                        </GlobalErrorBoundary>
-                        <Toaster />
-                      </SplashProvider>
-                    </CommunityProvider>
-                  </MessagesProvider>
-                </ServicesProvider>
-              </BusinessProvider>
-            </ThemeProvider>
-          </AuthProvider>
-        </SessionProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
 }
-
