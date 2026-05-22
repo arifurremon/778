@@ -53,7 +53,7 @@ export const authConfig: NextAuthConfig = {
       const isProtectedRoute = [
         "/dashboard", "/profile", "/settings", "/community", 
         "/messages", "/admin", "/seller", "/expert", 
-        "/activity", "/neighbours", "/sos"
+        "/activity", "/neighbours", "/emergency", "/shops", "/services", "/directory"
       ].some(path => nextUrl.pathname.startsWith(path));
 
       const isAdminRoute = nextUrl.pathname.startsWith("/admin");
