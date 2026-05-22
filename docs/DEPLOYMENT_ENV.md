@@ -103,7 +103,7 @@ SMTP_PORT="587"
 SMTP_USER="aa0dcf001@smtp-brevo.com"
 
 # Brevo SMTP API Key
-SMTP_PASSWORD="xsmtpsib-a40e21cd20f970c17e7d2261e5a3c04f313faf3c2ce42e00c4a5b069396f2cde-ut34EtPeYZPTINDo"
+SMTP_PASSWORD="your_brevo_smtp_password_here"
 
 # From Email Address
 SMTP_FROM="hello@thechattala.com"
