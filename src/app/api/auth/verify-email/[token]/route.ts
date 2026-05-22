@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendWelcomeEmail } from "@/lib/mail";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -33,6 +34,15 @@ export async function GET(
         emailToken: null,
       },
     });
+
+    try {
+      await sendWelcomeEmail({
+        to: user.email,
+        name: user.name || "Neighbour",
+      });
+    } catch (emailError) {
+      console.error("[VerifyEmail] Welcome email failed — verification NOT affected:", emailError);
+    }
 
     // Redirect to login with success message
     return NextResponse.redirect(new URL("/?verified=true", req.url));

@@ -6,8 +6,31 @@ import CityBackground from "@/components/ui/city-background";
 import { GlobalLoader } from "@/components/ui/global-loader";
 import { useAuth } from "@/hooks/use-auth";
 import { AnimatePresence, motion } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, Suspense } from "react";
+import { useToast } from "@/hooks/use-toast";
+
+function VerificationHandler() {
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (searchParams.get("verified") === "true") {
+      toast({
+        title: "Email Verified",
+        description: "Your email has been successfully verified. You can now sign in.",
+      });
+    } else if (searchParams.get("error")) {
+      toast({
+        title: "Verification Error",
+        description: "The verification link is invalid, expired, or failed.",
+        variant: "destructive",
+      });
+    }
+  }, [searchParams, toast]);
+
+  return null;
+}
 
 export default function Home() {
   const { user, isLoading } = useAuth();
@@ -46,6 +69,9 @@ export default function Home() {
         </div>
         
         <AuthContainer />
+        <Suspense fallback={null}>
+          <VerificationHandler />
+        </Suspense>
       </motion.div>
     </AnimatePresence>
   );

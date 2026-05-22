@@ -1,4 +1,4 @@
-
+// Fixed: 9 — Replaced window.location.href with router.push for client-side navigation.
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
     setLoginError(null);
     try {
       await login(data.email, data.password);
-      window.location.href = "/dashboard";
+      router.push("/dashboard");
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : "Invalid email or password. Please try again.");
     }

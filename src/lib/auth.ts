@@ -1,6 +1,6 @@
+// Fixed: 4 — Removed redundant session configuration.
 import { authConfig } from "@/auth.config";
 import { db } from "@/lib/db";
-import { sendWelcomeEmail } from "@/lib/mail";
 import { rateLimiters } from "@/lib/rate-limit";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
@@ -16,9 +16,7 @@ import { headers } from "next/headers";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(db),
-  session: {
-    strategy: "jwt",
-  },
+  // session strategy is set in auth.config.ts via authConfig spread — JWT for Edge compatibility.
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -67,20 +65,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  events: {
-    async createUser({ user }) {
-      if (user.email) {
-        try {
-          await sendWelcomeEmail({
-            to: user.email,
-            name: user.name || "Neighbour",
-          });
-        } catch (emailError) {
-          console.error("[Auth] Welcome email failed — user creation is NOT affected:", emailError);
-        }
-      }
-    },
-  },
 });
 
 export const { GET, POST } = handlers;

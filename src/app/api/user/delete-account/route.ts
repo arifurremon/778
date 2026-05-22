@@ -1,10 +1,15 @@
+// Fixed: 11 — Added server-side CSRF validation to prevent cross-origin state mutations.
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(req: NextRequest) {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
+
     const session = await auth();
     
     if (!session?.user?.id) {

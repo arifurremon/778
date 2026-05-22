@@ -1,11 +1,11 @@
+// Fixed: 4 — Corrected auth configuration comments and secured JWT token update to prevent cookie overflow.
 import { NextAuthConfig } from "next-auth";
 
 /**
  * Shared Auth.js configuration that is Edge-compatible.
  * This file should NOT import the database or any Node.js-only APIs.
  *
- * IMPORTANT: Do NOT set session.strategy here when using PrismaAdapter
- * in lib/auth.ts. The adapter requires the default "database" strategy.
+ * JWT strategy is intentional: CredentialsProvider does not support database sessions. PrismaAdapter is retained for OAuth account linking (Account model) only.
  * JWT callbacks below are used only for enriching the session token
  * with extra fields (id, username, isAdmin, profileImage).
  */
@@ -23,7 +23,12 @@ export const authConfig: NextAuthConfig = {
       
       // Support manual session updates
       if (trigger === "update" && session) {
-        return { ...token, ...session };
+        // Only merge safe, scalar session fields to prevent JWT size overflow
+        const allowed = ["username", "profileImage", "isAdmin"] as const;
+        for (const key of allowed) {
+          if (session[key] !== undefined) token[key] = session[key];
+        }
+        return token;
       }
       
       return token;

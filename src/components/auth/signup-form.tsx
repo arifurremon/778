@@ -1,3 +1,4 @@
+// Fixed: 9 — Replaced window.location.href with router.push for client-side navigation.
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { AlertCircle, AtSign, Calendar, Lock, Mail, MapPin, Phone, User, UserPlus, Eye, EyeOff } from "lucide-react";
@@ -48,6 +50,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
   const router = useRouter();
   const { signup } = useAuth();
+  const { toast } = useToast();
   const {
     register,
     handleSubmit,
@@ -64,7 +67,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
   const onSubmit = async (data: SignupFormValues) => {
     setSignupError(null);
     try {
-      await signup({
+      const res = await signup({
         email: data.email,
         pass: data.password,
         name: data.name,
@@ -74,7 +77,10 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         dob: data.dob,
         profession: data.profession || "Not specified"
       });
-      window.location.href = "/dashboard";
+      if (res && res.emailSent === false) {
+        toast({ title: "Email Delivery Failed", description: res.emailError, variant: "destructive" });
+      }
+      router.push("/dashboard");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
       setSignupError(message);

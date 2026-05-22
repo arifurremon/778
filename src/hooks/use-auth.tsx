@@ -1,3 +1,4 @@
+// Fixed: 8 — Resolved privacy settings type inconsistency between frontend types and database enums.
 "use client";
 
 import { api } from "@/lib/api";
@@ -6,6 +7,13 @@ import { createContext, ReactNode, useContext, useEffect, useState } from "react
 
 export type RegistrationStatus = 'None' | 'Pending' | 'Approved' | 'Rejected';
 export type PrivacyLevel = 'Public' | 'Neighbours' | 'Only Me';
+
+function mapPrivacyFromDB(s: string): PrivacyLevel {
+  if (s === 'PUBLIC') return 'Public';
+  if (s === 'NEIGHBOURS') return 'Neighbours';
+  if (s === 'PRIVATE') return 'Only Me';
+  return 'Public'; // safe default
+}
 
 export interface ShopDetails {
   businessName: string;
@@ -95,12 +103,19 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<void>;
-  signup: (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string }) => Promise<void>;
+  signup: (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string }) => Promise<any>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  "CredentialsSignin": "Invalid email or password. Please try again.",
+  "AccessDenied": "Access denied. Your account may be suspended.",
+  "Verification": "Please verify your email before signing in.",
+  "Default": "An authentication error occurred. Please try again."
+};
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, status, update } = useSession();
@@ -112,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const timer = setTimeout(() => {
       setTimeoutReached(true);
       setIsProfileLoading(false);
-    }, 4000);
+    }, 8000); // 8s timeout accounts for cold-start latency on serverless Neon + Upstash
     return () => clearTimeout(timer);
   }, []);
 
@@ -137,19 +152,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             serviceRegistrationStatus: mapRegStatus(data.serviceRegistrationStatus),
             verificationRequestStatus: mapRegStatus(data.verificationRequestStatus),
             privacySettings: data.privacySettings ? {
-              mobile: data.privacySettings.mobile,
-              email: data.privacySettings.email,
-              dob: data.privacySettings.dob,
+              mobile: mapPrivacyFromDB(data.privacySettings.mobile),
+              email: mapPrivacyFromDB(data.privacySettings.email),
+              dob: mapPrivacyFromDB(data.privacySettings.dob),
             } : {
-              mobile: 'PRIVATE',
-              email: 'NEIGHBOURS',
-              dob: 'NEIGHBOURS'
+              mobile: 'Only Me',
+              email: 'Neighbours',
+              dob: 'Neighbours'
             },
             neighbours: [],
             neighbourRequestsSent: [],
             neighbourRequestsReceived: [],
             neighboursCount: data.neighboursCount || 0,
-          } as any);
+          });
           setIsProfileLoading(false);
         })
         .catch(err => {
@@ -164,14 +179,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn('credentials', { email, password: pass, redirect: false }),
       new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Server is waking up or busy. Please try again.")), 15000))
     ]);
-    if (result?.error) {
-      throw new Error(result.error);
+
+    if (result === undefined || result === null) {
+      throw new Error(AUTH_ERROR_MESSAGES["Default"]);
+    }
+
+    if (result.error) {
+      const message = AUTH_ERROR_MESSAGES[result.error] || AUTH_ERROR_MESSAGES["Default"];
+      throw new Error(message);
     }
   };
 
   const signup = async (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string }) => {
-    await api.post('/api/auth/register', { ...data, password: data.pass });
+    const res = await api.post<any>('/api/auth/register', { ...data, password: data.pass });
     await login(data.email, data.pass);
+    return res;
   };
 
   const logout = () => {

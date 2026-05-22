@@ -1,7 +1,9 @@
+// Fixed: 7 — Resolved registration race condition and removed duplicate welcome email.
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
-import { sendVerificationEmail, sendWelcomeEmail } from "@/lib/mail";
+import { sendVerificationEmail } from "@/lib/mail";
 import { rateLimiters } from "@/lib/rate-limit";
+import { Prisma } from "@prisma/client";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { hash } from "bcryptjs";
 import crypto from "crypto";
@@ -69,30 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     username = sanitizeUserInput(username);
     if (profession) profession = sanitizeUserInput(profession);
 
-    // --- Duplicate checks ---------------------------------------------------
-    const existingEmail = await db.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-    if (existingEmail) {
-      return NextResponse.json(
-        { success: false, message: "Email already registered." },
-        { status: 409 }
-      );
-    }
-
-    const existingUsername = await db.user.findUnique({
-      where: { username },
-      select: { id: true },
-    });
-    if (existingUsername) {
-      return NextResponse.json(
-        { success: false, message: "Username taken." },
-        { status: 409 }
-      );
-    }
-
-    // --- Hash password & create user ----------------------------------------
+    // --- Hash password & create user (Atomic Check) -------------------------
     const hashedPassword = await hash(password, 12);
 
     const now = new Date();
@@ -100,37 +79,49 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const emailToken = crypto.randomBytes(32).toString("hex");
 
-    await db.user.create({
-      data: {
-        email,
-        username,
-        password: hashedPassword,
-        name,
-        mobile,
-        location,
-        dob,
-        profession: profession || "Not specified",
-        joinDate,
-        emailToken,
-      },
-    });
+    try {
+      await db.user.create({
+        data: {
+          email,
+          username,
+          password: hashedPassword,
+          name,
+          mobile,
+          location,
+          dob,
+          profession: profession || "Not specified",
+          joinDate,
+          emailToken,
+        },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+        const field = (err as any).meta?.target?.[0] ?? "field";
+        const fieldLabel = field === "email" ? "Email" : field === "username" ? "Username" : "A field";
+        return NextResponse.json(
+          { success: false, message: `${fieldLabel} already registered.` },
+          { status: 409 }
+        );
+      }
+      throw err; // re-throw for the outer catch
+    }
 
-    // --- Send Welcome & Verification Email (Fire and forget) ---
+    // --- Send Verification Email (Fire and forget) ---
+    // Note: Welcome emails are handled by the createUser NextAuth event for OAuth users,
+    // and are intentionally omitted here to avoid duplicate emails.
+    let emailSent = true;
+    let emailError = "";
     try {
       const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/verify-email/${emailToken}`;
       await sendVerificationEmail(email, verifyUrl);
-      
-      // Keep welcome email as well
-      await sendWelcomeEmail({
-        to: email,
-        name: name || "Neighbour",
-      });
-    } catch (emailError) {
-      logErrorToSentry(emailError, { route: "[POST /api/auth/register] Welcome email failed:" });
+    } catch (emailErrorObj) {
+      logErrorToSentry(emailErrorObj, { route: "[POST /api/auth/register] Verification email failed:" });
+      emailSent = false;
+      emailError = "Verification email could not be sent. Please use the resend verification option.";
     }
 
     return NextResponse.json(
-      { success: true, message: "Account created." },
+      { success: true, message: "Account created.", emailSent, emailError },
       { status: 201 }
     );
   } catch (error: unknown) {

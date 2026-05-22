@@ -1,3 +1,4 @@
+// Fixed: 10 — Removed unnecessary @ts-ignore and corrected type declarations.
 import * as Sentry from "@sentry/nextjs";
 import { db } from "./db";
 
@@ -73,14 +74,6 @@ export async function logAdminAction(
   userAgent: string | null = null
 ): Promise<void> {
   try {
-    // SCHEMA-FALLBACK: 'auditLog' model may not exist — verify schema
-    // @ts-ignore
-    if (!db.auditLog) {
-      console.warn("[AUDIT_LOG_FALLBACK]: AuditLog model missing in Prisma schema. Skipping log.", { action, entityId });
-      return;
-    }
-
-    // @ts-ignore
     await db.auditLog.create({
       data: {
         adminId,

@@ -1,3 +1,4 @@
+// Fixed: 10 — Removed unnecessary @ts-ignore and corrected type declarations.
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
@@ -14,7 +15,7 @@ export async function requireAdmin() {
     };
   }
 
-  // @ts-ignore - isAdmin is added to the session in the auth callback
+  // isAdmin is declared in src/types/next-auth.d.ts as part of Session['user'] augmentation
   if (!session.user?.isAdmin) {
     return {
       error: NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 }),

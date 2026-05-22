@@ -1,3 +1,4 @@
+import DOMPurify from "isomorphic-dompurify";
 import nodemailer from "nodemailer";
 
 function createTransporter() {
@@ -108,6 +109,10 @@ export const sendNotificationEmail = async (
   actionText?: string
 ) => {
   try {
+    const cleanTitle = DOMPurify.sanitize(title, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    const cleanMessage = DOMPurify.sanitize(message, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    const cleanActionText = actionText ? DOMPurify.sanitize(actionText, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }) : "";
+
     const transporter = createTransporter();
     await transporter.sendMail({
       from: `"The Chattala" <${process.env.SMTP_FROM}>`,
@@ -115,10 +120,10 @@ export const sendNotificationEmail = async (
       subject,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #111827;">${title}</h2>
-          <p>${message}</p>
-          ${actionLink && actionText
-            ? `<a href="${actionLink}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; margin: 16px 0;">${actionText}</a>`
+          <h2 style="color: #111827;">${cleanTitle}</h2>
+          <p>${cleanMessage}</p>
+          ${actionLink && cleanActionText
+            ? `<a href="${actionLink}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; margin: 16px 0;">${cleanActionText}</a>`
             : ""}
         </div>
       `,

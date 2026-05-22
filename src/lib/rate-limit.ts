@@ -1,3 +1,4 @@
+// Fixed: 3 — Added rate limiters for forgot-password and reset-password endpoints.
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
@@ -28,6 +29,24 @@ export const rateLimiters = {
   signin: hasRedisConfigs ? new Ratelimit({
     redis: redis!,
     limiter: Ratelimit.slidingWindow(10, "15 m"),
+    analytics: true,
+  }) : mockRatelimit,
+
+  forgotPassword: hasRedisConfigs ? new Ratelimit({
+    redis: redis!,
+    limiter: Ratelimit.slidingWindow(3, "15 m"),
+    analytics: true,
+  }) : mockRatelimit,
+
+  resetPassword: hasRedisConfigs ? new Ratelimit({
+    redis: redis!,
+    limiter: Ratelimit.slidingWindow(5, "15 m"),
+    analytics: true,
+  }) : mockRatelimit,
+
+  resendVerification: hasRedisConfigs ? new Ratelimit({
+    redis: redis!,
+    limiter: Ratelimit.slidingWindow(3, "1 h"),
     analytics: true,
   }) : mockRatelimit,
 

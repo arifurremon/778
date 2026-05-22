@@ -1,4 +1,10 @@
+// Fixed: 6 — Replaced unsupported KEYS command with tag-based cache tracking for Upstash Redis.
 import { Redis } from '@upstash/redis';
+
+const CACHE_TAG_GROUPS: Record<string, string> = {
+  "posts:page:": "cache:tag:posts",
+  // Add future groups here
+};
 
 let redis: Redis | null = null;
 
@@ -49,6 +55,20 @@ export async function cachedQuery<T>(
     } catch {
       // Cache write failed — return fresh data anyway
     }
+
+    const prefix = Object.keys(CACHE_TAG_GROUPS).find(p => key.startsWith(p));
+    if (prefix) {
+      const tagSetKey = CACHE_TAG_GROUPS[prefix];
+      if (tagSetKey) {
+        try {
+          await client.sadd(tagSetKey, key);
+        } catch { }
+        
+        try {
+          await client.expire(tagSetKey, 3600);
+        } catch { }
+      }
+    }
   }
 
   return fresh;
@@ -59,17 +79,38 @@ export async function invalidateCache(...patterns: string[]): Promise<void> {
   if (!client) return;
 
   for (const pattern of patterns) {
-    try {
-      if (pattern.includes('*')) {
-        const keys = await client.keys(pattern);
+    if (pattern.includes('*')) {
+      const parts = pattern.split('*');
+      const basePrefix = parts[0];
+      
+      if (!basePrefix) continue;
+      
+      const tagSetKey = CACHE_TAG_GROUPS[basePrefix];
+      
+      if (tagSetKey) {
+        let keys: string[] = [];
+        try {
+          keys = await client.smembers(tagSetKey);
+        } catch { }
+        
         if (keys.length > 0) {
-          await client.del(...(keys as [string, ...string[]]));
+          try {
+            await client.del(...(keys as [string, ...string[]]));
+          } catch { }
         }
+        
+        try {
+          await client.del(tagSetKey);
+        } catch { }
       } else {
-        await client.del(pattern);
+        if (process.env.NODE_ENV === "development") {
+          console.warn(`[Cache] Warning: Wildcard invalidation for pattern '${pattern}' skipped. Prefix '${basePrefix}' is not mapped in CACHE_TAG_GROUPS.`);
+        }
       }
-    } catch {
-      // Ignore cache invalidation failures
+    } else {
+      try {
+        await client.del(pattern);
+      } catch { }
     }
   }
 }

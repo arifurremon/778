@@ -1,11 +1,25 @@
+// Fixed: 3 — Added rate limiting to forgot-password endpoint.
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendPasswordResetEmail } from "@/lib/mail";
 import crypto from "crypto";
+import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimiters } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const headersList = await headers();
+    const ip = headersList.get("x-forwarded-for") || "unknown";
+    
+    const { success } = await rateLimiters.forgotPassword.limit(ip);
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const { email } = await req.json();
 
     if (!email) {

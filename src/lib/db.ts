@@ -1,8 +1,12 @@
+// Fixed: 1 — Added security documentation to ensure no DB debug endpoints are ever created.
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
 
 /**
+ * SECURITY DIRECTIVE: No debug endpoint for DB connectivity should ever be created.
+ * Exposing database configuration or connectivity status poses a critical security risk.
+ * 
  * Edge-compatible Prisma Client Initialization.
  * We avoid using 'ws' in the Edge runtime.
  */
