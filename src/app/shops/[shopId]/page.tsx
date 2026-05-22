@@ -1,7 +1,7 @@
 "use client";
 
-import { OrderModal } from "@/components/market/order-modal";
-import { VerifiedReviews } from "@/components/market/verified-reviews";
+import { OrderModal } from "@/components/shops/order-modal";
+import { VerifiedReviews } from "@/components/shops/verified-reviews";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
