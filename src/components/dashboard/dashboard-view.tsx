@@ -554,7 +554,7 @@ function NavItem({ icon, label, active = false, href, badge, onClick }: { icon: 
           <span className="relative flex items-center justify-center">
             {/* If active, we clone the icon element to add fill="currentColor" and strokeWidth="2.5" */}
             {active && React.isValidElement(icon) 
-              ? React.cloneElement(icon as React.ReactElement, { className: "fill-current", strokeWidth: 2.5 }) 
+              ? React.cloneElement(icon as React.ReactElement<any>, { className: "fill-current", strokeWidth: 2.5 }) 
               : icon}
           </span>
           <span className="text-sm tracking-tight flex-1">{label}</span>
