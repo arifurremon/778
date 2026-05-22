@@ -138,12 +138,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-card/40 backdrop-blur-3xl rounded-3xl border border-white/10 dark:border-white/5 shadow-2xl relative overflow-hidden">
-      {/* Subtle glow effect behind sidebar */}
-      <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent pointer-events-none" />
+    <div className="flex flex-col h-full bg-background relative overflow-hidden">
       
-      <div className="px-8 pt-8 mb-8 shrink-0 relative z-10">
-        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="transition-opacity hover:opacity-90 block hover:scale-105 duration-300">
+      <div className="px-6 pt-8 mb-8 shrink-0">
+        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="transition-opacity hover:opacity-90 block">
           <Logo width={120} className="cursor-pointer" />
         </Link>
       </div>
@@ -177,51 +175,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Zone 4: Critical */}
         <div className="space-y-1">
-          <div className="px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 opacity-70">System</div>
+          <div className="px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 opacity-70 mt-4">System</div>
           {visibleNavItems.filter(i => i.label === 'Vision & Legacy').map((item) => (
             <NavItem key={item.href} icon={item.icon} label={item.label} active={pathname === item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)} />
           ))}
           <NavItem icon={<Settings size={18} />} label="Settings" active={pathname === '/settings'} href="/settings" onClick={() => setIsMobileMenuOpen(false)} />
           
-          <Link href="/emergency" onClick={() => setIsMobileMenuOpen(false)} className="block mt-4">
+          <Link href="/emergency" onClick={() => setIsMobileMenuOpen(false)} className="block mt-4 px-2">
             <div className={cn(
-              "group relative flex items-center gap-4 px-4 py-4 rounded-2xl cursor-pointer transition-all duration-500 overflow-hidden",
-              pathname === '/emergency' ? "bg-red-500/20 text-red-500 shadow-sm scale-[1.02]" : "bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:scale-[1.02]"
+              "group flex items-center gap-4 px-4 py-3 rounded-lg cursor-pointer transition-colors",
+              pathname === '/emergency' ? "bg-red-500 text-white font-bold" : "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-500 dark:hover:bg-red-500/20 font-medium"
             )}>
-              <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-transparent pointer-events-none" />
-              <div className="relative z-10">
-                <ShieldAlert size={18} className="group-hover:scale-110 transition-transform duration-500" />
-                <span className="absolute inset-0 bg-red-500 blur-md opacity-40 rounded-full animate-pulse" />
-              </div>
-              <span className="font-black text-sm tracking-tight flex-1 relative z-10">SOS Emergency</span>
-              {pathname === '/emergency' && <motion.div layoutId="activeNav" className="ml-auto w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] relative z-10" />}
+              <ShieldAlert size={18} className={pathname === '/emergency' ? "fill-white/20" : ""} />
+              <span className="text-sm tracking-tight flex-1">Emergency SOS</span>
             </div>
           </Link>
           
-          <button 
-            onClick={() => {
-              setIsMobileMenuOpen(false);
-              setIsLogoutDialogOpen(true);
-            }}
-            className="w-full mt-2 group flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300 text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:scale-[1.02]"
-          >
-            <LogOut size={18} className="group-hover:scale-110 transition-transform duration-500" />
-            <span className="font-bold text-sm tracking-tight">Sign Out</span>
-          </button>
+          <div className="px-2 mt-2">
+            <button 
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsLogoutDialogOpen(true);
+              }}
+              className="w-full group flex items-center gap-4 px-4 py-3 rounded-lg cursor-pointer transition-colors text-muted-foreground hover:bg-muted hover:text-foreground font-medium"
+            >
+              <LogOut size={18} />
+              <span className="text-sm tracking-tight">Sign Out</span>
+            </button>
+          </div>
         </div>
       </nav>
 
-      <div className="mt-auto shrink-0 p-4 border-t border-border/10 bg-background/20 relative z-10 backdrop-blur-md">
+      <div className="mt-auto shrink-0 p-4 border-t border-border bg-background">
         <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-          <div className="flex items-center gap-3 px-3 cursor-pointer hover:bg-white/10 p-3 rounded-2xl transition-colors border border-transparent hover:border-white/5">
-             <Avatar className="w-10 h-10 border border-border/50 bg-background shadow-sm">
+          <div className="flex items-center gap-3 px-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+             <Avatar className="w-10 h-10 border border-border">
                <AvatarImage src={user?.profileImage} />
-               <AvatarFallback className="text-[10px] font-bold">{user?.name?.[0]}</AvatarFallback>
+               <AvatarFallback className="text-xs font-bold">{user?.name?.[0]}</AvatarFallback>
              </Avatar>
              <div className="flex-1 min-w-0 text-left">
-               <p className="text-xs font-black uppercase truncate tracking-tight">{user?.name}</p>
-               <div className="text-[10px] text-muted-foreground uppercase tracking-wider truncate font-bold flex items-center gap-1">
-                 <MapPin size={10} className="text-accent" /> {user?.location || 'Chittagong'}
+               <p className="text-sm font-bold truncate tracking-tight">{user?.name}</p>
+               <div className="text-[11px] text-muted-foreground truncate flex items-center gap-1 font-medium">
+                 <MapPin size={10} /> {user?.location || 'Chittagong'}
                </div>
              </div>
           </div>
@@ -367,107 +362,94 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="h-screen w-screen bg-background text-foreground overflow-hidden flex bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-accent/5 via-background to-background">
+    <div className="h-screen w-screen bg-background text-foreground overflow-hidden flex">
       {/* Fixed Desktop Sidebar */}
-      <aside className="hidden md:flex w-[280px] flex-col h-full shrink-0 overflow-hidden p-4 pr-0 relative z-40">
+      <aside className="hidden md:flex w-72 flex-col border-r border-border h-full bg-background shrink-0 z-40">
         <SidebarContent />
       </aside>
 
       {/* Main View Area */}
-      <div className="flex-1 flex flex-col relative h-full overflow-hidden">
-        {/* Universal Header */}
-        <div className="px-4 md:px-6 pt-4 pb-2 shrink-0 z-50 sticky top-0">
-          <header className="h-16 md:h-20 rounded-full border border-white/10 dark:border-white/5 flex items-center justify-between px-4 md:px-8 bg-card/40 backdrop-blur-2xl shadow-lg w-full relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-primary/5 pointer-events-none" />
+      <div className="flex-1 flex flex-col relative h-full overflow-hidden bg-muted/20">
+        {/* Edge-to-Edge Header */}
+        <header className="h-16 border-b border-border flex items-center justify-between px-4 md:px-8 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full shrink-0">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard" className="md:hidden block">
+              <Logo width={100} className="cursor-pointer" />
+            </Link>
             
-            <div className="flex items-center gap-4 relative z-10">
-              <Link href="/dashboard" className="md:hidden block transition-transform hover:scale-105 active:scale-95 duration-300">
-                <Logo width={100} className="cursor-pointer" />
-              </Link>
-              
-              {/* Desktop Welcome Section */}
-              <div className="hidden md:flex flex-col text-left shrink-0">
-                <h2 className="text-xl font-bold tracking-tight">
-                  {greeting} <span className="text-accent">{user?.preferredName || user?.name?.split(' ')[0]}</span>
-                </h2>
+            {/* Desktop Welcome Section */}
+            <div className="hidden md:flex flex-col text-left shrink-0">
+              <h2 className="text-lg font-bold tracking-tight">
+                {greeting} {user?.preferredName || user?.name?.split(' ')[0]}
+              </h2>
+            </div>
+          </div>
+
+          {/* Desktop Center Search Bar (Visible on md and up) */}
+          <div className="hidden md:block flex-1 max-w-md mx-8 relative" ref={searchRef}>
+            <form onSubmit={handleSearchSubmit}>
+              <div className="relative group">
+                <Search className={cn(
+                  "absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
+                  isSearchFocused ? 'text-primary' : 'text-muted-foreground'
+                )} />
+                <Input 
+                  placeholder={typeof window !== 'undefined' && window.innerWidth >= 1024 ? "Search Chattala..." : "Search..."}
+                  className="pl-10 h-10 bg-muted/50 border-transparent hover:border-border focus:border-primary focus:bg-background rounded-full w-full font-medium transition-all"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                />
               </div>
-            </div>
+            </form>
 
-            {/* Desktop Center Search Bar (Visible on md and up) */}
-            <div className="hidden md:block flex-1 max-w-sm lg:max-w-md mx-4 lg:mx-8 relative z-10" ref={searchRef}>
-              <form onSubmit={handleSearchSubmit}>
-                <div className="relative group">
-                  <Search className={cn(
-                    "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
-                    isSearchFocused ? 'text-accent' : 'text-muted-foreground'
-                  )} />
-                  <Input 
-                    placeholder={typeof window !== 'undefined' && window.innerWidth >= 1024 ? "Search shops, services, or residents..." : "Search..."}
-                    className="pl-12 h-12 bg-background/50 border-white/10 dark:border-white/5 focus:ring-accent rounded-full w-full font-bold shadow-inner"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => setIsSearchFocused(true)}
-                  />
-                </div>
-              </form>
+            <AnimatePresence>
+              {isSearchFocused && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 5 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-2xl shadow-xl overflow-hidden z-50 p-2"
+                >
+                  <SearchMenuContent onSelect={handleSearchSubmit} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          <div className="flex items-center gap-1 md:gap-2">
+             {/* Mobile Search Icon */}
+             <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowSearchOverlay(true)}
+                className="rounded-full w-10 h-10 md:hidden text-muted-foreground hover:text-foreground"
+             >
+               <Search size={20} strokeWidth={2} />
+             </Button>
 
-              <AnimatePresence>
-                {isSearchFocused && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 5, scale: 0.95 }}
-                    className="absolute top-full left-0 right-0 mt-4 bg-card/80 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-50 p-2"
-                  >
-                    <SearchMenuContent onSelect={handleSearchSubmit} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            
-            <div className="flex items-center gap-2 md:gap-3 relative z-10">
-               {/* Mobile Search Icon */}
+             <Link href="/messages">
                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setShowSearchOverlay(true)}
-                  className={cn(
-                    "rounded-full transition-all duration-300 relative w-10 h-10 md:hidden",
-                    showSearchOverlay 
-                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
-                      : "bg-background/50 border border-white/10 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                  )}
+                variant="ghost" 
+                size="icon" 
+                className={cn(
+                  "rounded-full w-10 h-10",
+                  pathname === '/messages' ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
                >
-                 <Search size={18} />
+                 <MessageSquare size={20} strokeWidth={pathname === '/messages' ? 2.5 : 2} className={pathname === '/messages' ? "fill-current" : ""} />
+                 {totalUnread > 0 && (
+                   <span className="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full animate-pulse" />
+                 )}
                </Button>
+             </Link>
 
-               <Link href="/messages">
-                 <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className={cn(
-                    "rounded-full transition-all duration-300 relative w-10 h-10 md:w-11 md:h-11",
-                    pathname === '/messages' 
-                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
-                      : "bg-background/50 border border-white/10 text-muted-foreground hover:bg-white/10 hover:text-foreground"
-                  )}
-                 >
-                   <MessageSquare size={18} />
-                   {totalUnread > 0 && (
-                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground rounded-full border-2 border-background text-[10px] font-black flex items-center justify-center animate-in zoom-in select-none shadow-lg">
-                       {totalUnread}
-                     </span>
-                   )}
-                 </Button>
-               </Link>
-
-               <NotificationCenter />
-            </div>
-          </header>
-        </div>
+             <NotificationCenter />
+          </div>
+        </header>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide px-4 md:px-6">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-0 md:px-0">
           <div className="max-w-7xl mx-auto w-full">
             <div className="pb-32 md:pb-10 min-h-full">
               <AnimatePresence mode="wait">
@@ -560,20 +542,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 function NavItem({ icon, label, active = false, href, badge, onClick }: { icon: React.ReactNode, label: string, active?: boolean, href: string, badge?: number, onClick?: () => void }) {
   return (
     <Link href={href} onClick={onClick}>
-      <div 
-        className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-500 overflow-hidden ${active ? 'bg-primary/10 text-primary shadow-sm scale-[1.02]' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground hover:scale-[1.02]'}`}
-      >
-        {active && (
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
-        )}
-        <span className={`transition-transform duration-500 group-hover:scale-110 relative z-10 ${active ? 'text-accent' : ''}`}>{icon}</span>
-        <span className="font-bold text-sm tracking-tight flex-1 relative z-10">{label}</span>
-        {badge !== undefined && (
-          <span className="bg-accent text-accent-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full relative z-10 shadow-md">
-            {badge}
+      <div className="px-2">
+        <div 
+          className={cn(
+            "group flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors relative",
+            active ? "bg-muted text-foreground font-bold" : "text-muted-foreground hover:bg-muted hover:text-foreground font-medium"
+          )}
+        >
+          {active && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-foreground rounded-r-full" />
+          )}
+          <span className="relative flex items-center justify-center">
+            {/* If active, we clone the icon element to add fill="currentColor" and strokeWidth="2.5" */}
+            {active && React.isValidElement(icon) 
+              ? React.cloneElement(icon as React.ReactElement, { className: "fill-current", strokeWidth: 2.5 }) 
+              : icon}
           </span>
-        )}
-        {active && <motion.div layoutId="activeNav" className="ml-auto w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(97,179,204,0.8)] relative z-10" />}
+          <span className="text-sm tracking-tight flex-1">{label}</span>
+          {badge !== undefined && (
+            <span className="bg-primary text-primary-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full">
+              {badge}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );
