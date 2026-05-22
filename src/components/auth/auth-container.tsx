@@ -6,8 +6,12 @@ import { useState } from "react";
 import LoginForm from "./login-form";
 import SignupForm from "./signup-form";
 
-export default function AuthContainer() {
-  const [isLogin, setIsLogin] = useState(true);
+interface AuthContainerProps {
+  defaultTab?: "login" | "register";
+}
+
+export default function AuthContainer({ defaultTab = "login" }: AuthContainerProps) {
+  const [isLogin, setIsLogin] = useState(defaultTab === "login");
 
   return (
     <div className="w-full max-w-2xl mx-auto relative z-20">
