@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -6,11 +5,12 @@ import {
   LayoutDashboard, 
   Users, 
   ShoppingBag, 
-  UserCircle,
+  Home,
   Menu
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 interface BottomNavProps {
   onMenuClick: () => void;
@@ -19,50 +19,61 @@ interface BottomNavProps {
 export function BottomNav({ onMenuClick }: BottomNavProps) {
   const pathname = usePathname();
   
-  // Specific order: Overview, Community (Social), Me (Center), Shops, Menu
+  // Specific order: Home, Feed (Community), Shop, Neighbours, Menu
   const tabs = [
-    { href: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Overview" },
-    { href: "/community", icon: <Users size={20} />, label: "Social" },
-    { href: "/profile", icon: <UserCircle size={20} />, label: "Me" },
-    { href: "/shops", icon: <ShoppingBag size={20} />, label: "Shops" },
+    { href: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Home" },
+    { href: "/community", icon: <Users size={20} />, label: "Feed" },
+    { href: "/shops", icon: <ShoppingBag size={20} />, label: "Shop" },
+    { href: "/neighbours", icon: <Home size={20} />, label: "Neighbours" },
   ];
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border h-16 flex items-center justify-center">
-      <div className="flex items-center justify-around w-full max-w-md h-full px-2">
+    <div className="md:hidden fixed bottom-6 left-4 right-4 z-50">
+      <div className="bg-background/60 backdrop-blur-3xl border border-white/10 dark:border-white/5 shadow-2xl h-16 rounded-[2rem] flex items-center justify-around px-2 relative overflow-hidden">
+        {/* Subtle glow effect behind the dock */}
+        <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-primary/5 pointer-events-none" />
+        
         {tabs.map((tab) => {
           const isActive = pathname === tab.href;
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className="flex flex-col items-center justify-center gap-1 flex-1 h-full"
+              className="relative flex flex-col items-center justify-center gap-1 flex-1 h-full z-10 group"
             >
               <div className={cn(
-                "flex items-center justify-center transition-all duration-300",
+                "flex items-center justify-center transition-all duration-500",
                 isActive 
-                  ? "bg-primary text-white px-5 py-1.5 rounded-2xl scale-105 shadow-lg shadow-primary/20" 
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-accent -translate-y-1" 
+                  : "text-muted-foreground group-hover:text-foreground"
               )}>
                 {tab.icon}
               </div>
               <span className={cn(
-                "text-[9px] font-bold uppercase tracking-[0.1em] transition-opacity",
-                isActive ? "text-primary" : "text-muted-foreground opacity-60"
+                "text-[9px] font-black uppercase tracking-[0.1em] transition-all duration-500 absolute bottom-2",
+                isActive ? "opacity-100 text-accent translate-y-0" : "opacity-0 translate-y-2 text-muted-foreground"
               )}>
                 {tab.label}
               </span>
+              {isActive && (
+                <motion.div 
+                  layoutId="bottom-nav-active"
+                  className="absolute bottom-0 w-8 h-1 bg-accent rounded-t-full shadow-[0_0_10px_rgba(97,179,204,0.8)]"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
             </Link>
           );
         })}
         <button
           onClick={onMenuClick}
-          className="flex flex-col items-center justify-center gap-1 flex-1 h-full text-muted-foreground group"
+          className="relative flex flex-col items-center justify-center gap-1 flex-1 h-full text-muted-foreground group z-10"
         >
-          <div className="flex items-center justify-center p-1.5 transition-all group-active:scale-90">
+          <div className="flex items-center justify-center transition-all duration-300 group-active:scale-90 group-hover:text-foreground">
             <Menu size={20} />
           </div>
-          <span className="text-[9px] font-bold uppercase tracking-[0.1em] opacity-60">Menu</span>
+          <span className="text-[9px] font-black uppercase tracking-[0.1em] opacity-60 absolute bottom-2 group-hover:opacity-100 group-hover:text-foreground transition-opacity">Menu</span>
         </button>
       </div>
     </div>

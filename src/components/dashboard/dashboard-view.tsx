@@ -138,50 +138,83 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-card/10 backdrop-blur-xl">
-      <div className="px-8 pt-8 mb-12 shrink-0">
-        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="transition-opacity hover:opacity-90">
+    <div className="flex flex-col h-full bg-card/40 backdrop-blur-3xl rounded-3xl border border-white/10 dark:border-white/5 shadow-2xl relative overflow-hidden">
+      {/* Subtle glow effect behind sidebar */}
+      <div className="absolute inset-0 bg-gradient-to-b from-accent/5 via-transparent to-transparent pointer-events-none" />
+      
+      <div className="px-8 pt-8 mb-8 shrink-0 relative z-10">
+        <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="transition-opacity hover:opacity-90 block hover:scale-105 duration-300">
           <Logo width={120} className="cursor-pointer" />
         </Link>
       </div>
       
-      <nav className="flex-1 overflow-y-auto scrollbar-hide px-4 space-y-1">
-        {visibleNavItems.map((item) => (
-          <NavItem 
-            key={item.href}
-            icon={item.icon} 
-            label={item.label} 
-            active={pathname === item.href} 
-            href={item.href}
-            onClick={() => setIsMobileMenuOpen(false)}
-          />
-        ))}
-        
-        <div className="h-px bg-border/20 my-4 mx-4" />
-        
-        <NavItem 
-          icon={<Settings size={18} />} 
-          label="App Settings" 
-          active={pathname === '/settings'} 
-          href="/settings"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-        <button 
-          onClick={() => {
-            setIsMobileMenuOpen(false);
-            setIsLogoutDialogOpen(true);
-          }}
-          className="w-full group flex items-center gap-4 px-4 py-4 rounded-xl cursor-pointer transition-all duration-300 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-        >
-          <LogOut size={18} />
-          <span className="font-bold text-sm tracking-tight">Sign Out</span>
-        </button>
+      <nav className="flex-1 overflow-y-auto scrollbar-hide px-4 space-y-6 relative z-10 pb-4">
+        {/* Zone 1: Core Daily Needs */}
+        <div className="space-y-1">
+          <div className="px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 opacity-70">Core</div>
+          {visibleNavItems.filter(i => ['Overview', 'Community', 'Neighbours'].includes(i.label)).map((item) => (
+            <NavItem key={item.href} icon={item.icon} label={item.label} active={pathname === item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)} />
+          ))}
+        </div>
+
+        {/* Zone 2: Discover & Utility */}
+        <div className="space-y-1">
+          <div className="px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 opacity-70">Discover</div>
+          {visibleNavItems.filter(i => ['Directory', 'Marketplace', 'Services'].includes(i.label)).map((item) => (
+            <NavItem key={item.href} icon={item.icon} label={item.label} active={pathname === item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)} />
+          ))}
+        </div>
+
+        {/* Zone 3: Workspaces */}
+        {(user?.isSeller || user?.isServiceProvider || user?.isAdmin) && (
+          <div className="space-y-1">
+            <div className="px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 opacity-70">Workspace</div>
+            {visibleNavItems.filter(i => ['Seller Hub', 'Expert Hub', 'Admin Center'].includes(i.label)).map((item) => (
+              <NavItem key={item.href} icon={item.icon} label={item.label} active={pathname === item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)} />
+            ))}
+          </div>
+        )}
+
+        {/* Zone 4: Critical */}
+        <div className="space-y-1">
+          <div className="px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 opacity-70">System</div>
+          {visibleNavItems.filter(i => i.label === 'Vision & Legacy').map((item) => (
+            <NavItem key={item.href} icon={item.icon} label={item.label} active={pathname === item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)} />
+          ))}
+          <NavItem icon={<Settings size={18} />} label="Settings" active={pathname === '/settings'} href="/settings" onClick={() => setIsMobileMenuOpen(false)} />
+          
+          <Link href="/emergency" onClick={() => setIsMobileMenuOpen(false)} className="block mt-4">
+            <div className={cn(
+              "group relative flex items-center gap-4 px-4 py-4 rounded-2xl cursor-pointer transition-all duration-500 overflow-hidden",
+              pathname === '/emergency' ? "bg-red-500/20 text-red-500 shadow-sm scale-[1.02]" : "bg-red-500/5 text-red-500 hover:bg-red-500/10 hover:scale-[1.02]"
+            )}>
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-transparent pointer-events-none" />
+              <div className="relative z-10">
+                <ShieldAlert size={18} className="group-hover:scale-110 transition-transform duration-500" />
+                <span className="absolute inset-0 bg-red-500 blur-md opacity-40 rounded-full animate-pulse" />
+              </div>
+              <span className="font-black text-sm tracking-tight flex-1 relative z-10">SOS Emergency</span>
+              {pathname === '/emergency' && <motion.div layoutId="activeNav" className="ml-auto w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)] relative z-10" />}
+            </div>
+          </Link>
+          
+          <button 
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              setIsLogoutDialogOpen(true);
+            }}
+            className="w-full mt-2 group flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-300 text-muted-foreground hover:bg-destructive/10 hover:text-destructive hover:scale-[1.02]"
+          >
+            <LogOut size={18} className="group-hover:scale-110 transition-transform duration-500" />
+            <span className="font-bold text-sm tracking-tight">Sign Out</span>
+          </button>
+        </div>
       </nav>
 
-      <div className="mt-auto shrink-0 p-4 pb-8 border-t border-border/50 bg-background/20">
+      <div className="mt-auto shrink-0 p-4 border-t border-border/10 bg-background/20 relative z-10 backdrop-blur-md">
         <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-          <div className="flex items-center gap-3 px-3 cursor-pointer hover:bg-white/5 p-3 rounded-xl transition-colors border border-transparent hover:border-border/50">
-             <Avatar className="w-10 h-10 border border-border/50 bg-background">
+          <div className="flex items-center gap-3 px-3 cursor-pointer hover:bg-white/10 p-3 rounded-2xl transition-colors border border-transparent hover:border-white/5">
+             <Avatar className="w-10 h-10 border border-border/50 bg-background shadow-sm">
                <AvatarImage src={user?.profileImage} />
                <AvatarFallback className="text-[10px] font-bold">{user?.name?.[0]}</AvatarFallback>
              </Avatar>
@@ -334,105 +367,109 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="h-screen w-screen bg-background text-foreground overflow-hidden flex">
+    <div className="h-screen w-screen bg-background text-foreground overflow-hidden flex bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-accent/5 via-background to-background">
       {/* Fixed Desktop Sidebar */}
-      <aside className="hidden md:flex w-72 flex-col border-r border-border h-full bg-card/5 shrink-0 overflow-hidden">
+      <aside className="hidden md:flex w-[280px] flex-col h-full shrink-0 overflow-hidden p-4 pr-0 relative z-40">
         <SidebarContent />
       </aside>
 
       {/* Main View Area */}
       <div className="flex-1 flex flex-col relative h-full overflow-hidden">
         {/* Universal Header */}
-        <header className="h-20 border-b border-border flex items-center justify-between px-4 md:px-10 bg-background sticky top-0 z-50 w-full shrink-0">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="md:hidden block transition-opacity hover:opacity-90">
-              <Logo width={110} className="cursor-pointer" />
-            </Link>
+        <div className="px-4 md:px-6 pt-4 pb-2 shrink-0 z-50 sticky top-0">
+          <header className="h-16 md:h-20 rounded-full border border-white/10 dark:border-white/5 flex items-center justify-between px-4 md:px-8 bg-card/40 backdrop-blur-2xl shadow-lg w-full relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-accent/5 via-transparent to-primary/5 pointer-events-none" />
             
-            {/* Desktop Welcome Section */}
-            <div className="hidden md:flex flex-col text-left shrink-0">
-              <h2 className="text-xl font-bold tracking-tight">
-                {greeting} <span className="text-accent">{user?.preferredName || user?.name?.split(' ')[0]}</span>
-              </h2>
-            </div>
-          </div>
-
-          {/* Desktop Center Search Bar (Visible on md and up) */}
-          <div className="hidden md:block flex-1 max-w-sm lg:max-w-md mx-4 lg:mx-8 relative" ref={searchRef}>
-            <form onSubmit={handleSearchSubmit}>
-              <div className="relative group">
-                <Search className={cn(
-                  "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
-                  isSearchFocused ? 'text-accent' : 'text-muted-foreground'
-                )} />
-                <Input 
-                  placeholder={typeof window !== 'undefined' && window.innerWidth >= 1024 ? "Search shops, services, or residents..." : "Search..."}
-                  className="pl-10 h-11 bg-card/20 border-border/50 focus:ring-accent rounded-xl w-full font-bold"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                />
+            <div className="flex items-center gap-4 relative z-10">
+              <Link href="/dashboard" className="md:hidden block transition-transform hover:scale-105 active:scale-95 duration-300">
+                <Logo width={100} className="cursor-pointer" />
+              </Link>
+              
+              {/* Desktop Welcome Section */}
+              <div className="hidden md:flex flex-col text-left shrink-0">
+                <h2 className="text-xl font-bold tracking-tight">
+                  {greeting} <span className="text-accent">{user?.preferredName || user?.name?.split(' ')[0]}</span>
+                </h2>
               </div>
-            </form>
+            </div>
 
-            <AnimatePresence>
-              {isSearchFocused && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 5 }}
-                  className="absolute top-full left-0 right-0 mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden z-50 p-2"
-                >
-                  <SearchMenuContent onSelect={handleSearchSubmit} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          
-          <div className="flex items-center gap-3">
-             {/* Mobile Search Icon */}
-             <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowSearchOverlay(true)}
-                className={cn(
-                  "rounded-full transition-all duration-300 relative w-11 h-11 md:hidden",
-                  showSearchOverlay 
-                    ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
-                    : "bg-card/30 border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+            {/* Desktop Center Search Bar (Visible on md and up) */}
+            <div className="hidden md:block flex-1 max-w-sm lg:max-w-md mx-4 lg:mx-8 relative z-10" ref={searchRef}>
+              <form onSubmit={handleSearchSubmit}>
+                <div className="relative group">
+                  <Search className={cn(
+                    "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
+                    isSearchFocused ? 'text-accent' : 'text-muted-foreground'
+                  )} />
+                  <Input 
+                    placeholder={typeof window !== 'undefined' && window.innerWidth >= 1024 ? "Search shops, services, or residents..." : "Search..."}
+                    className="pl-12 h-12 bg-background/50 border-white/10 dark:border-white/5 focus:ring-accent rounded-full w-full font-bold shadow-inner"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                  />
+                </div>
+              </form>
+
+              <AnimatePresence>
+                {isSearchFocused && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                    className="absolute top-full left-0 right-0 mt-4 bg-card/80 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-50 p-2"
+                  >
+                    <SearchMenuContent onSelect={handleSearchSubmit} />
+                  </motion.div>
                 )}
-             >
-               <Search size={18} />
-             </Button>
-
-             <Link href="/messages">
+              </AnimatePresence>
+            </div>
+            
+            <div className="flex items-center gap-2 md:gap-3 relative z-10">
+               {/* Mobile Search Icon */}
                <Button 
-                variant="ghost" 
-                size="icon" 
-                className={cn(
-                  "rounded-full transition-all duration-300 relative w-11 h-11",
-                  pathname === '/messages' 
-                    ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
-                    : "bg-card/30 border border-border/50 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                )}
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setShowSearchOverlay(true)}
+                  className={cn(
+                    "rounded-full transition-all duration-300 relative w-10 h-10 md:hidden",
+                    showSearchOverlay 
+                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
+                      : "bg-background/50 border border-white/10 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  )}
                >
-                 <MessageSquare size={18} />
-                 {totalUnread > 0 && (
-                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground rounded-full border-2 border-background text-[10px] font-black flex items-center justify-center animate-in zoom-in select-none">
-                     {totalUnread}
-                   </span>
-                 )}
+                 <Search size={18} />
                </Button>
-             </Link>
 
-             <NotificationCenter />
-          </div>
-        </header>
+               <Link href="/messages">
+                 <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={cn(
+                    "rounded-full transition-all duration-300 relative w-10 h-10 md:w-11 md:h-11",
+                    pathname === '/messages' 
+                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105" 
+                      : "bg-background/50 border border-white/10 text-muted-foreground hover:bg-white/10 hover:text-foreground"
+                  )}
+                 >
+                   <MessageSquare size={18} />
+                   {totalUnread > 0 && (
+                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-accent text-accent-foreground rounded-full border-2 border-background text-[10px] font-black flex items-center justify-center animate-in zoom-in select-none shadow-lg">
+                       {totalUnread}
+                     </span>
+                   )}
+                 </Button>
+               </Link>
+
+               <NotificationCenter />
+            </div>
+          </header>
+        </div>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide bg-background/50">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-4 md:px-6">
           <div className="max-w-7xl mx-auto w-full">
-            <div className="pb-24 md:pb-10 min-h-full">
+            <div className="pb-32 md:pb-10 min-h-full">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={pathname}
@@ -524,16 +561,19 @@ function NavItem({ icon, label, active = false, href, badge, onClick }: { icon: 
   return (
     <Link href={href} onClick={onClick}>
       <div 
-        className={`group flex items-center gap-4 px-4 py-4 rounded-xl cursor-pointer transition-all duration-300 ${active ? 'bg-primary/10 text-primary shadow-sm' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}
+        className={`group relative flex items-center gap-4 px-4 py-3.5 rounded-2xl cursor-pointer transition-all duration-500 overflow-hidden ${active ? 'bg-primary/10 text-primary shadow-sm scale-[1.02]' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground hover:scale-[1.02]'}`}
       >
-        <span className={`transition-transform group-hover:scale-110 ${active ? 'text-accent' : ''}`}>{icon}</span>
-        <span className="font-bold text-sm tracking-tight flex-1">{label}</span>
+        {active && (
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
+        )}
+        <span className={`transition-transform duration-500 group-hover:scale-110 relative z-10 ${active ? 'text-accent' : ''}`}>{icon}</span>
+        <span className="font-bold text-sm tracking-tight flex-1 relative z-10">{label}</span>
         {badge !== undefined && (
-          <span className="bg-accent text-accent-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full">
+          <span className="bg-accent text-accent-foreground text-[10px] font-black px-1.5 py-0.5 rounded-full relative z-10 shadow-md">
             {badge}
           </span>
         )}
-        {active && <motion.div layoutId="activeNav" className="ml-auto w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(97,179,204,0.8)]" />}
+        {active && <motion.div layoutId="activeNav" className="ml-auto w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(97,179,204,0.8)] relative z-10" />}
       </div>
     </Link>
   );
