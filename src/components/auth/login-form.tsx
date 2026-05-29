@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { AlertCircle, LogIn, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, CheckCircle, LogIn, Eye, EyeOff, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,8 +25,14 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   const { login } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isEmailUnverified, setIsEmailUnverified] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -36,20 +43,96 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
 
   const onSubmit = async (data: LoginFormValues) => {
     setLoginError(null);
+    setIsEmailUnverified(false);
+    setResendSuccess(false);
     try {
       await login(data.email, data.password);
       router.push("/dashboard");
     } catch (err) {
-      setLoginError(err instanceof Error ? err.message : "Invalid email or password. Please try again.");
+      const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
+      // Detect email-not-verified error from backend or AUTH_ERROR_MESSAGES
+      if (
+        message.includes("EmailNotVerified") ||
+        message.includes("verify your email")
+      ) {
+        setIsEmailUnverified(true);
+        setResendEmail(data.email);
+        setLoginError(message);
+      } else {
+        setLoginError(message);
+      }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setResendLoading(true);
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resendEmail }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Failed to resend verification email.");
+      }
+      setResendSuccess(true);
+    } catch (err) {
+      toast({
+        title: "Could not resend email",
+        description: err instanceof Error ? err.message : "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setResendLoading(false);
     }
   };
 
   return (
     <div className="space-y-8">
 
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        {loginError && (
+        {/* Email-unverified: amber warning with resend option */}
+        {isEmailUnverified && loginError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl bg-amber-50/90 border border-amber-200/70 p-4 text-sm text-amber-800 backdrop-blur-sm space-y-3"
+          >
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
+              <span className="font-medium leading-relaxed">{loginError}</span>
+            </div>
+            {resendSuccess ? (
+              <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-lg px-3 py-2 text-xs font-semibold">
+                <CheckCircle className="h-4 w-4 shrink-0" />
+                Verification email sent! Check your inbox.
+              </div>
+            ) : (
+              <Button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendLoading}
+                className="w-full h-9 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold uppercase tracking-wide transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {resendLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Sending...
+                  </div>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Resend Verification Email
+                  </span>
+                )}
+              </Button>
+            )}
+          </motion.div>
+        )}
+
+        {/* Standard error display for non-email-verification errors */}
+        {loginError && !isEmailUnverified && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}

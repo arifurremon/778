@@ -45,6 +45,11 @@ export const authConfig: NextAuthConfig = {
     async authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
       const isAdmin = auth?.user?.isAdmin;
+
+      // Propagate EmailNotVerified error to the login page with proper context
+      if (nextUrl.searchParams.get("error") === "EmailNotVerified") {
+        return Response.redirect(new URL("/login?error=EmailNotVerified", nextUrl.origin));
+      }
       
       if (process.env.NODE_ENV === "development") {
         console.log(`[Auth] Path: ${nextUrl.pathname}, LoggedIn: ${isLoggedIn}`);
@@ -73,8 +78,8 @@ export const authConfig: NextAuthConfig = {
     },
   },
   pages: {
-    signIn: "/",
-    error: "/",
+    signIn: "/login",
+    error: "/login",
   },
   // Enable debug logs in development for troubleshooting
   session: { strategy: "jwt" },

@@ -114,6 +114,7 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "CredentialsSignin": "Invalid email or password. Please try again.",
   "AccessDenied": "Access denied. Your account may be suspended.",
   "Verification": "Please verify your email before signing in.",
+  "EmailNotVerified": "Please verify your email address before signing in. Check your inbox for the verification link.",
   "Default": "An authentication error occurred. Please try again."
 };
 
@@ -124,12 +125,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [timeoutReached, setTimeoutReached] = useState(false);
 
   useEffect(() => {
+    if (status !== "loading") {
+      setTimeoutReached(true);
+      return;
+    }
     const timer = setTimeout(() => {
       setTimeoutReached(true);
       setIsProfileLoading(false);
-    }, 8000); // 8s timeout accounts for cold-start latency on serverless Neon + Upstash
+    }, 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [status]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -192,7 +197,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string }) => {
     const res = await api.post<any>('/api/auth/register', { ...data, password: data.pass });
-    await login(data.email, data.pass);
     return res;
   };
 

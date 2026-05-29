@@ -54,6 +54,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const passwordsMatch = await compare(credentials.password as string, user.password);
         if (!passwordsMatch) return null;
 
+        if (!user.emailVerified) {
+          throw new Error("EmailNotVerified");
+        }
+
         return {
           id: user.id,
           email: user.email,

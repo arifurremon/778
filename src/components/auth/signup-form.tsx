@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { AlertCircle, AtSign, Calendar, Lock, Mail, MapPin, Phone, User, UserPlus, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, AtSign, Calendar, CheckCircle, Lock, Mail, MapPin, Phone, User, UserPlus, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -63,6 +63,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
   const [signupError, setSignupError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const onSubmit = async (data: SignupFormValues) => {
     setSignupError(null);
@@ -80,12 +82,45 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
       if (res && res.emailSent === false) {
         toast({ title: "Email Delivery Failed", description: res.emailError, variant: "destructive" });
       }
-      router.push("/dashboard");
+      setRegisteredEmail(data.email);
+      setRegistrationSuccess(true);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
       setSignupError(message);
     }
   };
+
+  if (registrationSuccess) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+        className="flex flex-col items-center text-center space-y-6 py-6"
+      >
+        <div className="flex items-center justify-center w-20 h-20 rounded-full bg-green-100 border-4 border-green-200 shadow-md">
+          <CheckCircle className="w-10 h-10 text-green-600" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-slate-800">Account Created Successfully!</h2>
+          <p className="text-sm text-slate-600 max-w-sm leading-relaxed">
+            We&apos;ve sent a verification email to{" "}
+            <span className="font-bold text-slate-800">{registeredEmail}</span>. Please check your inbox and click the verification link to activate your account.
+          </p>
+        </div>
+        <p className="text-xs text-slate-400">
+          Didn&apos;t receive it? Check your spam folder or contact support.
+        </p>
+        <Button
+          type="button"
+          onClick={onSwitch}
+          className="w-full h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-300 uppercase tracking-wide"
+        >
+          Back to Sign In
+        </Button>
+      </motion.div>
+    );
+  }
 
   return (
     <div className="space-y-8">

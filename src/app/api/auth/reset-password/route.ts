@@ -17,8 +17,18 @@ export async function POST(req: NextRequest) {
     const headersList = await headers();
     const ip = headersList.get("x-forwarded-for") || "unknown";
     
-    const { success } = await rateLimiters.resetPassword.limit(ip);
-    if (!success) {
+    let rateLimitSuccess = true;
+    try {
+      const result = await Promise.race([
+        rateLimiters.resetPassword.limit(ip),
+        new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000))
+      ]);
+      rateLimitSuccess = result.success;
+    } catch (err) {
+      console.error("[ResetPassword] Rate limit skipped due to timeout or Upstash error:", err);
+    }
+
+    if (!rateLimitSuccess) {
       return NextResponse.json(
         { error: "Too many attempts. Please try again later." },
         { status: 429 }

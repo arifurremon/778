@@ -13,7 +13,7 @@ import { neonConfig } from "@neondatabase/serverless";
 const getPrismaClient = () => {
   // The Neon Serverless driver handles connection pooling natively.
   // Using the pooled DATABASE_URL (-pooler) can cause deadlocks and timeouts.
-  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
+  const connectionString = process.env.DATABASE_URL;
   
   // Detect runtime
   const isEdge = process.env.NEXT_RUNTIME === "edge";

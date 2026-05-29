@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
 }
 
 model User {
@@ -136,6 +136,8 @@ model Post {
   visibility       PrivacyLevel @default(PUBLIC)
   helpfulCount     Int          @default(0)
   notHelpfulCount  Int          @default(0)
+  flagged          Boolean      @default(false)
+  moderationStatus String       @default("APPROVED")
   comments         Comment[]
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
@@ -143,6 +145,7 @@ model Post {
   @@index([visibility])
   @@index([authorId])
   @@index([createdAt])
+  @@index([flagged])
 }
 
 model Comment {
@@ -212,6 +215,7 @@ model ExpertService {
   bio             String
   qualifications  String[]
   rating          Float    @default(5.0)
+  isVerified      Boolean  @default(false)
   createdAt       DateTime @default(now())
 }
 
