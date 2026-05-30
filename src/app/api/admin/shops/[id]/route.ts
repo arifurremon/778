@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -90,6 +91,8 @@ export async function PATCH(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
@@ -129,6 +132,8 @@ export async function DELETE(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 

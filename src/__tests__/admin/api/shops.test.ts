@@ -50,7 +50,10 @@ describe("Shop Moderation API Endpoints", () => {
         user: { email: "owner@test.com", name: "Owner" }
       });
 
-      const req = new NextRequest("http://localhost/api/admin/shops/shop-1/verify", { method: "POST" });
+      const req = new NextRequest("http://localhost/api/admin/shops/shop-1/verify", {
+        method: "POST",
+        headers: { origin: "http://localhost", "x-csrf-token": "test-csrf-token" },
+      });
       const res = await verifyShop(req, { params: Promise.resolve({ id: "shop-1" }) });
       const data = await res.json();
 
@@ -70,6 +73,7 @@ describe("Shop Moderation API Endpoints", () => {
       
       const req = new NextRequest("http://localhost/api/admin/shops/shop-1/reject", {
         method: "POST",
+        headers: { origin: "http://localhost", "x-csrf-token": "test-csrf-token" },
         body: JSON.stringify({ reason: "Too short" })
       });
       
@@ -92,6 +96,7 @@ describe("Shop Moderation API Endpoints", () => {
       const validReason = "Your shop does not meet our quality standards for photography and description.";
       const req = new NextRequest("http://localhost/api/admin/shops/shop-1/reject", {
         method: "POST",
+        headers: { origin: "http://localhost", "x-csrf-token": "test-csrf-token" },
         body: JSON.stringify({ reason: validReason })
       });
       
@@ -105,7 +110,7 @@ describe("Shop Moderation API Endpoints", () => {
     (requireAdmin as any).mockResolvedValue({ session: { user: { id: "admin-1" } } });
     (db.shop.findUnique as any).mockResolvedValue(null);
 
-    const res = await verifyShop(new NextRequest("http://x"), { params: Promise.resolve({ id: "none" }) });
+    const res = await verifyShop(new NextRequest("http://x", { method: "POST", headers: { origin: "http://x", "x-csrf-token": "test-csrf-token" } }), { params: Promise.resolve({ id: "none" }) });
     expect(res.status).toBe(404);
   });
 
@@ -114,7 +119,7 @@ describe("Shop Moderation API Endpoints", () => {
     (db.shop.findUnique as any).mockResolvedValue({ id: "s1", user: { email: "e" } });
     (sendEmail as any).mockRejectedValue(new Error("SMTP Error"));
 
-    const res = await verifyShop(new NextRequest("http://x"), { params: Promise.resolve({ id: "s1" }) });
+    const res = await verifyShop(new NextRequest("http://x", { method: "POST", headers: { origin: "http://x", "x-csrf-token": "test-csrf-token" } }), { params: Promise.resolve({ id: "s1" }) });
     expect(res.status).toBe(200); // API should still succeed
   });
 });

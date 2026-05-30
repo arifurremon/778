@@ -12,6 +12,7 @@ const createMockModel = () => ({
   findMany: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
+  updateMany: vi.fn(),
   delete: vi.fn(),
   deleteMany: vi.fn(),
   count: vi.fn(),
@@ -42,6 +43,11 @@ vi.mock("@/lib/db", () => ({
 
 export function resetPrismaMock() {
   Object.values(prismaMock).forEach((model) => {
+    if (typeof model === "function" && "mockReset" in model) {
+      (model as any).mockReset();
+      return;
+    }
+
     if (typeof model === "object" && model !== null) {
       Object.values(model).forEach((method) => {
         if (typeof method === "function" && "mockReset" in method) {
@@ -50,4 +56,6 @@ export function resetPrismaMock() {
       });
     }
   });
+
+  prismaMock.$transaction.mockImplementation((fns: any[]) => Promise.all(fns));
 }

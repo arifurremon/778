@@ -33,7 +33,11 @@ const VALID_EMAIL_TOKEN = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 function makeResendRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/auth/resend-verification", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "origin": "http://localhost:3000",
+      "x-csrf-token": "test-csrf-token",
+    },
     body: JSON.stringify(body),
   });
 }

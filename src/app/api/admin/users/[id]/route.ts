@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -118,6 +119,8 @@ export async function PATCH(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
@@ -178,10 +181,12 @@ export async function PATCH(
 // DELETE /api/admin/users/[id]  — soft delete
 // ---------------------------------------------------------------------------
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
@@ -203,7 +208,7 @@ export async function DELETE(
       "User",
       id,
       { method: "SOFT_DELETE" },
-      _req.headers.get("x-forwarded-for") || "unknown"
+      req.headers.get("x-forwarded-for") || "unknown"
     );
 
     return NextResponse.json({ success: true, message: "User soft-deleted successfully" });

@@ -1,22 +1,63 @@
-// Fixed: 3 — Added rate limiting to forgot-password endpoint.
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendPasswordResetEmail } from "@/lib/mail";
+import { rateLimiters } from "@/lib/rate-limit";
 import crypto from "crypto";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimiters } from "@/lib/rate-limit";
+import { z } from "zod";
+
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
+const GENERIC_RESET_MESSAGE = "If that email exists, we sent a password reset link.";
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Valid email is required."),
+});
+
+function hashResetToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function generateResetToken(): { rawToken: string; tokenHash: string; expiresAt: Date } {
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  return {
+    rawToken,
+    tokenHash: hashResetToken(rawToken),
+    expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS),
+  };
+}
+
+function buildResetUrl(req: NextRequest, token: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
+  return new URL(`/reset-password/${token}`, baseUrl).toString();
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
+
     const headersList = await headers();
-    const ip = headersList.get("x-forwarded-for") || "unknown";
-    
+    const rawForwarded = headersList.get("x-forwarded-for") ?? "";
+    const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
+
+    const body: unknown = await req.json();
+    const parsed = forgotPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors[0]?.message ?? "Validation failed." },
+        { status: 400 }
+      );
+    }
+
+    const email = parsed.data.email.toLowerCase().trim();
+
     let rateLimitSuccess = true;
     try {
       const result = await Promise.race([
-        rateLimiters.forgotPassword.limit(ip),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000))
+        rateLimiters.forgotPassword.limit(`${ip}:${email}`),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000)),
       ]);
       rateLimitSuccess = result.success;
     } catch (err) {
@@ -30,38 +71,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { email } = await req.json();
-
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
-    }
-
     const user = await db.user.findUnique({
       where: { email },
+      select: { id: true, email: true },
     });
 
-    // Don't reveal whether user exists or not for security
+    // Do not reveal whether user exists or not for security.
     if (!user) {
-      return NextResponse.json({ success: true, message: "If that email exists, we sent a password reset link." });
+      return NextResponse.json({ success: true, message: GENERIC_RESET_MESSAGE });
     }
 
-    // Generate secure token
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExp = new Date(Date.now() + 3600000); // 1 hour from now
+    const { rawToken, tokenHash, expiresAt } = generateResetToken();
 
     await db.user.update({
-      where: { email },
+      where: { id: user.id },
       data: {
-        resetToken,
-        resetTokenExp,
+        resetToken: tokenHash,
+        resetTokenExp: expiresAt,
       },
     });
 
-    // Send email
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
-    await sendPasswordResetEmail(email, resetUrl);
+    await sendPasswordResetEmail(user.email, buildResetUrl(req, rawToken));
 
-    return NextResponse.json({ success: true, message: "If that email exists, we sent a password reset link." });
+    return NextResponse.json({ success: true, message: GENERIC_RESET_MESSAGE });
   } catch (error) {
     logErrorToSentry(error, {
       endpoint: "/api/auth/forgot-password",

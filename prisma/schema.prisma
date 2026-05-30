@@ -78,6 +78,7 @@ model User {
 
   @@index([createdAt])
   @@index([emailToken, emailTokenExp])
+  @@index([resetToken, resetTokenExp])
 }
 
 model Account {

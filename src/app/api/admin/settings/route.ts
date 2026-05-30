@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
@@ -80,6 +81,9 @@ export async function GET(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
+
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 

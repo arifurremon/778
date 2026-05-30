@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -73,6 +74,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 // ---------------------------------------------------------------------------
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
     const { error } = await requireAdmin();
     if (error) return error;
 

@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
@@ -11,6 +12,9 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function POST(req: NextRequest, { params }: any) {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
+
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 

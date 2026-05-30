@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { logAdminAction } from "@/lib/audit-log";
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
@@ -21,6 +22,8 @@ export async function POST(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
+    const csrfError = validateCsrfRequest(req);
+    if (csrfError) return csrfError;
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
