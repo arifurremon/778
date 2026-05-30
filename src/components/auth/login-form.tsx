@@ -1,4 +1,3 @@
-// Fixed: 9 — Replaced window.location.href with router.push for client-side navigation.
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -50,7 +49,6 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
       router.push("/dashboard");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
-      // Detect email-not-verified error from backend or AUTH_ERROR_MESSAGES
       if (
         message.includes("EmailNotVerified") ||
         message.includes("verify your email")
@@ -203,8 +201,6 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
           )}
         </Button>
       </form>
-
-
 
       <div className="pt-6 border-t border-gray-200/50 text-center">
         <p className="text-sm text-gray-600 font-medium">

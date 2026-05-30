@@ -1,4 +1,3 @@
-// Fixed: 7 — Resolved registration race condition and removed duplicate welcome email.
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
@@ -80,69 +79,71 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     username = sanitizeUserInput(username);
     if (profession) profession = sanitizeUserInput(profession);
 
-    // --- Hash password & create user (Atomic Check) -------------------------
+    // --- Hash password
     const hashedPassword = await hash(password, 12);
 
-    const now = new Date();
-    const joinDate = now.toLocaleString("default", { month: "long", year: "numeric" });
-
-    const emailToken = crypto.randomBytes(32).toString("hex");
-
+    // --- Create user --------------------------------------------------------
+    let user;
     try {
-      await db.user.create({
+      user = await db.user.create({
         data: {
           email,
-          username,
           password: hashedPassword,
+          username,
           name,
           mobile,
           location,
           dob,
-          profession: profession || "Not specified",
-          joinDate,
-          emailToken,
+          profession: profession ?? null,
+          emailVerificationToken: crypto.randomBytes(32).toString("hex"),
+          emailVerificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
-        const field = (err as any).meta?.target?.[0] ?? "field";
-        const fieldLabel = field === "email" ? "Email" : field === "username" ? "Username" : "A field";
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
+        const field = (err.meta?.target as string[])?.join(", ") ?? "field";
         return NextResponse.json(
-          { success: false, message: `${fieldLabel} already registered.` },
+          { success: false, message: `This ${field} is already in use.` },
           { status: 409 }
         );
       }
-      throw err; // re-throw for the outer catch
+      throw err;
     }
 
-    // --- Send Verification Email (Fire and forget) ---
-    // Note: Welcome emails are handled by the createUser NextAuth event for OAuth users,
-    // and are intentionally omitted here to avoid duplicate emails.
+    // --- Send verification email -------------------------------------------
     let emailSent = true;
-    let emailError = "";
+    let emailError: string | undefined;
     try {
-      const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/verify-email/${emailToken}`;
-      await sendVerificationEmail(email, verifyUrl);
-    } catch (emailErrorObj) {
-      logErrorToSentry(emailErrorObj, { route: "[POST /api/auth/register] Verification email failed:" });
+      await sendVerificationEmail(
+        user.email,
+        user.name,
+        user.emailVerificationToken!
+      );
+    } catch (err) {
       emailSent = false;
-      emailError = "Verification email could not be sent. Please use the resend verification option.";
+      emailError = err instanceof Error ? err.message : "Unknown email error";
+      logErrorToSentry(err, {
+        endpoint: "/api/auth/register",
+        userId: user.id,
+        note: "Welcome email failed after successful registration",
+      });
     }
 
     return NextResponse.json(
-      { success: true, message: "Account created.", emailSent, emailError },
+      {
+        success: true,
+        message: "Registration successful. Please check your email to verify your account.",
+        ...(emailSent ? {} : { emailSent: false, emailError }),
+      },
       { status: 201 }
     );
-  } catch (error: unknown) {
-    logErrorToSentry(error, { route: "[POST /api/auth/register] CRITICAL ERROR:" });
-    
-    // Provide a slightly more descriptive message for debugging
-    const errorMessage = process.env.NODE_ENV === "development" 
-      ? `Registration failed: ${error instanceof Error ? error.message : 'An error occurred'}`
-      : "Internal server error. Please try again later.";
-
+  } catch (error) {
+    logErrorToSentry(error, { endpoint: "/api/auth/register" });
     return NextResponse.json(
-      { success: false, message: errorMessage },
+      { success: false, message: "An unexpected error occurred. Please try again." },
       { status: 500 }
     );
   }

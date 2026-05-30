@@ -1,4 +1,3 @@
-// Fixed: 9 — Replaced window.location.href with router.push for client-side navigation.
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -124,8 +123,6 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
   return (
     <div className="space-y-8">
-
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {signupError && (
           <motion.div
@@ -221,7 +218,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
           </div>
         </div>
 
-        {/* Location Dropdown - Full Width for Better Visibility */}
+        {/* Location Dropdown */}
         <div className="space-y-2 text-left">
           <Label htmlFor="location" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
             <MapPin className="w-4 h-4 text-blue-600" /> Select Your Thana (Area) *
@@ -332,8 +329,6 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
           )}
         </Button>
       </form>
-
-
 
       <div className="pt-6 border-t border-gray-200/50 text-center">
         <p className="text-sm text-gray-600 font-medium">

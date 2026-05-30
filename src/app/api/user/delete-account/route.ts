@@ -1,4 +1,3 @@
-// Fixed: 11 — Added server-side CSRF validation to prevent cross-origin state mutations.
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
@@ -27,7 +26,7 @@ export async function DELETE(req: NextRequest) {
         mobile: null,
         location: null,
         dob: null,
-        email: `deleted_${userId}@example.com`, // Avoid unique constraint issues if user signs up again
+        email: `deleted_${userId}@example.com`,
         username: `deleted_${userId}`,
         name: "Deleted User",
       },

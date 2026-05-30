@@ -1,4 +1,3 @@
-// Fixed: 5 — Resolved TOCTOU race condition in name change API using atomic updateMany.
 import { auth } from "@/lib/auth";
 import { cachedQuery, invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
@@ -126,7 +125,7 @@ export const PATCH = auth(async (req) => {
       const result = await db.user.updateMany({
         where: {
           id: userId,
-          nameChangeCount: { lt: 3 }, // atomic guard
+          nameChangeCount: { lt: 3 },
         },
         data: {
           name,
@@ -135,8 +134,6 @@ export const PATCH = auth(async (req) => {
       });
 
       if (result.count === 0) {
-        // Either user not found, OR nameChangeCount >= 3
-        // Distinguish by checking user existence
         const exists = await db.user.findUnique({ where: { id: userId }, select: { id: true } });
         if (!exists) return NextResponse.json({ error: "User not found." }, { status: 404 });
         return NextResponse.json({ error: "Name change limit reached (maximum 3 changes allowed)." }, { status: 403 });
