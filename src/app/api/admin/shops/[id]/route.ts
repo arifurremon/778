@@ -1,6 +1,6 @@
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { logAdminAction } from "@/lib/audit-log";
 
@@ -14,10 +14,8 @@ export async function GET(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id || !session.user.isAdmin) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-    }
+    const { error } = await requireAdmin();
+    if (error) return error;
 
     const { id } = await params;
 
@@ -92,10 +90,8 @@ export async function PATCH(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id || !session.user.isAdmin) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-    }
+    const { session, error } = await requireAdmin();
+    if (error || !session) return error;
 
     const { id } = await params;
     const body = await req.json() as { isVerified?: boolean; trustScore?: number; [key: string]: unknown };
@@ -133,10 +129,8 @@ export async function DELETE(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id || !session.user.isAdmin) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-    }
+    const { session, error } = await requireAdmin();
+    if (error || !session) return error;
 
     const { id } = await params;
 
