@@ -6,17 +6,9 @@
  * Architecture:
  *   1. On mount, fetches the initial notification list and unread count from
  *      GET /api/notifications (server-sourced, authoritative).
- *   2. Initialises a Pusher client (pusher-js) and subscribes to the user's
- *      private channel: "private-user-{userId}".
- *      - The Pusher client calls POST /api/pusher/auth to complete the
- *        private-channel handshake before the subscription is allowed.
- *   3. When a "new-notification" event arrives on the channel, prepends it to
- *      local state and increments the unread count — zero page refresh needed.
- *   4. Falls back gracefully if NEXT_PUBLIC_PUSHER_KEY is not set (e.g. local
- *      dev without Pusher credentials): the initial DB fetch still works and
- *      the hook returns the same interface.
- *   5. On unmount, unsubscribes from the channel and disconnects the client
- *      to avoid memory leaks and zombie WebSocket connections.
+ *   2. Polls periodically as the dependency-free delivery path. The server
+ *      persists notifications first, so polling is authoritative and resilient
+ *      even when optional realtime providers are unavailable.
  *
  * The hook preserves the exact same return interface as the previous version
  * (notifications, unreadCount, isLoading, markAllAsRead, markAsRead, refresh)
@@ -25,7 +17,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "@/lib/api";
 import { NotificationType } from "@prisma/client";
@@ -189,12 +181,6 @@ export function useNotifications(pollingIntervalMs = 60_000) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Keep a stable ref to the Pusher channel so the cleanup effect doesn't
-  // need `channel` in its dependency array (which would trigger re-subscriptions
-  // on every render).
-  const channelRef = useRef<import("pusher-js").Channel | null>(null);
-  const pusherRef = useRef<import("pusher-js").default | null>(null);
-
   // -------------------------------------------------------------------------
   // fetchNotifications — initial load + polling fallback
   // -------------------------------------------------------------------------
@@ -211,8 +197,8 @@ export function useNotifications(pollingIntervalMs = 60_000) {
     }
   }, [userId]);
 
-  // Initial fetch + polling fallback (catches missed Pusher events during
-  // brief disconnections without hammering the server).
+  // Initial fetch + polling fallback (catches missed realtime events without
+  // hammering the server).
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, pollingIntervalMs);
@@ -220,85 +206,13 @@ export function useNotifications(pollingIntervalMs = 60_000) {
   }, [fetchNotifications, pollingIntervalMs]);
 
   // -------------------------------------------------------------------------
-  // Pusher real-time subscription
+  // Realtime note
   // -------------------------------------------------------------------------
-  useEffect(() => {
-    if (!userId) return;
-
-    const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
-    const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
-
-    // Degrade gracefully when Pusher is not configured (local dev without
-    // credentials). Polling fallback above covers this case.
-    if (!pusherKey || !pusherCluster) {
-      console.warn(
-        "[useNotifications] NEXT_PUBLIC_PUSHER_KEY or NEXT_PUBLIC_PUSHER_CLUSTER not set. "
-        + "Real-time delivery disabled; falling back to polling."
-      );
-      return;
-    }
-
-    // Dynamic import keeps pusher-js out of the initial bundle for
-    // unauthenticated users who never reach this hook.
-    let isMounted = true;
-
-    import("pusher-js").then((PusherModule) => {
-      if (!isMounted) return; // component unmounted before import resolved
-
-      const PusherClass = PusherModule.default;
-
-      const client = new PusherClass(pusherKey, {
-        cluster: pusherCluster,
-        // Point the Pusher client at our auth endpoint for private channels.
-        // This is called automatically before the subscription is allowed.
-        channelAuthorization: {
-          endpoint: "/api/pusher/auth",
-          transport: "ajax",
-        },
-      });
-
-      pusherRef.current = client;
-
-      // Subscribe to the user's private channel.
-      const channel = client.subscribe(`private-user-${userId}`);
-      channelRef.current = channel;
-
-      // Bind to the event name used by sendNotification() on the server.
-      channel.bind(
-        "new-notification",
-        (rawNotification: Omit<Notification, "description" | "contextUrl">) => {
-          const enriched = enrichNotification(rawNotification);
-
-          // Prepend to the list (newest first) without requiring a re-fetch.
-          setNotifications((prev) => [enriched, ...prev]);
-
-          // Increment the badge count.
-          setUnreadCount((prev) => prev + 1);
-        }
-      );
-
-      // Log connection issues in development for easier debugging.
-      if (process.env.NODE_ENV === "development") {
-        client.connection.bind("error", (err: unknown) => {
-          console.error("[useNotifications] Pusher connection error:", err);
-        });
-      }
-    });
-
-    // Cleanup: unsubscribe and disconnect on unmount or userId change.
-    return () => {
-      isMounted = false;
-      if (channelRef.current) {
-        channelRef.current.unbind_all();
-        pusherRef.current?.unsubscribe(`private-user-${userId}`);
-        channelRef.current = null;
-      }
-      if (pusherRef.current) {
-        pusherRef.current.disconnect();
-        pusherRef.current = null;
-      }
-    };
-  }, [userId]);
+  // The previous implementation dynamically imported a realtime client SDK, but that
+  // package was not represented in the lockfile and blocked deterministic
+  // installs in restricted environments. Polling remains the authoritative,
+  // dependency-free path because notifications are durably stored server-side
+  // before any best-effort realtime trigger is attempted.
 
   // -------------------------------------------------------------------------
   // markAllAsRead — optimistic, reverts on failure

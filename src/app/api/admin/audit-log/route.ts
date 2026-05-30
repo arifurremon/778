@@ -1,16 +1,14 @@
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 
 // GET /api/admin/audit-log — paginated system activity log
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id || !session.user.isAdmin) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-    }
+    const { error } = await requireAdmin();
+    if (error) return error;
 
     const { searchParams } = req.nextUrl;
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));

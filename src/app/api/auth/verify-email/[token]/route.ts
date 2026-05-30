@@ -3,35 +3,44 @@ import { logErrorToSentry } from "@/lib/error-handler";
 import { sendWelcomeEmail } from "@/lib/mail";
 import { NextRequest, NextResponse } from "next/server";
 
+function redirectTo(req: NextRequest, path: string): NextResponse {
+  return NextResponse.redirect(new URL(path, req.url));
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
-    const resolvedParams = await params;
-    const token = resolvedParams.token;
+    const { token } = await params;
 
-    if (!token) {
-      return NextResponse.json({ error: "Missing token" }, { status: 400 });
+    if (!token || token.length < 32) {
+      return redirectTo(req, "/login?error=invalid-verification-token");
     }
 
     const user = await db.user.findFirst({
       where: {
         emailToken: token,
+        emailTokenExp: { gt: new Date() },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        emailVerified: true,
       },
     });
 
     if (!user) {
-      // Redirect to an error page or show an error
-      return NextResponse.redirect(new URL("/?error=invalid-verification-token", req.url));
+      return redirectTo(req, "/login?error=invalid-verification-token");
     }
 
-    // Mark email as verified and clear the token
     await db.user.update({
       where: { id: user.id },
       data: {
-        emailVerified: new Date(),
+        emailVerified: user.emailVerified ?? new Date(),
         emailToken: null,
+        emailTokenExp: null,
       },
     });
 
@@ -44,13 +53,12 @@ export async function GET(
       console.error("[VerifyEmail] Welcome email failed — verification NOT affected:", emailError);
     }
 
-    // Redirect to login with success message
-    return NextResponse.redirect(new URL("/?verified=true", req.url));
+    return redirectTo(req, "/login?verified=true");
   } catch (error) {
     logErrorToSentry(error, {
       endpoint: "/api/auth/verify-email/[token]",
       method: "GET",
     });
-    return NextResponse.redirect(new URL("/?error=verification-failed", req.url));
+    return redirectTo(req, "/login?error=verification-failed");
   }
 }

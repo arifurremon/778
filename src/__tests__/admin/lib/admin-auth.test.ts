@@ -1,10 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { requireAdmin } from "@/lib/admin-auth";
 import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
 
 vi.mock("@/lib/auth", () => ({
   auth: vi.fn(),
+}));
+
+vi.mock("@/lib/db", () => ({
+  db: {
+    user: {
+      findUnique: vi.fn(),
+    },
+  },
 }));
 
 describe("requireAdmin() Library Utility", () => {
@@ -12,58 +20,70 @@ describe("requireAdmin() Library Utility", () => {
     vi.clearAllMocks();
   });
 
-  it("should return 401 error if no session exists", async () => {
-    (auth as any).mockResolvedValue(null);
+  it("returns 401 if no session exists", async () => {
+    vi.mocked(auth).mockResolvedValue(null);
 
     const result = await requireAdmin();
 
     expect(result.error).toBeDefined();
     expect(result.error?.status).toBe(401);
-    
+    expect(db.user.findUnique).not.toHaveBeenCalled();
+
     const body = await result.error?.json();
     expect(body.error).toBe("Unauthorized");
   });
 
-  it("should return 403 error if user is not an admin", async () => {
-    (auth as any).mockResolvedValue({
-      user: { id: "user-1", isAdmin: false },
-    });
+  it("returns 403 if the session user was deleted from the database", async () => {
+    vi.mocked(auth).mockResolvedValue({ user: { id: "missing-user" } } as any);
+    vi.mocked(db.user.findUnique).mockResolvedValue(null);
 
     const result = await requireAdmin();
 
     expect(result.error).toBeDefined();
     expect(result.error?.status).toBe(403);
-    
+    expect(db.user.findUnique).toHaveBeenCalledWith({
+      where: { id: "missing-user" },
+      select: { id: true, isAdmin: true },
+    });
+
+    const body = await result.error?.json();
+    expect(body.error).toBe("Forbidden: Account not found");
+  });
+
+  it("returns 403 if the database user is not an admin even when the JWT says admin", async () => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: "user-1", isAdmin: true },
+    } as any);
+    vi.mocked(db.user.findUnique).mockResolvedValue({ id: "user-1", isAdmin: false } as any);
+
+    const result = await requireAdmin();
+
+    expect(result.error).toBeDefined();
+    expect(result.error?.status).toBe(403);
+
     const body = await result.error?.json();
     expect(body.error).toBe("Forbidden: Admin access required");
   });
 
-  it("should return the session if user is an admin", async () => {
-    const mockSession = { user: { id: "admin-1", isAdmin: true, email: "admin@test.com" } };
-    (auth as any).mockResolvedValue(mockSession);
+  it("returns the session and database user if the live database record is admin", async () => {
+    const mockSession = { user: { id: "admin-1", isAdmin: false, email: "admin@test.com" } };
+    const mockDbUser = { id: "admin-1", isAdmin: true };
+    vi.mocked(auth).mockResolvedValue(mockSession as any);
+    vi.mocked(db.user.findUnique).mockResolvedValue(mockDbUser as any);
 
     const result = await requireAdmin();
 
     expect(result.error).toBeUndefined();
     expect(result.session).toEqual(mockSession);
+    expect(result.dbUser).toEqual(mockDbUser);
   });
 
-  it("should handle unexpected session structure gracefully", async () => {
-    (auth as any).mockResolvedValue({ user: {} });
+  it("returns 401 for malformed sessions without a user id", async () => {
+    vi.mocked(auth).mockResolvedValue({ user: {} } as any);
 
     const result = await requireAdmin();
-    expect(result.error?.status).toBe(403);
-  });
 
-  it("should block users with isAdmin set to null or undefined", async () => {
-    (auth as any).mockResolvedValue({ user: { id: "user-2" } });
-    const result = await requireAdmin();
-    expect(result.error?.status).toBe(403);
-  });
-
-  it("should return Unauthorized if session is empty object", async () => {
-    (auth as any).mockResolvedValue({});
-    const result = await requireAdmin();
     expect(result.error?.status).toBe(401);
+    expect(db.user.findUnique).not.toHaveBeenCalled();
   });
 });
