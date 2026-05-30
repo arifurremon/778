@@ -64,6 +64,10 @@ model User {
   sentRequests         NeighbourConnection[] @relation("Sender")
   receivedRequests     NeighbourConnection[] @relation("Receiver")
 
+  // Notifications
+  notifications        Notification[]        @relation("NotificationRecipient")
+  triggeredNotifications Notification[]      @relation("NotificationActor")
+
   // NextAuth
   accounts             Account[]
   sessions             Session[]
@@ -124,6 +128,83 @@ model NeighbourConnection {
   updatedAt   DateTime         @updatedAt
 
   @@unique([senderId, receiverId])
+}
+
+// ---------------------------------------------------------------------------
+// Notification
+//
+// A single, centralised notification row covering every event type across
+// every module (Community, Connections, E-commerce, Services, Admin).
+//
+// Design principles:
+//
+//   1. Polymorphic entity reference via (entityType + entityId).
+//      Foreign-key constraints are intentionally omitted on these two fields
+//      because a notification may point to any table (Post, Comment, Order,
+//      NeighbourConnection, Shop, ExpertService, User, …). Enforcing a hard FK
+//      would require a separate junction table per entity type, which adds
+//      schema complexity without practical benefit — the application layer
+//      is responsible for writing valid IDs.
+//
+//   2. Optional actorId. System-generated events (SYSTEM_ALERT,
+//      MODERATION_ACTION) have no human actor. The field is nullable to
+//      accommodate both human-triggered and system-triggered events without
+//      a sentinel value.
+//
+//   3. JSON metadata field for type-specific payloads. Each NotificationType
+//      may need different contextual data that does not belong in dedicated
+//      columns (e.g., reaction emoji for POST_REACTION, old/new status for
+//      ORDER_UPDATED, rejection reason for SHOP_VERIFIED). The metadata field
+//      holds a typed JSON blob. Application code is responsible for reading
+//      and writing this field with the correct shape for each type.
+//
+//   4. Indexed for the two read patterns that matter:
+//      • userId + isRead  → unread badge count query (O(1) with index)
+//      • userId + createdAt → chronological inbox query (covering index)
+// ---------------------------------------------------------------------------
+model Notification {
+  id          String           @id @default(uuid())
+
+  // Recipient — the user who should see this notification
+  userId      String
+  user        User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Actor — the user who triggered the event (null for system events)
+  actorId     String?
+  actor       User?            @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  // What happened
+  type        NotificationType
+
+  // Polymorphic entity reference
+  // entityType: the logical name of the source table ("Post", "Comment",
+  //             "Order", "NeighbourConnection", "Shop", "ExpertService").
+  // entityId:   the UUID primary key of the referenced row.
+  // Both are nullable because SYSTEM_ALERT notifications may not reference
+  // any specific entity.
+  entityType  String?
+  entityId    String?
+
+  // Type-specific contextual payload.
+  // Examples:
+  //   POST_REACTION:  { "emoji": "👍", "postPreview": "Great news about..." }
+  //   ORDER_UPDATED:  { "oldStatus": "PENDING", "newStatus": "CONFIRMED" }
+  //   SHOP_VERIFIED:  { "approved": true }
+  //   NEW_COMMENT:    { "commentPreview": "Great point! I also think..." }
+  //   SYSTEM_ALERT:   { "message": "Your account was flagged for review." }
+  metadata    Json             @default("{}")
+
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  // Covering index for the inbox query: fetch all notifications for a user
+  // ordered by recency. Postgres can satisfy ORDER BY createdAt DESC with
+  // this index without a separate sort step.
+  @@index([userId, createdAt])
+
+  // Partial-style index for the unread badge count query:
+  // SELECT COUNT(*) WHERE userId = ? AND isRead = false
+  @@index([userId, isRead])
 }
 
 model Post {
@@ -251,6 +332,46 @@ enum ActivityType {
   POST_DISLIKE
 }
 
+// ---------------------------------------------------------------------------
+// NotificationType
+//
+// Exhaustive enum covering every cross-module event that may produce a
+// user-facing notification. Grouped by source module for readability.
+// ---------------------------------------------------------------------------
+enum NotificationType {
+  // --- Community ---
+  POST_REACTION        // Someone reacted to your post
+  NEW_COMMENT          // Someone commented on your post
+  COMMENT_REPLY        // Someone replied to your comment
+  POST_FLAGGED         // A moderator flagged your post
+
+  // --- Connections ---
+  NEIGHBOR_REQUEST     // Someone sent you a neighbour request
+  NEIGHBOR_ACCEPTED    // Your neighbour request was accepted
+
+  // --- E-commerce (Shop) ---
+  NEW_ORDER            // A buyer placed an order on your shop
+  ORDER_UPDATED        // The status of an order changed
+  SHOP_VERIFIED        // Your shop application was approved or rejected
+  NEW_PRODUCT_REVIEW   // A buyer left a review on your product
+
+  // --- Service Directory ---
+  SERVICE_BOOKED       // Someone booked your expert service
+  SERVICE_UPDATED      // A service booking status changed
+  SERVICE_VERIFIED     // Your expert profile was approved or rejected
+
+  // --- Admin / System ---
+  SYSTEM_ALERT         // Platform-wide or account-targeted system message
+  MODERATION_ACTION    // An admin took action on your content or account
+}
+
+enum NotificationEmailStatus {
+  NONE         // No email for this notification
+  PENDING      // Queued, not yet sent
+  SENT         // Delivered successfully
+  FAILED       // Delivery attempt failed
+}
+
 // -----------------------------------------------------------------------------
 // INSTRUCTION: Run `npx prisma migrate dev --name add_admin_settings_audit` 
 // to apply these new schema models to the database.
@@ -286,4 +407,3 @@ model AuditLog {
   @@index([adminId])
   @@index([createdAt])
 }
-
