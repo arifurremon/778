@@ -1,3 +1,13 @@
+/**
+ * src/app/api/notifications/[id]/read/route.ts
+ *
+ * PATCH /api/notifications/:id/read
+ *
+ * Marks a single notification as read. The WHERE clause includes both
+ * `id` and `userId` so a user can only mark their OWN notifications as
+ * read — not another user's.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -17,7 +27,9 @@ export async function PATCH(
 
     const { id } = await params;
 
-    await db.activityLog.update({
+    // The compound WHERE ensures users cannot mark another user's notification
+    // as read by guessing the notification ID.
+    await db.notification.update({
       where: { id, userId: session.user.id },
       data: { isRead: true },
     });
