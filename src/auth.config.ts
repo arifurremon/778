@@ -23,7 +23,7 @@ export const authConfig: NextAuthConfig = {
       // Support manual session updates
       if (trigger === "update" && session) {
         // Only merge safe, scalar session fields to prevent JWT size overflow
-        const allowed = ["username", "profileImage", "isAdmin"] as const;
+        const allowed = ["username", "profileImage"] as const;
         for (const key of allowed) {
           if (session[key] !== undefined) token[key] = session[key];
         }
