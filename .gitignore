@@ -30,6 +30,17 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# logs — never commit log files; they may contain internal schema/type info
+*.log
+
+# cookies — NEVER commit cookie files; they contain live session credentials
+cookies.txt
+*.cookies
+*.cookie
+
+# scratch work — developer scratch files must never be committed
+/scratch
+
 # vercel
 .vercel
 
