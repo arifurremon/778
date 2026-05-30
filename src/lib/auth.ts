@@ -1,4 +1,3 @@
-// Fixed: 4 — Removed redundant session configuration.
 import { authConfig } from "@/auth.config";
 import { db } from "@/lib/db";
 import { rateLimiters } from "@/lib/rate-limit";
@@ -11,7 +10,10 @@ import { headers } from "next/headers";
 /**
  * Full Auth.js configuration including Node.js-only providers and adapters.
  * Only credentials-based authentication (email + password) is enabled.
- * Google OAuth has been removed.
+ *
+ * This module exports `handlers`, `auth`, `signIn`, and `signOut`.
+ * It does NOT export GET or POST — those HTTP verb handlers belong
+ * exclusively in src/app/api/auth/[...nextauth]/route.ts.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -34,7 +36,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const result = await Promise.race([
             rateLimiters.signin.limit(ip),
-            new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000))
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error("Rate limit timeout")), 2000)
+            ),
           ]);
           rateLimitSuccess = result.success;
         } catch (err) {
@@ -51,7 +55,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user || !user.password) return null;
 
-        const passwordsMatch = await compare(credentials.password as string, user.password);
+        const passwordsMatch = await compare(
+          credentials.password as string,
+          user.password
+        );
         if (!passwordsMatch) return null;
 
         if (!user.emailVerified) {
@@ -70,5 +77,3 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
 });
-
-export const { GET, POST } = handlers;
