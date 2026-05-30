@@ -39,6 +39,7 @@ vi.mock("next/headers", () => ({
 
 // Import the handler AFTER mocks are configured
 import { POST } from "@/app/api/auth/register/route";
+import { sendVerificationEmail } from "@/lib/mail";
 
 // ---------------------------------------------------------------------------
 
@@ -123,20 +124,34 @@ describe("POST /api/auth/register — Integration", () => {
 
   it("creates user and returns 201 on valid input", async () => {
     prismaMock.user.findUnique.mockResolvedValue(null); // no duplicates
-    prismaMock.user.create.mockResolvedValue({ id: "new-user-id" });
+    prismaMock.user.create.mockResolvedValue({
+      id: "new-user-id",
+      email: validRegistrationPayload.email,
+      name: validRegistrationPayload.name,
+      emailToken: "verify-token",
+    });
 
     const res = await POST(makeRequest(validRegistrationPayload));
     const json = await res.json();
 
     expect(res.status).toBe(201);
     expect(json.success).toBe(true);
-    expect(json.message).toBe("Account created.");
+    expect(json.message).toContain("Account created");
     expect(prismaMock.user.create).toHaveBeenCalledOnce();
+    expect(sendVerificationEmail).toHaveBeenCalledWith(
+      validRegistrationPayload.email,
+      "http://localhost:3000/api/auth/verify-email/verify-token"
+    );
   });
 
   it("stores hashed password (not plaintext)", async () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.user.create.mockResolvedValue({ id: "new-user-id" });
+    prismaMock.user.create.mockResolvedValue({
+      id: "new-user-id",
+      email: validRegistrationPayload.email,
+      name: validRegistrationPayload.name,
+      emailToken: "verify-token",
+    });
 
     await POST(makeRequest(validRegistrationPayload));
 
@@ -146,6 +161,9 @@ describe("POST /api/auth/register — Integration", () => {
     // bcryptjs hashes start with "$2a$" or "$2b$"
     expect(storedPassword).toMatch(/^\$2[ab]\$/);
     expect(storedPassword).not.toBe(validRegistrationPayload.password);
+    expect(createCall?.data.emailToken).toMatch(/^[a-f0-9]{64}$/);
+    expect(createCall?.data.emailTokenExp).toBeInstanceOf(Date);
+    expect(createCall?.data.emailVerified).toBeNull();
   });
 
   // ----- Rate limiting -----------------------------------------------------

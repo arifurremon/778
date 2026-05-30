@@ -2,15 +2,15 @@ import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
 import { rateLimiters } from "@/lib/rate-limit";
-import { Prisma } from "@prisma/client";
 import { sanitizeUserInput } from "@/lib/sanitize";
+import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import crypto from "crypto";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-// ---------------------------------------------------------------------------
+const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Validation schema
@@ -32,26 +32,46 @@ const registerSchema = z.object({
   profession: z.string().optional(),
 });
 
+function buildVerificationUrl(req: NextRequest, token: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
+  return new URL(`/api/auth/verify-email/${token}`, baseUrl).toString();
+}
+
+function generateEmailToken(): { token: string; expiresAt: Date } {
+  return {
+    token: crypto.randomBytes(32).toString("hex"),
+    expiresAt: new Date(Date.now() + EMAIL_VERIFICATION_TTL_MS),
+  };
+}
+
+function formatUniqueConstraintMessage(err: Prisma.PrismaClientKnownRequestError): string {
+  const target = Array.isArray(err.meta?.target) ? err.meta.target : [];
+  if (target.includes("email")) return "Email already registered.";
+  if (target.includes("username")) return "Username taken.";
+  return "This account field is already in use.";
+}
+
 // ---------------------------------------------------------------------------
 // POST /api/auth/register
 // ---------------------------------------------------------------------------
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const headersList = await headers();
-    const ip = headersList.get("x-forwarded-for") || "unknown";
-    
+    const rawForwarded = headersList.get("x-forwarded-for") ?? "";
+    const ip = rawForwarded.split(",")[0].trim() || "unknown";
+
     // Check Redis-based rate limit
     let rateLimitSuccess = true;
     try {
       const result = await Promise.race([
         rateLimiters.register.limit(ip),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000))
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000)),
       ]);
       rateLimitSuccess = result.success;
     } catch (err) {
       console.error("[Register] Rate limit skipped due to timeout or Upstash error:", err);
     }
-    
+
     if (!rateLimitSuccess) {
       return NextResponse.json(
         { success: false, message: "Too many attempts. Please try again later." },
@@ -61,7 +81,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const body: unknown = await req.json();
 
-    // --- Validation ---------------------------------------------------------
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
       const firstError = parsed.error.errors[0];
@@ -73,16 +92,37 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     let { email, password, username, name, mobile, location, dob, profession } =
       parsed.data;
-      
-    name = sanitizeUserInput(name);
-    location = sanitizeUserInput(location);
-    username = sanitizeUserInput(username);
-    if (profession) profession = sanitizeUserInput(profession);
 
-    // --- Hash password
+    email = email.toLowerCase().trim();
+    username = sanitizeUserInput(username).trim();
+    name = sanitizeUserInput(name).trim();
+    mobile = sanitizeUserInput(mobile).trim();
+    location = sanitizeUserInput(location).trim();
+    dob = sanitizeUserInput(dob).trim();
+    if (profession) profession = sanitizeUserInput(profession).trim();
+
+    const [emailOwner, usernameOwner] = await Promise.all([
+      db.user.findUnique({ where: { email }, select: { id: true } }),
+      db.user.findUnique({ where: { username }, select: { id: true } }),
+    ]);
+
+    if (emailOwner) {
+      return NextResponse.json(
+        { success: false, message: "Email already registered." },
+        { status: 409 }
+      );
+    }
+
+    if (usernameOwner) {
+      return NextResponse.json(
+        { success: false, message: "Username taken." },
+        { status: 409 }
+      );
+    }
+
     const hashedPassword = await hash(password, 12);
+    const { token: emailToken, expiresAt: emailTokenExp } = generateEmailToken();
 
-    // --- Create user --------------------------------------------------------
     let user;
     try {
       user = await db.user.create({
@@ -94,9 +134,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           mobile,
           location,
           dob,
-          profession: profession ?? null,
-          emailVerificationToken: crypto.randomBytes(32).toString("hex"),
-          emailVerificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          profession: profession || null,
+          emailToken,
+          emailTokenExp,
+          emailVerified: null,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          emailToken: true,
         },
       });
     } catch (err) {
@@ -104,23 +151,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         err instanceof Prisma.PrismaClientKnownRequestError &&
         err.code === "P2002"
       ) {
-        const field = (err.meta?.target as string[])?.join(", ") ?? "field";
         return NextResponse.json(
-          { success: false, message: `This ${field} is already in use.` },
+          { success: false, message: formatUniqueConstraintMessage(err) },
           { status: 409 }
         );
       }
       throw err;
     }
 
-    // --- Send verification email -------------------------------------------
     let emailSent = true;
     let emailError: string | undefined;
     try {
       await sendVerificationEmail(
         user.email,
-        user.name,
-        user.emailVerificationToken!
+        buildVerificationUrl(req, user.emailToken!)
       );
     } catch (err) {
       emailSent = false;
@@ -128,14 +172,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       logErrorToSentry(err, {
         endpoint: "/api/auth/register",
         userId: user.id,
-        note: "Welcome email failed after successful registration",
+        note: "Verification email failed after successful registration",
       });
     }
 
     return NextResponse.json(
       {
         success: true,
-        message: "Registration successful. Please check your email to verify your account.",
+        message: "Account created. Please check your email to verify your account.",
         ...(emailSent ? {} : { emailSent: false, emailError }),
       },
       { status: 201 }
