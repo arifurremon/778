@@ -64,7 +64,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         }
       });
 
-      // [cite_start]Notification on reject: "Your service application was not approved. Reason: [reason]" [cite: 110]
+      // Notification on reject
       // SCHEMA-FALLBACK: 'notification' may not exist — verify schema
       try {
         // @ts-ignore
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             userId: service.userId,
             title: "Service Application Rejected",
             message: `Your service application was not approved. Reason: ${validatedData.reason}`,
-            type: "ERROR"
+            type: "MODERATION_ACTION"
           }
         });
       } catch (e) {
@@ -105,7 +105,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
     }
 
-    // [cite_start]AuditLog actions: 'REJECT_SERVICE' [cite: 157-158]
     await logAdminAction(
       session.user.id,
       "REJECT_SERVICE",
