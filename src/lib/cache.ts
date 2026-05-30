@@ -1,17 +1,23 @@
 import { Redis } from '@upstash/redis';
 
-let redis: Redis | null = null;
-
-function getRedis(): Redis | null {
-  if (
-    !process.env.UPSTASH_REDIS_REST_URL ||
-    !process.env.UPSTASH_REDIS_REST_TOKEN
-  ) {
-    return null;
-  }
-  if (!redis) redis = Redis.fromEnv();
-  return redis;
-}
+/**
+ * Upstash Redis client for caching.
+ *
+ * Initialized once at module load time as a constant. Null when Redis
+ * environment variables are absent (e.g. local dev without .env.local).
+ *
+ * Why a module-level const and not a lazy-init singleton:
+ *   @upstash/redis is an HTTP-based, stateless client — every operation
+ *   issues a fresh HTTPS request to Upstash's REST API. There is no TCP
+ *   connection to pool or reuse. In Vercel's serverless environment,
+ *   modules are re-instantiated on cold starts anyway, so a lazy-init
+ *   guard provides zero benefit while adding mutable nullable indirection.
+ *   A const is simpler, safer, and idiomatic for serverless.
+ */
+const redis: Redis | null =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? Redis.fromEnv()
+    : null;
 
 /**
  * Retrieves the current epoch version for a cache namespace.
@@ -49,17 +55,16 @@ function buildVersionedKey(
 /**
  * Execute a query with Redis caching.
  *
- * @param key       - The cache key segment (e.g. 'page:1:limit:10').
- * @param fetcher   - Async function that fetches fresh data from the source.
+ * @param key        - Cache key segment (e.g. 'page:1:limit:10').
+ * @param fetcher    - Async function that fetches fresh data from the source.
  * @param ttlSeconds - Cache TTL in seconds. Defaults to 300.
- * @param namespace  - Optional namespace (e.g. 'posts'). When provided, the
- *                     key is automatically versioned using the namespace epoch
+ * @param namespace  - Optional namespace (e.g. 'posts'). When provided the key
+ *                     is automatically versioned using the namespace epoch
  *                     counter. Invalidating the namespace increments the epoch,
  *                     instantly orphaning all keys from the previous epoch.
  *
- * Cache miss path: fetcher() is called, result is stored under the versioned
- * key, and the fresh value is returned.
- *
+ * Cache miss path : fetcher() is called, result stored under the versioned key,
+ *                   fresh value returned.
  * Redis unavailable: falls through to fetcher() transparently.
  */
 export async function cachedQuery<T>(
@@ -68,16 +73,14 @@ export async function cachedQuery<T>(
   ttlSeconds: number = 300,
   namespace?: string
 ): Promise<T> {
-  const client = getRedis();
-
-  if (client) {
+  if (redis) {
     try {
       const version = namespace
-        ? await getNamespaceVersion(client, namespace)
+        ? await getNamespaceVersion(redis, namespace)
         : 1;
       const versionedKey = buildVersionedKey(key, namespace, version);
 
-      const cached = await client.get<string>(versionedKey);
+      const cached = await redis.get<string>(versionedKey);
       if (cached !== null && cached !== undefined) {
         if (typeof cached === 'string') {
           try {
@@ -92,7 +95,7 @@ export async function cachedQuery<T>(
       // Cache miss — fetch, store, return
       const fresh = await fetcher();
       try {
-        await client.set(versionedKey, JSON.stringify(fresh), { ex: ttlSeconds });
+        await redis.set(versionedKey, JSON.stringify(fresh), { ex: ttlSeconds });
       } catch {
         // Cache write failure is non-fatal — return fresh data
       }
@@ -123,17 +126,16 @@ export async function cachedQuery<T>(
  * @param namespaces - One or more namespace names (e.g. 'posts', 'users').
  */
 export async function invalidateCache(...namespaces: string[]): Promise<void> {
-  const client = getRedis();
-  if (!client) return;
+  if (!redis) return;
 
   await Promise.allSettled(
     namespaces.map(async (namespace) => {
       try {
-        await client.incr(`${namespace}:v`);
+        await redis!.incr(`${namespace}:v`);
       } catch {
-        // Invalidation failure is logged but non-fatal.
-        // The next request will still see stale data for up to ttlSeconds,
-        // which is the same behaviour as before this fix.
+        // Invalidation failure is non-fatal.
+        // The next request will see stale data for up to ttlSeconds —
+        // the same behaviour as before this call.
         if (process.env.NODE_ENV === 'development') {
           console.warn(
             `[Cache] Failed to invalidate namespace '${namespace}'. ` +
