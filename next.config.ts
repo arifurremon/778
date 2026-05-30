@@ -43,7 +43,18 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, nextRuntime }) => {
+    // Fix: jose ships a 'webapi' build that uses CompressionStream/DecompressionStream
+    // (Node.js-only APIs) — this crashes the Edge Runtime used by next-auth middleware.
+    // Alias the webapi entrypoint to jose's Node.js-compatible build for Edge bundles.
+    // See: https://github.com/panva/jose/issues/634
+    if (nextRuntime === 'edge') {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'jose/dist/webapi': require.resolve('jose').replace('/dist/node/index.js', '/dist/node'),
+      };
+    }
+
     // Suppress known Sentry + OpenTelemetry critical dependency warnings
     config.ignoreWarnings = [
       { module: /require-in-the-middle/ },
