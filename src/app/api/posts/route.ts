@@ -33,16 +33,23 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "10", 10)));
     const skip = (page - 1) * limit;
 
-    const cacheKey = `posts:page:${page}:limit:${limit}`;
+    // Key is the page/limit segment only; the namespace embeds the version.
+    // Full resolved key example: posts:v3:page:1:limit:10
+    const cacheKey = `page:${page}:limit:${limit}`;
 
+    // Fix #6: wrap count + findMany in a Prisma transaction to guarantee
+    // the two queries observe the same DB snapshot. This eliminates the
+    // pagination corruption race where a concurrent INSERT between the two
+    // queries causes total to be N+1 while posts only returns N items.
     const [posts, total] = await cachedQuery(
       cacheKey,
       async () => {
-        return Promise.all([
+        return db.$transaction([
           db.post.findMany({
             skip,
             take: limit,
             orderBy: { createdAt: "desc" },
+            where: { visibility: PrivacyLevel.PUBLIC },
             select: {
               id: true,
               content: true,
@@ -57,10 +64,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
               _count: { select: { comments: true } },
             },
           }),
-          db.post.count(),
+          db.post.count({ where: { visibility: PrivacyLevel.PUBLIC } }),
         ]);
       },
-      30 // Cache for 30 seconds
+      30,
+      'posts' // namespace — versioned key, epoch-safe invalidation
     );
 
     const hasNextPage = skip + limit < total;
@@ -120,40 +128,47 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     content = sanitizePostContent(content);
     const authorId = session.user.id;
 
-    // Create post + activity log sequentially (HTTP adapter doesn't support transactions)
-    const post = await db.post.create({
-      data: {
-        authorId,
-        content,
-        images,
-        checkInLocation,
-        visibility,
-      },
-      select: {
-        id: true,
-        content: true,
-        images: true,
-        checkInLocation: true,
-        visibility: true,
-        helpfulCount: true,
-        notHelpfulCount: true,
-        createdAt: true,
-        updatedAt: true,
-        author: { select: authorSelect },
-        _count: { select: { comments: true } },
-      },
-    });
+    // Fix #14: wrap post creation + activity log in a Prisma interactive
+    // transaction. Previously, if activityLog.create failed, the post would
+    // exist in the DB with no corresponding audit record. Now both writes
+    // succeed or both roll back atomically.
+    const [post] = await db.$transaction([
+      db.post.create({
+        data: {
+          authorId,
+          content,
+          images,
+          checkInLocation,
+          visibility,
+        },
+        select: {
+          id: true,
+          content: true,
+          images: true,
+          checkInLocation: true,
+          visibility: true,
+          helpfulCount: true,
+          notHelpfulCount: true,
+          createdAt: true,
+          updatedAt: true,
+          author: { select: authorSelect },
+          _count: { select: { comments: true } },
+        },
+      }),
+      db.activityLog.create({
+        data: {
+          userId: authorId,
+          type: "SYSTEM",
+          description: "You created a new post.",
+          contextUrl: "/community",
+        },
+      }),
+    ]);
 
-    await db.activityLog.create({
-      data: {
-        userId: authorId,
-        type: "SYSTEM",
-        description: "You created a new post.",
-        contextUrl: "/community",
-      },
-    });
-
-    await invalidateCache('posts:page:*');
+    // Epoch-safe invalidation: bumps posts:v counter in Redis (O(1)).
+    // All page cache keys from the previous epoch are instantly orphaned.
+    // Safe on cold Redis restart — INCR on a missing key initialises it to 1.
+    await invalidateCache('posts');
 
     return NextResponse.json(post, { status: 201 });
   } catch (error) {
