@@ -1,20 +1,18 @@
 /**
  * src/lib/pusher.ts
  *
- * Server-side Pusher client singleton.
+ * Minimal server-side Pusher REST helper implemented with platform primitives.
  *
- * Safe initialisation contract:
- *   - If any required environment variable is absent, `pusher` is exported as
- *     `null` and a warning is logged at module load time.
- *   - All call sites that use `pusher` must guard with `pusher?.trigger(...)`,
- *     so the absence of credentials degrades gracefully (no real-time delivery)
- *     without crashing the build or API routes.
- *   - This module must NEVER be imported from Edge Runtime files — the Pusher
- *     Node.js SDK uses `http`/`https` which are unavailable in the Edge.
- *     Use it only in Node.js runtime route handlers (src/app/api/**).
+ * Why this exists instead of the official `pusher` npm package:
+ *   - The repository's lockfile did not contain the newly-added Pusher packages,
+ *     which made `npm ci` non-deterministic.
+ *   - The deployment environment can block those packages at install time.
+ *   - We only need two small operations here: private-channel auth signatures and
+ *     best-effort event triggering. Both are documented HMAC/REST operations and
+ *     do not require a runtime SDK dependency.
  */
 
-import Pusher from "pusher";
+import crypto from "crypto";
 
 const {
   PUSHER_APP_ID,
@@ -34,24 +32,69 @@ const missingVars = Object.entries(requiredVars)
   .filter(([, v]) => !v)
   .map(([k]) => k);
 
-let pusher: Pusher | null = null;
+function hmacSha256Hex(value: string): string {
+  return crypto
+    .createHmac("sha256", PUSHER_SECRET!)
+    .update(value)
+    .digest("hex");
+}
+
+interface PusherRestClient {
+  authorizeChannel(socketId: string, channelName: string): { auth: string };
+  trigger(channel: string, event: string, data: unknown): Promise<void>;
+}
+
+let pusher: PusherRestClient | null = null;
 
 if (missingVars.length > 0) {
   // Log once at startup. Missing vars in local dev are expected until
   // the developer populates .env.local; this should not block the build.
   console.warn(
-    `[Pusher] Server client NOT initialised. Missing environment variables: ${
+    `[Pusher] REST helper NOT initialised. Missing environment variables: ${
       missingVars.join(", ")
     }. Real-time notifications will be skipped until these are set.`
   );
 } else {
-  pusher = new Pusher({
-    appId: PUSHER_APP_ID!,
-    key: NEXT_PUBLIC_PUSHER_KEY!,
-    secret: PUSHER_SECRET!,
-    cluster: NEXT_PUBLIC_PUSHER_CLUSTER!,
-    useTLS: true, // All traffic encrypted in transit — non-negotiable
-  });
+  pusher = {
+    authorizeChannel(socketId: string, channelName: string) {
+      const signature = hmacSha256Hex(`${socketId}:${channelName}`);
+      return { auth: `${NEXT_PUBLIC_PUSHER_KEY}:${signature}` };
+    },
+
+    async trigger(channel: string, event: string, data: unknown) {
+      const body = JSON.stringify({
+        name: event,
+        channels: [channel],
+        data: JSON.stringify(data),
+      });
+
+      const bodyMd5 = crypto.createHash("md5").update(body).digest("hex");
+      const path = `/apps/${PUSHER_APP_ID}/events`;
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const params = new URLSearchParams({
+        auth_key: NEXT_PUBLIC_PUSHER_KEY!,
+        auth_timestamp: timestamp,
+        auth_version: "1.0",
+        body_md5: bodyMd5,
+      });
+
+      const signature = hmacSha256Hex(`POST\n${path}\n${params.toString()}`);
+      params.set("auth_signature", signature);
+
+      const response = await fetch(
+        `https://api-${NEXT_PUBLIC_PUSHER_CLUSTER}.pusher.com${path}?${params.toString()}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Pusher trigger failed with status ${response.status}`);
+      }
+    },
+  };
 }
 
 export { pusher };

@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { format, startOfDay, subDays } from "date-fns";
@@ -9,10 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 // ---------------------------------------------------------------------------
 export async function GET(_req: NextRequest): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id || !session.user.isAdmin) {
-      return NextResponse.json({ error: "Forbidden. Admin access required." }, { status: 403 });
-    }
+    const { error } = await requireAdmin();
+    if (error) return error;
 
     const now = new Date();
     const thirtyDaysAgo = subDays(now, 30);
