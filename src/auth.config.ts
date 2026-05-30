@@ -1,4 +1,3 @@
-// Fixed: 4 — Corrected auth configuration comments and secured JWT token update to prevent cookie overflow.
 import { NextAuthConfig } from "next-auth";
 
 /**
@@ -51,10 +50,6 @@ export const authConfig: NextAuthConfig = {
         return Response.redirect(new URL("/login?error=EmailNotVerified", nextUrl.origin));
       }
       
-      if (process.env.NODE_ENV === "development") {
-        console.log(`[Auth] Path: ${nextUrl.pathname}, LoggedIn: ${isLoggedIn}`);
-      }
-      
       const isProtectedRoute = [
         "/dashboard", "/profile", "/settings", "/community", 
         "/messages", "/admin", "/seller", "/expert", 
@@ -65,11 +60,9 @@ export const authConfig: NextAuthConfig = {
 
       if (isProtectedRoute) {
         if (!isLoggedIn) {
-          console.log(`[Auth] Redirecting unauthenticated user from ${nextUrl.pathname} to sign-in`);
           return false;
         }
         if (isAdminRoute && !isAdmin) {
-          console.log(`[Auth] Forbidden: Non-admin user attempted to access ${nextUrl.pathname}`);
           return Response.redirect(new URL("/dashboard?error=unauthorized", nextUrl.origin));
         }
         return true;
@@ -81,9 +74,9 @@ export const authConfig: NextAuthConfig = {
     signIn: "/login",
     error: "/login",
   },
-  // Enable debug logs in development for troubleshooting
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET,
   trustHost: true,
+  // Auth.js native debug output in development — no manual console.log needed
   debug: process.env.NODE_ENV === "development"
 };
