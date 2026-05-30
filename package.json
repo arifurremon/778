@@ -16,7 +16,10 @@
     "test:coverage": "vitest run --coverage",
     "test:integration": "vitest run src/__tests__/api",
     "test:e2e": "npx playwright test",
-    "test:e2e:headed": "npx playwright test --headed"
+    "test:e2e:headed": "npx playwright test --headed",
+    "check:db": "npx tsx scripts/check-db.ts",
+    "script:replace-logs": "node scripts/replace-logs.js",
+    "script:test-csrf": "node scripts/test-csrf.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
