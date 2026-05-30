@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters } from "@/lib/rate-limit";
 import { sanitizePostContent } from "@/lib/sanitize";
-import { PrivacyLevel } from "@prisma/client";
+import { ConnectionStatus, PrivacyLevel, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -27,7 +27,86 @@ const authorSelect = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// GET /api/posts  — paginated feed (real-time, no cache)
+// resolveNeighborIds
+//
+// Fetches the set of user IDs that have an ACCEPTED NeighbourConnection with
+// the given userId. Because NeighbourConnection is bidirectional (either party
+// can initiate the request), we query BOTH sides of the relation and merge the
+// results into a single deduplicated array.
+//
+// This query is O(N) on connections, which is appropriate for a hyperlocal
+// platform where the expected neighbour count per user is small (< 500).
+// ---------------------------------------------------------------------------
+async function resolveNeighborIds(userId: string): Promise<string[]> {
+  const connections = await db.neighbourConnection.findMany({
+    where: {
+      status: ConnectionStatus.ACCEPTED,
+      OR: [{ senderId: userId }, { receiverId: userId }],
+    },
+    select: { senderId: true, receiverId: true },
+  });
+
+  // For each accepted connection, the neighbour is whichever side is NOT the
+  // current user.
+  const neighborIds = connections.map((c) =>
+    c.senderId === userId ? c.receiverId : c.senderId
+  );
+
+  // Deduplicate defensively — the @@unique([senderId, receiverId]) constraint
+  // on the model makes duplicates impossible in practice, but Set gives us a
+  // clean guarantee regardless.
+  return [...new Set(neighborIds)];
+}
+
+// ---------------------------------------------------------------------------
+// buildFeedWhereClause
+//
+// Constructs a Prisma WhereInput that enforces the hybrid visibility rules:
+//
+//   Unauthenticated:
+//     - Only PUBLIC posts are visible.
+//
+//   Authenticated:
+//     - PUBLIC posts from anyone                       (openness)
+//     - The user's own posts, regardless of visibility (self-authorship)
+//     - NEIGHBOURS posts whose author is an accepted   (trust boundary)
+//       neighbour of the requesting user
+//
+// The three arms are composed with OR, so a post is visible if it satisfies
+// ANY one of them. PRIVATE posts authored by others are never included.
+// ---------------------------------------------------------------------------
+function buildFeedWhereClause(
+  userId: string | null,
+  neighborIds: string[]
+): Prisma.PostWhereInput {
+  if (!userId) {
+    return { visibility: PrivacyLevel.PUBLIC };
+  }
+
+  return {
+    OR: [
+      // Arm 1 — public content from the entire community
+      { visibility: PrivacyLevel.PUBLIC },
+      // Arm 2 — the user's own posts (all visibility levels)
+      { authorId: userId },
+      // Arm 3 — neighbour-restricted posts from accepted connections
+      // Guard: only emit this arm when the user actually has neighbours.
+      // An empty `in: []` would never match any row, but omitting the arm
+      // entirely keeps the query plan cleaner when neighborIds is empty.
+      ...(neighborIds.length > 0
+        ? [
+            {
+              visibility: PrivacyLevel.NEIGHBOURS,
+              authorId: { in: neighborIds },
+            },
+          ]
+        : []),
+    ],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/posts  — paginated hybrid feed (real-time, no cache)
 // ---------------------------------------------------------------------------
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
@@ -40,19 +119,24 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
     const skip = (page - 1) * limit;
 
-    // Direct DB read — no Redis TTL layer for the community feed.
-    //
-    // Rationale: a 30s TTL was counter-productive: too short to yield
-    // meaningful cache benefit (cold-start + round-trip overhead), yet
-    // too long to feel live for a social feed. The Prisma $transaction
-    // ensures the count and findMany observe the same DB snapshot,
-    // preventing pagination corruption from concurrent inserts.
+    // Resolve the requesting user's identity and neighbour graph.
+    // For unauthenticated requests both values remain null / empty, and the
+    // where clause degrades gracefully to PUBLIC-only.
+    const session = await auth();
+    const userId = session?.user?.id ?? null;
+    const neighborIds = userId ? await resolveNeighborIds(userId) : [];
+
+    const where = buildFeedWhereClause(userId, neighborIds);
+
+    // The Prisma $transaction ensures the count and findMany observe the
+    // same DB snapshot, preventing pagination corruption from concurrent
+    // inserts between the two queries.
     const [posts, total] = await db.$transaction([
       db.post.findMany({
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        where: { visibility: PrivacyLevel.PUBLIC },
+        where,
         select: {
           id: true,
           content: true,
@@ -67,7 +151,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           _count: { select: { comments: true } },
         },
       }),
-      db.post.count({ where: { visibility: PrivacyLevel.PUBLIC } }),
+      db.post.count({ where }),
     ]);
 
     const hasNextPage = skip + limit < total;
