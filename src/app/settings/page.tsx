@@ -17,8 +17,6 @@ import {
     Trash2
 } from "lucide-react";
 import { useState } from "react";
-import Layout from "../dashboard/layout";
-
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const [notifications, setNotifications] = useState(true);
@@ -42,7 +40,6 @@ export default function SettingsPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-3xl mx-auto py-10 px-6 space-y-12">
         <section className="space-y-2">
           <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
@@ -166,6 +163,5 @@ export default function SettingsPage() {
 
         <div className="h-20" />
       </div>
-    </Layout>
   );
 }

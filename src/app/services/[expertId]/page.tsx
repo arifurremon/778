@@ -26,8 +26,6 @@ import {
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import Layout from "../../dashboard/layout";
-
 type ExpertApiResponse = {
   id: string;
   profession: string;
@@ -110,16 +108,11 @@ export default function ExpertPublicProfile() {
   };
 
   if (isLoading) {
-    return (
-      <Layout>
-        <GlobalLoader />
-      </Layout>
-    );
+    return <GlobalLoader />;
   }
 
   if (notFound || !expert) {
     return (
-      <Layout>
         <div className="min-h-[60vh] flex flex-col items-center justify-center gap-6 px-6">
           <h1 className="text-2xl font-bold">Provider not found</h1>
           <p className="text-muted-foreground text-sm font-bold max-w-md text-center">
@@ -133,14 +126,13 @@ export default function ExpertPublicProfile() {
             <ArrowLeft size={16} className="mr-2" /> Go Back
           </Button>
         </div>
-      </Layout>
     );
   }
 
   const qualifications = expert.qualifications ?? [];
 
   return (
-    <Layout>
+    <>
       <div className="min-h-screen pb-32">
         <div className="relative h-[300px] bg-gradient-to-br from-primary/20 via-background to-background">
           <div className="absolute top-8 left-8 md:left-12 z-10">
@@ -292,6 +284,6 @@ export default function ExpertPublicProfile() {
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}
       />
-    </Layout>
+    </>
   );
 }

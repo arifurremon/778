@@ -11,7 +11,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCommunity } from "@/hooks/use-community";
 import { toast } from "@/hooks/use-toast";
 import PostCard from "@/components/community/post-card";
-import Layout from "../../dashboard/layout";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
 import {
@@ -136,19 +135,16 @@ export default function PublicProfilePage() {
 
   if (isLoading) {
     return (
-      <Layout>
         <div className="min-h-screen flex items-center justify-center text-muted-foreground font-bold">
           <span className="w-6 h-6 border-4 border-accent border-t-transparent rounded-full animate-spin mr-3" />
           Loading Profile...
         </div>
-      </Layout>
     );
   }
 
   if (!profile) return null;
 
   return (
-    <Layout>
       <div className="min-h-screen bg-background">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-24 md:pb-10">
           
@@ -302,6 +298,5 @@ export default function PublicProfilePage() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }

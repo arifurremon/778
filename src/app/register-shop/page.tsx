@@ -33,8 +33,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
-import Layout from "../dashboard/layout";
-
 const categories = ["Grocery", "Electronics", "Fashion", "Pharmacy", "Restaurant", "Stationery", "Home Decor", "Beauty", "Others"];
 
 const registerSchema = z.object({
@@ -138,7 +136,6 @@ export default function RegisterShopPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-4xl mx-auto py-12 px-6">
         {/* Header */}
         <div className="mb-12 space-y-4">
@@ -453,7 +450,6 @@ export default function RegisterShopPage() {
           </AnimatePresence>
         </form>
       </div>
-    </Layout>
   );
 }
 

@@ -32,8 +32,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
-import Layout from "../dashboard/layout";
-
 const categories = [
   { id: "Doctor", label: "Doctor", icon: <Stethoscope size={16} /> },
   { id: "Engineer", label: "Engineer", icon: <Building2 size={16} /> },
@@ -150,7 +148,6 @@ export default function RegisterServicePage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-4xl mx-auto py-12 px-6">
         <div className="mb-12 space-y-4">
           <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
@@ -482,6 +479,5 @@ export default function RegisterServicePage() {
           </AnimatePresence>
         </form>
       </div>
-    </Layout>
   );
 }

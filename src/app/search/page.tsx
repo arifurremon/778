@@ -31,8 +31,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useMemo, useState } from "react";
-import Layout from "../dashboard/layout";
-
 const CHITTAGONG_AREAS = [
   "Akbar Shah", "Bakalia", "Bandar", "Bayezid Bostami", "Chandgaon",
   "Chawkbazar", "Double Mooring", "EPZ", "Halishahar", "Karnaphuli",
@@ -329,17 +327,15 @@ function SearchResults() {
 
 export default function SearchPage() {
   return (
-    <Layout>
-      <Suspense
-        fallback={
-          <div className="h-full w-full flex items-center justify-center p-20">
-            <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
-          </div>
-        }
-      >
-        <SearchResults />
-      </Suspense>
-    </Layout>
+    <Suspense
+      fallback={
+        <div className="h-full w-full flex items-center justify-center p-20">
+          <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <SearchResults />
+    </Suspense>
   );
 }
 

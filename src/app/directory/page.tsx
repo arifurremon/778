@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Layout from "../dashboard/layout";
 import { 
   MapPin, 
   Map, 
@@ -54,7 +53,6 @@ export default function DirectoryPage() {
   );
 
   return (
-    <Layout>
       <div className="max-w-6xl mx-auto py-8 px-6 space-y-8">
         <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
@@ -265,6 +263,5 @@ export default function DirectoryPage() {
 
         <div className="h-20" />
       </div>
-    </Layout>
   );
 }

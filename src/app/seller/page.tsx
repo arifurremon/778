@@ -15,14 +15,11 @@ import { cn } from "@/lib/utils";
 import { History, LayoutDashboard, Package, Plus, Settings, ShoppingBag, Store } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import Layout from "../dashboard/layout";
-
 export default function SellerPage() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const pathname = usePathname();
 
   return (
-    <Layout>
       <div className="flex h-full">
         {/* Contextual Merchant Sidebar */}
         <aside className="hidden lg:flex w-64 flex-col border-r border-border/50 bg-card/5 shrink-0">
@@ -76,7 +73,6 @@ export default function SellerPage() {
           <SellerDashboard />
         </div>
       </div>
-    </Layout>
   );
 }
 
