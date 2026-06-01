@@ -1,7 +1,8 @@
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sanitizeUserInput } from "@/lib/sanitize";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ shopId: string }> };
@@ -82,10 +83,9 @@ export async function PATCH(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     const { shopId } = await params;
 
@@ -114,9 +114,15 @@ export async function PATCH(
       );
     }
 
+    const { name, description, category, location } = parsed.data;
     const updated = await db.shop.update({
       where: { id: shopId },
-      data: parsed.data,
+      data: {
+        ...(name !== undefined ? { name: sanitizeUserInput(name) } : {}),
+        ...(description !== undefined ? { description: sanitizeUserInput(description) } : {}),
+        ...(category !== undefined ? { category: sanitizeUserInput(category) } : {}),
+        ...(location !== undefined ? { location: sanitizeUserInput(location) } : {}),
+      },
       select: {
         id: true,
         name: true,

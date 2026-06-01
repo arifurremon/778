@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -49,7 +50,10 @@ const sendRequestSchema = z.object({
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

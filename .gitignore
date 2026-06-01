@@ -55,3 +55,7 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+e2e/.runtime-config.json
+
+/playwright-report/
+/test-results/

@@ -31,7 +31,16 @@ export const prismaMock = {
   neighbourConnection: createMockModel(),
   product: createMockModel(),
   expertService: createMockModel(),
-  $transaction: vi.fn((fns: any[]) => Promise.all(fns)),
+  auditLog: createMockModel(),
+  $transaction: vi.fn((arg: unknown) => {
+    if (typeof arg === "function") {
+      return (arg as (client: typeof prismaMock) => Promise<unknown>)(prismaMock);
+    }
+    if (Array.isArray(arg)) {
+      return Promise.all(arg);
+    }
+    return Promise.resolve(arg);
+  }),
   $connect: vi.fn(),
   $disconnect: vi.fn(),
 };
@@ -57,5 +66,13 @@ export function resetPrismaMock() {
     }
   });
 
-  prismaMock.$transaction.mockImplementation((fns: any[]) => Promise.all(fns));
+  prismaMock.$transaction.mockImplementation((arg: unknown) => {
+    if (typeof arg === "function") {
+      return (arg as (client: typeof prismaMock) => Promise<unknown>)(prismaMock);
+    }
+    if (Array.isArray(arg)) {
+      return Promise.all(arg);
+    }
+    return Promise.resolve(arg);
+  });
 }

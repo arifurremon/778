@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
@@ -15,7 +16,10 @@ const bulkActionSchema = z.object({
  * Performs bulk operations on users within a transaction.
  */
 export async function POST(req: NextRequest) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 

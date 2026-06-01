@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
@@ -26,7 +27,10 @@ function generateEmailToken(): { token: string; expiresAt: Date } {
 }
 
 export async function POST(req: NextRequest) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const body: unknown = await req.json();
     const parsed = resendVerificationSchema.safeParse(body);
     if (!parsed.success) {

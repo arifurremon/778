@@ -22,6 +22,7 @@ vi.mock("@/lib/rate-limit", () => ({
 // Mock cache (bypass — always run the query function)
 vi.mock("@/lib/cache", () => ({
   cachedQuery: vi.fn((_key: string, fn: () => Promise<any>) => fn()),
+  invalidateCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock auth session — default: unauthenticated
@@ -134,6 +135,16 @@ describe("GET /api/posts — Integration", () => {
 
 // ---------------------------------------------------------------------------
 
+function mockActiveUser(userId: string) {
+  mockAuth.mockResolvedValue({ user: { id: userId } });
+  prismaMock.user.findUnique.mockResolvedValue({
+    id: userId,
+    isAdmin: false,
+    deletedAt: null,
+    suspendedAt: null,
+  });
+}
+
 describe("POST /api/posts — Integration", () => {
   beforeEach(() => {
     resetPrismaMock();
@@ -149,7 +160,7 @@ describe("POST /api/posts — Integration", () => {
   });
 
   it("returns 400 when content is missing", async () => {
-    mockAuth.mockResolvedValue({ user: { id: testUsers.regular.id } });
+    mockActiveUser(testUsers.regular.id);
 
     const res = await POST(makePostRequest({ images: [] }));
     const json = await res.json();
@@ -160,7 +171,7 @@ describe("POST /api/posts — Integration", () => {
   });
 
   it("creates a post and returns 201 for authenticated user", async () => {
-    mockAuth.mockResolvedValue({ user: { id: testUsers.regular.id } });
+    mockActiveUser(testUsers.regular.id);
     prismaMock.post.create.mockResolvedValue(sampleDbPost);
     prismaMock.activityLog.create.mockResolvedValue({});
 
@@ -174,7 +185,7 @@ describe("POST /api/posts — Integration", () => {
   });
 
   it("sanitises XSS in post content before saving", async () => {
-    mockAuth.mockResolvedValue({ user: { id: testUsers.regular.id } });
+    mockActiveUser(testUsers.regular.id);
     prismaMock.post.create.mockResolvedValue(sampleDbPost);
     prismaMock.activityLog.create.mockResolvedValue({});
 
@@ -190,7 +201,7 @@ describe("POST /api/posts — Integration", () => {
   });
 
   it("returns 429 when post rate limit is exceeded", async () => {
-    mockAuth.mockResolvedValue({ user: { id: testUsers.regular.id } });
+    mockActiveUser(testUsers.regular.id);
 
     const { rateLimiters } = await import("@/lib/rate-limit");
     (rateLimiters.posts.limit as any).mockResolvedValueOnce({ success: false });
@@ -203,7 +214,7 @@ describe("POST /api/posts — Integration", () => {
   });
 
   it("rejects content exceeding 1000 characters", async () => {
-    mockAuth.mockResolvedValue({ user: { id: testUsers.regular.id } });
+    mockActiveUser(testUsers.regular.id);
 
     const longContent = "x".repeat(1001);
     const res = await POST(makePostRequest({ content: longContent }));

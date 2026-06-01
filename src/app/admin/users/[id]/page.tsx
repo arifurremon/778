@@ -162,12 +162,8 @@ export default function UserDetailPage() {
   const handleAction = async (action: string) => {
     setActing(true);
     try {
-      const res = await fetch("/api/admin/users", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userIds: [id], action }),
-      });
-      if (!res.ok) throw new Error();
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.post("/api/admin/users/bulk-action", { userIds: [id], action });
       toast({ title: "Success", description: `Action '${action}' applied.` });
       // Refetch
       const fresh = await fetch(`/api/admin/users/${id}`);

@@ -4,6 +4,7 @@ import { logErrorToSentry } from "@/lib/error-handler";
 import { pusher } from "@/lib/pusher";
 import { rateLimiters } from "@/lib/rate-limit";
 import { sanitizeUserInput } from "@/lib/sanitize";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -83,10 +84,9 @@ export async function POST(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     // Rate limit: 30 messages per minute per user
     const { success, reset } = await rateLimiters.messages.limit(session.user.id);

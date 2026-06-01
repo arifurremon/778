@@ -108,7 +108,7 @@ export default function VisionLegacyPage() {
                 <div className="flex flex-col items-center text-center space-y-6">
                    <div className="relative">
                      <Avatar className="w-32 h-32 border-4 border-card ring-4 ring-primary/20 shadow-2xl">
-                       <AvatarImage src="https://picsum.photos/seed/selim/400" />
+                       <AvatarImage src="/city_background.png" />
                        <AvatarFallback className="text-4xl font-bold bg-primary/20 text-primary">AS</AvatarFallback>
                      </Avatar>
                      <div className="absolute -bottom-2 -right-2 bg-accent text-accent-foreground p-2 rounded-xl shadow-lg border-2 border-background">

@@ -1,7 +1,9 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
 import { rateLimiters } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
@@ -17,18 +19,19 @@ const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 // ---------------------------------------------------------------------------
 const registerSchema = z.object({
   email: z.string().email("Invalid email address."),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters."),
+  password: z.string().min(8, "Password must be at least 8 characters.").regex(/[0-9!@#$%^&*(),.?":{}|<>_]/, "Password must contain at least one number or symbol."),
   username: z
     .string()
     .min(3, "Username must be at least 3 characters.")
     .max(20, "Username cannot exceed 20 characters.")
     .regex(/^\w+$/, "Username may only contain letters, numbers, and underscores."),
   name: z.string().min(1, "Name is required."),
-  mobile: z.string().min(1, "Mobile is required."),
+  mobile: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Invalid Bangladeshi phone number."),
   location: z.string().min(1, "Location is required."),
-  dob: z.string().min(1, "Date of birth is required."),
+  dob: z
+    .string()
+    .min(1, "Date of birth is required.")
+    .refine((value) => !Number.isNaN(Date.parse(value)), "Invalid date of birth."),
   profession: z.string().optional(),
 });
 
@@ -55,30 +58,22 @@ function formatUniqueConstraintMessage(err: Prisma.PrismaClientKnownRequestError
 // POST /api/auth/register
 // ---------------------------------------------------------------------------
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const headersList = await headers();
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
-    // Check Redis-based rate limit
-    let rateLimitResult: { success: boolean; reset?: number } = { success: true };
-    try {
-      rateLimitResult = await Promise.race([
-        rateLimiters.register.limit(ip),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000)),
-      ]);
-    } catch (err) {
-      console.error("[Register] Rate limit skipped due to timeout or Upstash error:", err);
-    }
-
-    if (!rateLimitResult.success) {
-      const retryAfterSec = rateLimitResult.reset ? Math.max(1, Math.ceil((rateLimitResult.reset - Date.now()) / 1000)) : 60;
+    const rateLimitResponse = await enforceRateLimit(
+      () => rateLimiters.register.limit(ip),
+      "Register"
+    );
+    if (rateLimitResponse) {
       return NextResponse.json(
         { success: false, message: "Too many attempts. Please try again later." },
-        { 
-          status: 429,
-          headers: { 'Retry-After': String(retryAfterSec) }
-        }
+        { status: rateLimitResponse.status, headers: rateLimitResponse.headers }
       );
     }
 
@@ -136,7 +131,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           name,
           mobile,
           location,
-          dob,
+          dob: new Date(dob),
           profession: profession || null,
           emailToken,
           emailTokenExp,

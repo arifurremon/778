@@ -1,3 +1,4 @@
+import { pendingServiceWhere, pendingShopWhere } from "@/lib/admin/dashboard-metrics";
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
@@ -18,17 +19,20 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
       pendingVerifications,
     ] = await Promise.all([
       db.user.count(),
-      db.user.count({ where: { registrationStatus: "PENDING" } }),
-      db.user.count({ where: { serviceRegistrationStatus: "PENDING" } }),
+      db.shop.count({ where: pendingShopWhere }),
+      db.expertService.count({ where: pendingServiceWhere }),
       db.user.count({ where: { verificationRequestStatus: "PENDING" } }),
     ]);
 
-    return NextResponse.json({
-      totalUsers,
-      pendingShops,
-      pendingServices,
-      pendingVerifications,
-    });
+    return NextResponse.json(
+      {
+        totalUsers,
+        pendingShops,
+        pendingServices,
+        pendingVerifications,
+      },
+      { headers: { "Cache-Control": "private, max-age=60" } }
+    );
   } catch (error) {
     logErrorToSentry(error, {
       endpoint: "/api/admin",

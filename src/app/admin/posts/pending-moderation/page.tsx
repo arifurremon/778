@@ -68,14 +68,15 @@ export default function PendingModerationPage() {
     setActionLoading(postId);
     try {
       // "Approve" clears the flag and sets moderationStatus = 'ACTIVE'
-      const status = action === 'approve' ? 'ACTIVE' : action === 'hide' ? 'HIDDEN' : 'DELETED';
-      
-      const res = await fetch(`/api/admin/posts/${postId}/moderate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, status })
+      const { adminApi } = await import("@/lib/admin-api");
+      const moderateAction =
+        action === "approve" ? "approve" : action === "hide" ? "hide" : "delete";
+      await adminApi.post(`/api/admin/posts/${postId}/moderate`, {
+        action: moderateAction,
+        ...(moderateAction !== "approve"
+          ? { reason: "Moderated from flagged content queue." }
+          : {}),
       });
-      if (!res.ok) throw new Error();
 
       toast({ title: "Action Applied", description: `Post has been ${action === 'approve' ? 'approved and returned to feed' : action === 'hide' ? 'hidden' : 'deleted'}.` });
       
@@ -91,12 +92,11 @@ export default function PendingModerationPage() {
 
   const handleBanAuthor = async (authorId: string) => {
     try {
-      const res = await fetch(`/api/admin/users/${authorId}/suspend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: "Policy violation: Posting inappropriate content.", suspended: true })
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.post(`/api/admin/users/${authorId}/suspend`, {
+        reason: "Policy violation: Posting inappropriate content.",
+        suspended: true,
       });
-      if (!res.ok) throw new Error();
       toast({ title: "Author Banned", description: "The user has been suspended from the platform." });
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to ban author." });

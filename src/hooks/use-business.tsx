@@ -87,16 +87,12 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
 
   const addOrder = async (orderData: Omit<Order, 'id' | 'status' | 'timestamp'>) => {
     try {
-      await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shopId: orderData.shopId,
-          productId: orderData.productId,
-          phone: orderData.phone,
-          address: orderData.address,
-          price: orderData.price,
-        }),
+      const { api } = await import("@/lib/api");
+      await api.post("/api/orders", {
+        shopId: orderData.shopId,
+        productId: orderData.productId,
+        phone: orderData.phone,
+        address: orderData.address,
       });
     } catch (error) {
       console.error("Failed to add order", error);

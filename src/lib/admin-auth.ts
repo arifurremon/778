@@ -35,7 +35,7 @@ export async function requireAdmin() {
   // We fetch only the two scalar fields we need; never over-fetch.
   const dbUser = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, isAdmin: true },
+    select: { id: true, isAdmin: true, deletedAt: true, suspendedAt: true },
   });
 
   if (!dbUser) {
@@ -43,6 +43,15 @@ export async function requireAdmin() {
     return {
       error: NextResponse.json(
         { error: "Forbidden: Account not found" },
+        { status: 403 }
+      ),
+    };
+  }
+
+  if (dbUser.deletedAt || dbUser.suspendedAt) {
+    return {
+      error: NextResponse.json(
+        { error: "Forbidden: Account not active" },
         { status: 403 }
       ),
     };

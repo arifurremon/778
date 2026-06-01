@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { cachedQuery, invalidateCache } from "@/lib/cache";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sanitizeUserInput } from "@/lib/sanitize";
@@ -81,7 +82,7 @@ export const GET = auth(async (req) => {
 const updateProfileSchema = z.object({
   name:            z.string().min(1).optional(),
   preferredName:   z.string().min(1).optional(),
-  mobile:          z.string().optional(),
+  mobile:          z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Invalid Bangladeshi phone number.").optional(),
   location:        z.string().optional(),
   profession:      z.string().optional(),
   bio:             z.string().max(500, "Bio must be 500 characters or less.").optional(),
@@ -95,10 +96,21 @@ const updateProfileSchema = z.object({
 }).strict();
 
 export const PATCH = auth(async (req) => {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
   try {
     const userId = req.auth?.user?.id;
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const dbUser = await db.user.findUnique({
+      where: { id: userId },
+      select: { deletedAt: true, suspendedAt: true },
+    });
+    if (!dbUser || dbUser.deletedAt || dbUser.suspendedAt) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body: unknown = await req.json();

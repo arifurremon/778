@@ -107,8 +107,8 @@ export default function PostDetailPage() {
 
   const handleDeletePost = async () => {
     try {
-      const res = await fetch(`/api/admin/posts/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.del(`/api/admin/posts/${id}`);
       toast({ title: "Post deleted" });
       router.push("/admin/posts");
     } catch {
@@ -119,12 +119,8 @@ export default function PostDetailPage() {
 
   const handleDeleteComment = async (commentId: string) => {
     try {
-      const res = await fetch("/api/admin/comments", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commentIds: [commentId] }),
-      });
-      if (!res.ok) throw new Error();
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.del("/api/admin/comments", { commentIds: [commentId] });
       setPost((p) => p ? { ...p, comments: p.comments.filter((c) => c.id !== commentId) } : p);
       toast({ title: "Comment deleted" });
     } catch {

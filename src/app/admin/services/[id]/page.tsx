@@ -90,12 +90,11 @@ export default function ServiceDetailPage() {
     if (!service) return;
     setActing(true);
     try {
-      const res = await fetch(`/api/admin/verify/${service.user.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: approve ? "approve" : "reject", type: "service" }),
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.post(`/api/admin/verify/${service.user.id}`, {
+        action: approve ? "approve" : "reject",
+        type: "service",
       });
-      if (!res.ok) throw new Error();
       const newStatus = approve ? "APPROVED" : "REJECTED";
       setService((s) => s ? { ...s, user: { ...s.user, serviceRegistrationStatus: newStatus, isServiceProvider: approve } } : s);
       toast({ title: approve ? "✅ Expert Certified" : "❌ Application Rejected" });

@@ -73,12 +73,8 @@ export default function PendingVerificationPage() {
       const body: Record<string, string> = { action };
       if (action === 'reject') body.reason = rejectDialog.reason;
 
-      const res = await fetch(`/api/admin/shops/${id}/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) throw new Error();
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.post(`/api/admin/shops/${id}/verify`, body);
 
       toast({ 
         title: action === 'approve' ? "Approved" : "Rejected", 

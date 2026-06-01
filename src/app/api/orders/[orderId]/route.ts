@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -21,10 +21,9 @@ export async function PATCH(
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     const { orderId } = await params;
 

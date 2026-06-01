@@ -16,7 +16,10 @@ const rejectSchema = z.object({
  * Rejects a shop registration request.
  */
 export async function POST(req: NextRequest, { params }: any) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const csrfError = validateCsrfRequest(req);
     if (csrfError) return csrfError;
 

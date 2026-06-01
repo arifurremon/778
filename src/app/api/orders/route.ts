@@ -1,5 +1,6 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters } from "@/lib/rate-limit";
@@ -8,18 +9,19 @@ import { z } from "zod";
 const orderSchema = z.object({
   shopId: z.string().uuid(),
   productId: z.string().uuid(),
-  phone: z.string().min(1, "Phone is required"),
+  phone: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Invalid Bangladeshi phone number"),
   address: z.string().min(1, "Address is required"),
-  price: z.number().positive("Price must be a positive number."),
   note: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
+    const active = await requireActiveUser();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const { success } = await rateLimiters.orders.limit(session.user.id);
     if (!success) {
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.error.errors[0]?.message ?? "Validation failed." }, { status: 400 });
     }
 
-    const { shopId, productId, phone, address, price, note } = result.data;
+    const { shopId, productId, phone, address, note } = result.data;
 
     const shop = await db.shop.findUnique({
       where: { id: shopId },
@@ -51,6 +53,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
+    if (!product.inStock) {
+      return NextResponse.json({ error: "Product is out of stock" }, { status: 400 });
+    }
+
+    const totalPrice = Number(product.price);
+
     const newOrder = await db.$transaction(async (tx) => {
       const order = await tx.order.create({
         data: {
@@ -61,7 +69,7 @@ export async function POST(req: NextRequest) {
           buyerPhone: phone,
           address,
           quantity: 1,
-          totalPrice: price,
+          totalPrice,
           note,
           status: "PENDING",
         },
@@ -94,10 +102,9 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveUser();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const searchParams = req.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1", 10);

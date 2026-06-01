@@ -1,6 +1,6 @@
 import { logErrorToSentry } from "@/lib/error-handler";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ shopId: string; productId: string }> };
@@ -9,14 +9,13 @@ type RouteContext = { params: Promise<{ shopId: string; productId: string }> };
 // DELETE /api/shops/[shopId]/products/[productId]  — owner only
 // ---------------------------------------------------------------------------
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     const { shopId, productId } = await params;
 

@@ -1,7 +1,8 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { requireActiveUser } from "@/lib/session-guards";
 
 type RouteContext = { params: Promise<{ postId: string; commentId: string }> };
 
@@ -18,14 +19,24 @@ export async function POST(
   req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveUser();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const { postId, commentId } = await params;
     const userId = session.user.id;
+
+    const commentForPost = await db.comment.findFirst({
+      where: { id: commentId, postId },
+      select: { id: true },
+    });
+    if (!commentForPost) {
+      return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
 
     const body = await req.json();
     const { type } = body as { type: "like" | "unlike" };

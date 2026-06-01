@@ -1,10 +1,14 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 
 const SENTRY_HOST = "o4511376317743104.ingest.us.sentry.io";
 const SENTRY_PROJECT_ID = "4511376352870400";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const envelope = await req.text();
     const piece = envelope.split("\n")[0] || "";
     const header = JSON.parse(piece) as { dsn?: string };

@@ -4,21 +4,30 @@ import { render } from '@/lib/test-utils';
 import { fireEvent, screen, waitFor } from '@testing-library/dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: vi.fn(),
+}));
+
 describe('LoginForm Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useAuth).mockReturnValue({
+      login: vi.fn().mockResolvedValue(true),
+      user: null,
+      isAuthenticated: false,
+    } as any);
   });
 
   it('should render the login form correctly', () => {
-    const { container } = render(<LoginForm onSwitch={() => {}} />);
-    expect(screen.getByPlaceholderText(/name@example.com/i)).toBeInTheDocument();
+    render(<LoginForm onSwitch={() => {}} />);
+    expect(screen.getByPlaceholderText(/you@example.com/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/••••••••/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Sign in/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sign In/i })).toBeInTheDocument();
   });
 
   it('should allow user to type in email and password fields', () => {
-    const { container } = render(<LoginForm onSwitch={() => {}} />);
-    const emailInput = screen.getByPlaceholderText(/name@example.com/i) as HTMLInputElement;
+    render(<LoginForm onSwitch={() => {}} />);
+    const emailInput = screen.getByPlaceholderText(/you@example.com/i) as HTMLInputElement;
     const passwordInput = screen.getByPlaceholderText(/••••••••/i) as HTMLInputElement;
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
@@ -30,20 +39,20 @@ describe('LoginForm Component', () => {
 
   it('should call login from useAuth when form is submitted', async () => {
     const mockLogin = vi.fn().mockResolvedValue(true);
-    (useAuth as any) = vi.fn().mockReturnValue({
+    vi.mocked(useAuth).mockReturnValue({
       login: mockLogin,
       user: null,
-      isAuthenticated: false
-    });
+      isAuthenticated: false,
+    } as any);
 
-    const { container } = render(<LoginForm onSwitch={() => {}} />);
-    const emailInput = screen.getByPlaceholderText(/name@example.com/i);
+    render(<LoginForm onSwitch={() => {}} />);
+    const emailInput = screen.getByPlaceholderText(/you@example.com/i);
     const passwordInput = screen.getByPlaceholderText(/••••••••/i);
     const form = emailInput.closest('form');
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    
+
     if (form) {
       fireEvent.submit(form);
     }
@@ -55,34 +64,33 @@ describe('LoginForm Component', () => {
 
   it('should handle signIn errors gracefully', async () => {
     const mockLogin = vi.fn().mockRejectedValue(new Error('Invalid credentials'));
-    (useAuth as any) = vi.fn().mockReturnValue({
+    vi.mocked(useAuth).mockReturnValue({
       login: mockLogin,
       user: null,
-      isAuthenticated: false
-    });
+      isAuthenticated: false,
+    } as any);
 
-    const { container } = render(<LoginForm onSwitch={() => {}} />);
-    const emailInput = screen.getByPlaceholderText(/name@example.com/i);
+    render(<LoginForm onSwitch={() => {}} />);
+    const emailInput = screen.getByPlaceholderText(/you@example.com/i);
     const passwordInput = screen.getByPlaceholderText(/••••••••/i);
     const form = emailInput.closest('form');
 
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'wrongpass' } });
-    
+
     if (form) {
       fireEvent.submit(form);
     }
 
     await waitFor(() => {
-      // Look for the error message shown in the UI
-      expect(screen.getByText(/Invalid email or password/i)).toBeInTheDocument();
+      expect(screen.getByText(/Invalid credentials/i)).toBeInTheDocument();
     });
   });
-  
+
   it('should have a forgot password link', () => {
     render(<LoginForm onSwitch={() => {}} />);
-    const forgotLink = screen.getByRole('link', { name: /forgot password/i });
-    
+    const forgotLink = screen.getByRole('link', { name: /Forgot it/i });
+
     expect(forgotLink).toBeInTheDocument();
     expect(forgotLink).toHaveAttribute('href', '/forgot-password');
   });

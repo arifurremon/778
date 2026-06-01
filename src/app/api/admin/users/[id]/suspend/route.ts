@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
@@ -13,7 +14,10 @@ const suspendSchema = z.object({
  * POST /api/admin/users/[id]/suspend
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
@@ -25,25 +29,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "You cannot suspend your own account." }, { status: 400 });
     }
 
-    let success = false;
-    
-    // [cite_start]Wrap that specific query in try/catch. [cite: 263]
-    // SCHEMA-FALLBACK: 'suspendedAt' may not exist — verify schema [cite: 264]
-    try {
-      await db.user.update({
-        where: { id },
-        data: {
-          // @ts-ignore
-          suspendedAt: validatedData.suspended ? new Date() : null,
-          // @ts-ignore
-          suspensionReason: validatedData.suspended ? validatedData.reason : null
-        }
-      });
-      success = true;
-    } catch (err) {
-      // Return a safe default success response to avoid crashing the UI
-      success = false; 
-    }
+    await db.user.update({
+      where: { id },
+      data: {
+        suspendedAt: validatedData.suspended ? new Date() : null,
+        suspensionReason: validatedData.suspended ? validatedData.reason : null,
+      },
+    });
+
+    await db.session.deleteMany({ where: { userId: id } });
 
     await logAdminAction(
       session.user.id,
@@ -54,10 +48,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       req.headers.get("x-forwarded-for") || "unknown"
     );
 
-    return NextResponse.json({ 
-      success: true, 
-      applied: success,
-      message: success ? "Status updated" : "Action logged but schema fields missing" 
+    return NextResponse.json({
+      success: true,
+      message: "Status updated",
     });
 
   } catch (err) {

@@ -71,7 +71,7 @@ export default function CreatePost({ onCreate }: CreatePostProps) {
       author: {
         id: user?.id || `guest-${Date.now()}`,
         name: user?.name || "Guest User",
-        avatar: user?.profileImage || `https://picsum.photos/seed/${user?.email}/100`,
+        avatar: user?.profileImage || `/city_background.png${user?.email}/100`,
         location: user?.location || "Unknown",
         username: user?.username || "guest"
       },
@@ -90,7 +90,7 @@ export default function CreatePost({ onCreate }: CreatePostProps) {
 
   const addMockImage = () => {
     if (images.length >= 3) return;
-    const newImage = `https://picsum.photos/seed/${Math.random()}/800/400`;
+    const newImage = `/city_background.png${Math.random()}/800/400`;
     setImages([...images, newImage]);
   };
 
@@ -117,7 +117,7 @@ export default function CreatePost({ onCreate }: CreatePostProps) {
         <div className="bg-card border border-border rounded-xl p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer mb-6">
           <div className="flex gap-3 items-center">
             <Avatar className="w-10 h-10 border border-border">
-               <AvatarImage src={user?.profileImage || `https://picsum.photos/seed/${user?.email}/100`} />
+               <AvatarImage src={user?.profileImage || `/city_background.png${user?.email}/100`} />
                <AvatarFallback className="font-bold">{user?.name?.[0] || 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex-1 bg-muted/60 hover:bg-muted transition-colors h-10 rounded-full px-4 flex items-center text-muted-foreground text-[15px] font-medium">
@@ -161,7 +161,7 @@ export default function CreatePost({ onCreate }: CreatePostProps) {
           {/* User Info & Privacy Pill */}
           <div className="flex items-center gap-3 mb-4">
              <Avatar className="w-10 h-10 border border-border">
-               <AvatarImage src={user?.profileImage || `https://picsum.photos/seed/${user?.email}/100`} />
+               <AvatarImage src={user?.profileImage || `/city_background.png${user?.email}/100`} />
                <AvatarFallback className="font-bold">{user?.name?.[0]}</AvatarFallback>
              </Avatar>
              <div>

@@ -1,7 +1,10 @@
-"use client";
-import ProtectedRoute from "@/components/layouts/protected-route";
-import type { ReactNode } from "react";
+import type { Metadata } from 'next';
 
-export default function SearchLayout({ children }: { children: ReactNode }) {
-  return <ProtectedRoute>{children}</ProtectedRoute>;
+export const metadata: Metadata = {
+  title: 'Search | The Chattala',
+  description: 'Search for anything in The Chattala.',
+};
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }

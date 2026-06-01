@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/admin-auth";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
@@ -19,6 +20,9 @@ export async function POST(
   req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
   try {
     const { error } = await requireAdmin();
     if (error) return error;

@@ -1,7 +1,9 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sanitizeUserInput } from "@/lib/sanitize";
+import { requireActiveUser } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 // ---------------------------------------------------------------------------
@@ -69,11 +71,13 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
 ): Promise<NextResponse> {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveUser();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const { postId } = await params;
 
@@ -97,7 +101,7 @@ export async function POST(
       );
     }
 
-    const { text } = parsed.data;
+    const sanitizedText = sanitizeUserInput(parsed.data.text);
     const commenterId = session.user.id;
 
     // Create comment sequentially (HTTP adapter doesn't support transactions)
@@ -105,7 +109,7 @@ export async function POST(
       data: {
         postId,
         authorId: commenterId,
-        text,
+        text: sanitizedText,
       },
       select: {
         id: true,
@@ -136,7 +140,7 @@ export async function POST(
           postAuthor.email,
           "New Comment on Your Post",
           "Someone left a comment!",
-          `${commenterName} commented: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`,
+          `${commenterName} commented: "${sanitizedText.substring(0, 50)}${sanitizedText.length > 50 ? '...' : ''}"`,
           `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/community`,
           "View Comment"
         );

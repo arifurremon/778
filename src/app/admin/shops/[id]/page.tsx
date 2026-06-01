@@ -89,12 +89,8 @@ export default function ShopDetailPage() {
     if (!shop) return;
     setToggling(true);
     try {
-      const res = await fetch(`/api/admin/shops/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isVerified: !shop.isVerified }),
-      });
-      if (!res.ok) throw new Error();
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.patch(`/api/admin/shops/${id}`, { isVerified: !shop.isVerified });
       setShop((s) => s ? { ...s, isVerified: !s.isVerified } : s);
       toast({ title: shop.isVerified ? "Verification removed" : "Shop verified" });
     } catch {

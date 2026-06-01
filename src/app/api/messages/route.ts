@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
@@ -72,10 +73,9 @@ const startConvSchema = z.object({
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     const body: unknown = await req.json();
     const parsed = startConvSchema.safeParse(body);
@@ -106,7 +106,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Normalise participant order so [A,B] and [B,A] map to the same row
-    const [participantA, participantB] = [userId, recipientId].sort();
+    const sorted = [userId, recipientId].sort();
+    const participantA = sorted[0] as string;
+    const participantB = sorted[1] as string;
 
     const conversation = await db.conversation.upsert({
       where: { participantA_participantB: { participantA, participantB } },

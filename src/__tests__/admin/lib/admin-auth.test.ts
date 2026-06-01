@@ -43,7 +43,7 @@ describe("requireAdmin() Library Utility", () => {
     expect(result.error?.status).toBe(403);
     expect(db.user.findUnique).toHaveBeenCalledWith({
       where: { id: "missing-user" },
-      select: { id: true, isAdmin: true },
+      select: { id: true, isAdmin: true, deletedAt: true, suspendedAt: true },
     });
 
     const body = await result.error?.json();
@@ -54,7 +54,12 @@ describe("requireAdmin() Library Utility", () => {
     vi.mocked(auth).mockResolvedValue({
       user: { id: "user-1", isAdmin: true },
     } as any);
-    vi.mocked(db.user.findUnique).mockResolvedValue({ id: "user-1", isAdmin: false } as any);
+    vi.mocked(db.user.findUnique).mockResolvedValue({
+      id: "user-1",
+      isAdmin: false,
+      deletedAt: null,
+      suspendedAt: null,
+    } as any);
 
     const result = await requireAdmin();
 
@@ -67,7 +72,12 @@ describe("requireAdmin() Library Utility", () => {
 
   it("returns the session and database user if the live database record is admin", async () => {
     const mockSession = { user: { id: "admin-1", isAdmin: false, email: "admin@test.com" } };
-    const mockDbUser = { id: "admin-1", isAdmin: true };
+    const mockDbUser = {
+      id: "admin-1",
+      isAdmin: true,
+      deletedAt: null,
+      suspendedAt: null,
+    };
     vi.mocked(auth).mockResolvedValue(mockSession as any);
     vi.mocked(db.user.findUnique).mockResolvedValue(mockDbUser as any);
 

@@ -88,12 +88,8 @@ export default function AdminVerificationsPage() {
   const handleAction = async (userId: string, type: string, action: "approve" | "reject", reason?: string) => {
     setProcessing(userId);
     try {
-      const res = await fetch(`/api/admin/verify/${userId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, type, reason }),
-      });
-      if (!res.ok) throw new Error();
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.post(`/api/admin/verify/${userId}`, { action, type, reason });
       toast({
         title: action === "approve" ? "✅ Approved" : "❌ Rejected",
         description: `${type.charAt(0).toUpperCase() + type.slice(1)} application ${action}d.`,

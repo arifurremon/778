@@ -1,7 +1,7 @@
 import { logErrorToSentry } from "@/lib/error-handler";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 type RouteContext = { params: Promise<{ connectionId: string }> };
@@ -18,10 +18,9 @@ export async function PATCH(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     const { connectionId } = await params;
     const body: unknown = await req.json();
@@ -113,14 +112,13 @@ export async function PATCH(
 // DELETE /api/neighbours/requests/[connectionId]  — cancel sent request (sender only)
 // ---------------------------------------------------------------------------
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     const { connectionId } = await params;
 

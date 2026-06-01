@@ -106,8 +106,11 @@ export default function AdminUsersPage() {
 
   const handleSuspend = async (userId: string) => {
     try {
-      const res = await fetch(`/api/admin/users/${userId}/suspend`, { method: 'PATCH' });
-      if (!res.ok) throw new Error('Failed to suspend user');
+      const { api } = await import("@/lib/api");
+      await api.post(`/api/admin/users/${userId}/suspend`, {
+        suspended: true,
+        reason: "Suspended by administrator from user management panel",
+      });
       toast({ title: "Success", description: "User suspension status updated." });
       fetchUsers();
     } catch (error) {
@@ -119,11 +122,8 @@ export default function AdminUsersPage() {
   const handleDelete = async (userId: string | null, isBulk: boolean) => {
     const idsToDelete = isBulk ? selectedIds : [userId!];
     try {
-      await Promise.all(
-        idsToDelete.map(id =>
-          fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
-        )
-      );
+      const { adminApi } = await import("@/lib/admin-api");
+      await Promise.all(idsToDelete.map((id) => adminApi.del(`/api/admin/users/${id}`)));
       toast({ 
         title: "Deleted", 
         description: `${idsToDelete.length} user(s) have been removed.` 

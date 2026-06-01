@@ -105,8 +105,8 @@ export default function AdminShopsPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/shops/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.del(`/api/admin/shops/${id}`);
       toast({ title: "Deleted", description: "Shop removed successfully." });
       fetchShops();
     } catch (error) {
@@ -118,12 +118,10 @@ export default function AdminShopsPage() {
 
   const handleVerify = async (id: string, approve: boolean) => {
     try {
-      const res = await fetch(`/api/admin/shops/${id}/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: approve ? 'approve' : 'reject' })
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.post(`/api/admin/shops/${id}/verify`, {
+        action: approve ? "approve" : "reject",
       });
-      if (!res.ok) throw new Error();
       toast({ title: approve ? "Verified" : "Rejected", description: `Shop ${approve ? 'verified' : 'rejected'} successfully.` });
       fetchShops();
     } catch (error) {

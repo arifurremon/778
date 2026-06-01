@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { requireActiveUser } from "@/lib/session-guards";
 
 export async function GET(req: NextRequest) {
   try {
+    const active = await requireActiveUser();
+    if (active.error) return active.error;
+
     const { searchParams } = req.nextUrl;
     const username = searchParams.get("username");
 

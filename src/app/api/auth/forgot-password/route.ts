@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendPasswordResetEmail } from "@/lib/mail";
 import { rateLimiters } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import crypto from "crypto";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -34,10 +35,10 @@ function buildResetUrl(req: NextRequest, token: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
 
+try {
     const headersList = await headers();
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
@@ -53,26 +54,11 @@ export async function POST(req: NextRequest) {
 
     const email = parsed.data.email.toLowerCase().trim();
 
-    let rateLimitResult: { success: boolean; reset?: number } = { success: true };
-    try {
-      rateLimitResult = await Promise.race([
-        rateLimiters.forgotPassword.limit(`${ip}:${email}`),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000)),
-      ]);
-    } catch (err) {
-      console.error("[ForgotPassword] Rate limit skipped:", err);
-    }
-
-    if (!rateLimitResult.success) {
-      const retryAfterSec = rateLimitResult.reset ? Math.max(1, Math.ceil((rateLimitResult.reset - Date.now()) / 1000)) : 60;
-      return NextResponse.json(
-        { error: "Too many attempts. Please try again later." },
-        { 
-          status: 429,
-          headers: { 'Retry-After': String(retryAfterSec) }
-        }
-      );
-    }
+    const rateLimitResponse = await enforceRateLimit(
+      () => rateLimiters.forgotPassword.limit(`${ip}:${email}`),
+      "ForgotPassword"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const user = await db.user.findUnique({
       where: { email },
