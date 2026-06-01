@@ -2,7 +2,7 @@ import { POST as rejectShop } from "@/app/api/admin/shops/[id]/reject/route";
 import { POST as verifyShop } from "@/app/api/admin/shops/[id]/verify/route";
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/mail";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -27,7 +27,7 @@ vi.mock("@/lib/admin-auth", () => ({
   requireAdmin: vi.fn(),
 }));
 
-vi.mock("@/lib/email", () => ({
+vi.mock("@/lib/mail", () => ({
   sendEmail: vi.fn().mockResolvedValue(true),
 }));
 
@@ -50,9 +50,9 @@ describe("Shop Moderation API Endpoints", () => {
         user: { email: "owner@test.com", name: "Owner" }
       });
 
-      const req = new NextRequest("http://localhost/api/admin/shops/shop-1/verify", {
+      const req = new NextRequest("http://localhost:3000/api/admin/shops/shop-1/verify", {
         method: "POST",
-        headers: { origin: "http://localhost", "x-csrf-token": "test-csrf-token" },
+        headers: { origin: "http://localhost:3000", "x-csrf-token": "test-csrf-token" },
       });
       const res = await verifyShop(req, { params: Promise.resolve({ id: "shop-1" }) });
       const data = await res.json();
@@ -71,9 +71,9 @@ describe("Shop Moderation API Endpoints", () => {
     it("should fail if rejection reason is less than 20 characters", async () => {
       (requireAdmin as any).mockResolvedValue({ session: { user: { id: "admin-1" } } });
       
-      const req = new NextRequest("http://localhost/api/admin/shops/shop-1/reject", {
+      const req = new NextRequest("http://localhost:3000/api/admin/shops/shop-1/reject", {
         method: "POST",
-        headers: { origin: "http://localhost", "x-csrf-token": "test-csrf-token" },
+        headers: { origin: "http://localhost:3000", "x-csrf-token": "test-csrf-token" },
         body: JSON.stringify({ reason: "Too short" })
       });
       
@@ -94,13 +94,13 @@ describe("Shop Moderation API Endpoints", () => {
       });
 
       const validReason = "Your shop does not meet our quality standards for photography and description.";
-      const req = new NextRequest("http://localhost/api/admin/shops/shop-1/reject", {
+      const req = new NextRequest("http://localhost:3000/api/admin/shops/shop-1/reject", {
         method: "POST",
-        headers: { origin: "http://localhost", "x-csrf-token": "test-csrf-token" },
+        headers: { origin: "http://localhost:3000", "x-csrf-token": "test-csrf-token" },
         body: JSON.stringify({ reason: validReason })
       });
       
-      const res = await rejectShop(req, { params: { id: "shop-1" } });
+      const res = await rejectShop(req, { params: Promise.resolve({ id: "shop-1" }) });
       expect(res.status).toBe(200);
       expect(db.$transaction).toHaveBeenCalled();
     });
@@ -110,7 +110,7 @@ describe("Shop Moderation API Endpoints", () => {
     (requireAdmin as any).mockResolvedValue({ session: { user: { id: "admin-1" } } });
     (db.shop.findUnique as any).mockResolvedValue(null);
 
-    const res = await verifyShop(new NextRequest("http://x", { method: "POST", headers: { origin: "http://x", "x-csrf-token": "test-csrf-token" } }), { params: Promise.resolve({ id: "none" }) });
+    const res = await verifyShop(new NextRequest("http://localhost:3000/api/admin/shops/none/verify", { method: "POST", headers: { origin: "http://localhost:3000", "x-csrf-token": "test-csrf-token" } }), { params: Promise.resolve({ id: "none" }) });
     expect(res.status).toBe(404);
   });
 
@@ -119,7 +119,7 @@ describe("Shop Moderation API Endpoints", () => {
     (db.shop.findUnique as any).mockResolvedValue({ id: "s1", user: { email: "e" } });
     (sendEmail as any).mockRejectedValue(new Error("SMTP Error"));
 
-    const res = await verifyShop(new NextRequest("http://x", { method: "POST", headers: { origin: "http://x", "x-csrf-token": "test-csrf-token" } }), { params: Promise.resolve({ id: "s1" }) });
+    const res = await verifyShop(new NextRequest("http://localhost:3000/api/admin/shops/s1/verify", { method: "POST", headers: { origin: "http://localhost:3000", "x-csrf-token": "test-csrf-token" } }), { params: Promise.resolve({ id: "s1" }) });
     expect(res.status).toBe(200); // API should still succeed
   });
 });

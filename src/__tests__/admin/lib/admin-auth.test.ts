@@ -21,7 +21,7 @@ describe("requireAdmin() Library Utility", () => {
   });
 
   it("returns 401 if no session exists", async () => {
-    vi.mocked(auth).mockResolvedValue(null);
+    vi.mocked(auth).mockResolvedValue(null as any);
 
     const result = await requireAdmin();
 

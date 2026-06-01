@@ -22,6 +22,7 @@ vi.mock("@/lib/rate-limit", () => ({
 // Mock cache (bypass — always run the query function)
 vi.mock("@/lib/cache", () => ({
   cachedQuery: vi.fn((_key: string, fn: () => Promise<any>) => fn()),
+  invalidateCache: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock auth session — default: unauthenticated

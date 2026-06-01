@@ -72,19 +72,18 @@ describe("logAdminAction() Library Utility", () => {
 
     expect(db.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        ipAddress: null,
+        ipAddress: "unknown",
         userAgent: null
       })
     });
   });
 
-  it("should handle AuditLog model missing in db client (schema fallback)", async () => {
-    // @ts-ignore
-    db.auditLog = undefined;
+  it("should log errors when audit log persistence fails", async () => {
+    vi.mocked(db.auditLog.create).mockRejectedValueOnce(new Error("DB error"));
 
     await logAdminAction("a", "b", "c", "d", {});
-    
-    expect(console.warn).toHaveBeenCalled();
+
+    expect(console.error).toHaveBeenCalled();
   });
 
   it("should accept any string as action for schema flexibility", async () => {

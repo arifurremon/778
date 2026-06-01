@@ -2,7 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/mail";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -16,7 +16,10 @@ const rejectSchema = z.object({
  * Rejects a service provider application.
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const csrfError = validateCsrfRequest(req);
     if (csrfError) return csrfError;
 
@@ -38,22 +41,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await db.$transaction(async (tx) => {
       // Update service status
-      try {
-        // SCHEMA-FALLBACK: 'rejectedAt' or 'rejectionReason' may not exist — verify schema
-        await tx.expertService.update({
-          where: { id },
-          data: {
-            // @ts-ignore
-            isVerified: false,
-            // @ts-ignore
-            rejectedAt: new Date(),
-            // @ts-ignore
-            rejectionReason: validatedData.reason
-          }
-        });
-      } catch (e) {
-        // Handled by User status update below
-      }
+      await tx.expertService.update({
+        where: { id },
+        data: {
+          isVerified: false,
+          rejectedAt: new Date(),
+          rejectionReason: validatedData.reason
+        }
+      });
 
       // Update user status
       await tx.user.update({
@@ -67,13 +62,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Notification on reject
       // SCHEMA-FALLBACK: 'notification' may not exist — verify schema
       try {
-        // @ts-ignore
         await tx.notification.create({
           data: {
             userId: service.userId,
-            title: "Service Application Rejected",
-            message: `Your service application was not approved. Reason: ${validatedData.reason}`,
-            type: "MODERATION_ACTION"
+            type: "SERVICE_VERIFIED",
+            entityType: "ExpertService",
+            entityId: service.id,
+            metadata: {
+              approved: false,
+              message: `Your service application was not approved. Reason: ${validatedData.reason}`,
+            },
           }
         });
       } catch (e) {

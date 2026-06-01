@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
@@ -26,7 +27,10 @@ function generateEmailToken(): { token: string; expiresAt: Date } {
 }
 
 export async function POST(req: NextRequest) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const body: unknown = await req.json();
     const parsed = resendVerificationSchema.safeParse(body);
     if (!parsed.success) {
@@ -39,13 +43,17 @@ export async function POST(req: NextRequest) {
     const email = parsed.data.email.toLowerCase().trim();
     const headersList = await headers();
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
-    const ip = rawForwarded.split(",")[0].trim() || "unknown";
+    const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
-    const { success } = await rateLimiters.resendVerification.limit(`${ip}:${email}`);
-    if (!success) {
+    const result = await rateLimiters.resendVerification.limit(`${ip}:${email}`);
+    if (!result.success) {
+      const retryAfterSec = result.reset ? Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)) : 60;
       return NextResponse.json(
         { error: "Too many attempts. Please try again later." },
-        { status: 429 }
+        { 
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSec) }
+        }
       );
     }
 

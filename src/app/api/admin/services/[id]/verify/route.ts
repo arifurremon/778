@@ -2,7 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/mail";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -11,7 +11,10 @@ import { NextRequest, NextResponse } from "next/server";
  * Approves a service provider application.
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const csrfError = validateCsrfRequest(req);
     if (csrfError) return csrfError;
 
@@ -32,20 +35,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Prisma transaction for atomic updates
     await db.$transaction(async (tx) => {
       // Update service status
-      try {
-        // SCHEMA-FALLBACK: 'isVerified' or 'verifiedAt' may not exist — verify schema
-        await tx.expertService.update({
-          where: { id },
-          data: { 
-            // @ts-ignore
-            isVerified: true,
-            // @ts-ignore
-            verifiedAt: new Date()
-          }
-        });
-      } catch (e) {
-        // Handled by User status update below
-      }
+      await tx.expertService.update({
+        where: { id },
+        data: { 
+          isVerified: true,
+          verifiedAt: new Date()
+        }
+      });
 
       // Update user status
       await tx.user.update({
@@ -59,13 +55,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // [cite_start]Notification on verify: "Your service '[title]' has been verified and is now live!" [cite: 117]
       // SCHEMA-FALLBACK: 'notification' may not exist — verify schema
       try {
-        // @ts-ignore
         await tx.notification.create({
           data: {
             userId: service.userId,
-            title: "Service Verified",
-            message: `Your service '${serviceTitle}' has been verified and is now live!`,
-            type: "SUCCESS"
+            type: "SERVICE_VERIFIED",
+            entityType: "ExpertService",
+            entityId: service.id,
+            metadata: {
+              approved: true,
+              message: `Your service '${serviceTitle}' has been verified and is now live!`,
+            },
           }
         });
       } catch (e) {
