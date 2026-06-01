@@ -81,8 +81,8 @@ export async function logAdminAction(
         entityType,
         entityId,
         details,
-        ipAddress,
-        userAgent,
+        ipAddress: ipAddress ?? "unknown",
+        userAgent: userAgent ?? null,
       }
     });
   } catch (error) {
