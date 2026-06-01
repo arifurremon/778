@@ -1,10 +1,7 @@
-import type { Metadata } from 'next';
+"use client";
+import ProtectedRoute from "@/components/layouts/protected-route";
+import type { ReactNode } from "react";
 
-export const metadata: Metadata = {
-  title: 'About | The Chattala',
-  description: 'Vision and Legacy of The Chattala.',
-};
-
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+export default function AboutLayout({ children }: { children: ReactNode }) {
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }

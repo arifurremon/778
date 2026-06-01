@@ -13,7 +13,6 @@ import {
   Search,
   Bell
 } from "lucide-react";
-import Layout from "../dashboard/layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -47,7 +46,6 @@ export default function ActivityPage() {
   );
 
   return (
-    <Layout>
       <div className="max-w-4xl mx-auto py-8 px-6 space-y-8">
         <section className="space-y-2">
           <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
@@ -101,7 +99,6 @@ export default function ActivityPage() {
           </AnimatePresence>
         </Tabs>
       </div>
-    </Layout>
   );
 }
 

@@ -12,6 +12,11 @@ interface ProtectedRouteProps {
   children: ReactNode;
 }
 
+/**
+ * Single source of truth for authenticated route guard.
+ * Replaces duplicated auth logic in dashboard/layout.tsx and community/layout.tsx.
+ * Used as the shared layout for all protected app routes.
+ */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
   const { status } = useSession();
@@ -19,7 +24,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (status === "unauthenticated" || (status === "authenticated" && !isLoading && !user)) {
-      router.push("/");
+      router.replace("/");
     }
   }, [status, isLoading, user, router]);
 

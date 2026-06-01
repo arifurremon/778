@@ -17,7 +17,6 @@ import {
   MessageSquare,
   ShieldCheck
 } from "lucide-react";
-import Layout from "../dashboard/layout";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,7 +87,6 @@ export default function NeighboursPage() {
   const filteredNeighbours = neighbours.filter(n => n.username.toLowerCase().includes(searchQuery.toLowerCase()) || n.name?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <Layout>
       <div className="max-w-4xl mx-auto py-8 px-6 space-y-8">
         <header className="space-y-2">
           <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
@@ -173,7 +171,6 @@ export default function NeighboursPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
   );
 }
 

@@ -24,8 +24,6 @@ import {
     ShieldCheck
 } from "lucide-react";
 import { useState } from "react";
-import Layout from "../dashboard/layout";
-
 export default function VisionLegacyPage() {
   const [activeTab, setActiveTab] = useState("genesis");
 
@@ -38,7 +36,6 @@ export default function VisionLegacyPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-5xl mx-auto py-10 px-6 space-y-12">
         {/* Page Header */}
         <section className="space-y-2">
@@ -218,7 +215,6 @@ export default function VisionLegacyPage() {
 
         <div className="h-20" />
       </div>
-    </Layout>
   );
 }
 

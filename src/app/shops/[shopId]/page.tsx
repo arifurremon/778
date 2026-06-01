@@ -37,7 +37,6 @@ import {
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import Layout from "../../dashboard/layout";
 
 const container = {
   hidden: { opacity: 0 },
@@ -103,7 +102,7 @@ export default function ShopStorefront() {
   };
 
   return (
-    <Layout>
+    <>
       <div className="min-h-screen pb-32">
         {/* Immersive Hero */}
         <div className="relative h-[400px] md:h-[500px]">
@@ -321,6 +320,6 @@ export default function ShopStorefront() {
       {selectedProduct && (
         <OrderModal product={selectedProduct} shopId={shop.id as string} isOpen={isOrderModalOpen} onClose={() => setSelectedProduct(null)} />
       )}
-    </Layout>
+    </>
   );
 }

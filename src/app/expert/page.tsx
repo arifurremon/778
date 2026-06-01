@@ -4,11 +4,8 @@
 import { ExpertDashboard } from "@/components/expert/expert-dashboard";
 import { cn } from "@/lib/utils";
 import { Calendar, LayoutDashboard, Settings, ShieldCheck, Star, Wallet } from "lucide-react";
-import Layout from "../dashboard/layout";
-
 export default function ExpertPage() {
   return (
-    <Layout>
       <div className="flex h-full">
         {/* Contextual Expert Sidebar */}
         <aside className="hidden lg:flex w-64 flex-col border-r border-border/50 bg-card/5 shrink-0">
@@ -46,7 +43,6 @@ export default function ExpertPage() {
           <ExpertDashboard />
         </div>
       </div>
-    </Layout>
   );
 }
 

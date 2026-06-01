@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, MapPin, ShieldAlert, Siren, Truck, Building2, Search, ExternalLink } from "lucide-react";
-import Layout from "../dashboard/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +32,6 @@ export default function EmergencyPage() {
   };
 
   return (
-    <Layout>
       <div className="max-w-5xl mx-auto py-8 px-6 space-y-8">
         <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
@@ -149,6 +147,5 @@ export default function EmergencyPage() {
         
         <div className="h-20" />
       </div>
-    </Layout>
   );
 }
