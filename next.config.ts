@@ -29,6 +29,33 @@ const devOnlyImageDomains =
       ]
     : [];
 
+/** CSP sources for third-party scripts (Pusher, Sentry, Vercel observability). */
+const cspScriptHosts = [
+  'https://js.pusher.com',
+  'https://js.sentry-cdn.com',
+  // Vercel Analytics (dev debug script) + Speed Insights loader when not first-party
+  'https://va.vercel-scripts.com',
+].join(' ');
+
+/**
+ * Production script-src: Next.js 15 App Router still emits inline hydration
+ * bootstraps; without 'unsafe-inline' the browser blocks them → white screen.
+ * TODO: migrate to nonce-based CSP via middleware when feasible.
+ */
+const productionScriptSrc = `'self' 'unsafe-inline' ${cspScriptHosts}`;
+const developmentScriptSrc = `'self' 'unsafe-inline' 'unsafe-eval' ${cspScriptHosts}`;
+
+const cspConnectHosts = [
+  'https://*.pusher.com',
+  'wss://*.pusher.com',
+  'https://*.upstash.io',
+  'https://*.sentry.io',
+  'https://uploadthing.com',
+  'https://utfs.io',
+  'https://vitals.vercel-insights.com',
+  'https://va.vercel-scripts.com',
+].join(' ');
+
 const nextConfig: NextConfig = {
   serverExternalPackages: ["ws", "@neondatabase/serverless"],
   images: {
@@ -92,13 +119,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              process.env.NODE_ENV === 'development'
-                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.pusher.com https://js.sentry-cdn.com"
-                : "script-src 'self' https://js.pusher.com https://js.sentry-cdn.com",
+              `script-src ${process.env.NODE_ENV === 'development' ? developmentScriptSrc : productionScriptSrc}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self'",
-              "connect-src 'self' https://*.pusher.com wss://*.pusher.com https://*.upstash.io https://*.sentry.io https://uploadthing.com https://utfs.io",
+              `connect-src 'self' ${cspConnectHosts}`,
               "frame-ancestors 'none'",
             ].join('; '),
           },
