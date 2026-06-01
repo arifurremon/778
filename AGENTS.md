@@ -25,6 +25,7 @@ See **SETUP.md** for full variable list and troubleshooting.
 | Dev server | `npm run dev` → http://localhost:9002 |
 | Lint | `npm run lint` (may prompt for ESLint setup if no config is committed) |
 | Typecheck | `npm run typecheck` |
+| Validate (CI parity) | `npm run validate` (typecheck + unit tests; set `NEXT_PUBLIC_APP_URL=http://localhost:3000` to match GitHub Actions) |
 | Unit + integration tests | `npm run test` or `npm run test:integration` (mocked Prisma; no DB) |
 | E2E | `npm run test:e2e` (install browsers once: `npx playwright install chromium`) |
 | DB schema | `npx prisma db push` or `npx prisma migrate dev` |

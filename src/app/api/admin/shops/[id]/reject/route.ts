@@ -2,7 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/mail";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -16,7 +16,10 @@ const rejectSchema = z.object({
  * Rejects a shop registration request.
  */
 export async function POST(req: NextRequest, { params }: any) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const csrfError = validateCsrfRequest(req);
     if (csrfError) return csrfError;
 
@@ -40,8 +43,8 @@ export async function POST(req: NextRequest, { params }: any) {
         where: { id },
         data: {
           isVerified: false,
-          // SCHEMA-FALLBACK: 'rejectedAt' or 'rejectionReason' may not exist — verify schema
-          // We'll update the User's registration status as a fallback
+          rejectedAt: new Date(),
+          rejectionReason: validatedData.reason
         }
       });
 
@@ -57,13 +60,16 @@ export async function POST(req: NextRequest, { params }: any) {
 
       // [cite_start]Notify owner via in-app notification. [cite: 110]
       try {
-        // @ts-ignore
         await tx.notification.create({
           data: {
             userId: shop.userId,
-            title: "Shop Registration Rejected",
-            message: `Your shop registration was not approved. Reason: ${validatedData.reason}`,
-            type: "ERROR"
+            type: "SHOP_VERIFIED",
+            entityType: "Shop",
+            entityId: shop.id,
+            metadata: {
+              approved: false,
+              message: `Your shop registration was not approved. Reason: ${validatedData.reason}`,
+            },
           }
         });
       } catch (e) {

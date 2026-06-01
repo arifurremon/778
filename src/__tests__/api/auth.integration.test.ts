@@ -79,7 +79,7 @@ describe("POST /api/auth/register — Integration", () => {
 
     expect(res.status).toBe(400);
     expect(json.success).toBe(false);
-    expect(json.message).toContain("at least 6 characters");
+    expect(json.message).toContain("at least 8 characters");
   });
 
   it("rejects request with missing required fields", async () => {

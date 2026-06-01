@@ -35,7 +35,7 @@
 import { db } from "@/lib/db";
 import { pusher } from "@/lib/pusher";
 import { logErrorToSentry } from "@/lib/error-handler";
-import { NotificationType } from "@prisma/client";
+import { NotificationType, Prisma } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -103,7 +103,7 @@ export async function sendNotification(
       type,
       entityType: entityType ?? null,
       entityId: entityId ?? null,
-      metadata,
+      metadata: metadata as Prisma.InputJsonValue,
     },
     // Select the fields the client needs to render the notification immediately
     // without a follow-up fetch — the Pusher payload IS the notification record.

@@ -15,10 +15,57 @@ import { headers } from "next/headers";
  * It does NOT export GET or POST — those HTTP verb handlers belong
  * exclusively in src/app/api/auth/[...nextauth]/route.ts.
  */
+const baseCallbacks = authConfig.callbacks ?? {};
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(db),
-  // session strategy is set in auth.config.ts via authConfig spread — JWT for Edge compatibility.
+  callbacks: {
+    ...baseCallbacks,
+    async jwt({ token, user, trigger, session }) {
+      if (baseCallbacks.jwt) {
+        const nextToken = await baseCallbacks.jwt({ token, user, trigger, session } as Parameters<
+          NonNullable<typeof baseCallbacks.jwt>
+        >[0]);
+        if (nextToken) token = nextToken;
+      }
+
+      if (token.id) {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.id as string },
+          select: {
+            isAdmin: true,
+            suspendedAt: true,
+            deletedAt: true,
+            username: true,
+            profileImage: true,
+          },
+        });
+
+        if (!dbUser || dbUser.deletedAt || dbUser.suspendedAt) {
+          return { ...token, invalid: true };
+        }
+
+        token.isAdmin = dbUser.isAdmin;
+        token.username = dbUser.username ?? token.username;
+        token.profileImage = dbUser.profileImage ?? token.profileImage;
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
+      if (token.invalid) {
+        return { ...session, user: undefined, expires: new Date(0).toISOString() };
+      }
+      if (baseCallbacks.session) {
+        return baseCallbacks.session({ session, token } as Parameters<
+          NonNullable<typeof baseCallbacks.session>
+        >[0]);
+      }
+      return session;
+    },
+    authorized: baseCallbacks.authorized,
+  },
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -43,7 +90,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // on a multi-hop deployment produces a unique key per proxy path,
         // silently defeating the limiter for a rotating-proxy attacker.
         const rawForwarded = headersList.get("x-forwarded-for") ?? "";
-        const ip = rawForwarded.split(",")[0].trim() || "unknown";
+        const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
         // Normalise email to lowercase to prevent key fragmentation.
         // An attacker using "Victim@Evil.com" vs "victim@evil.com" would
@@ -66,21 +113,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         //     accounts, so they each consume their own independent budget.
         const rateLimitKey = `${ip}:${email}`;
 
-        let rateLimitSuccess = true;
+        let rateLimitResult: { success: boolean; reset?: number } = { success: true };
         try {
-          const result = await Promise.race([
+          rateLimitResult = await Promise.race([
             rateLimiters.signin.limit(rateLimitKey),
             new Promise<never>((_, reject) =>
               setTimeout(() => reject(new Error("Rate limit timeout")), 2000)
             ),
           ]);
-          rateLimitSuccess = result.success;
         } catch (err) {
           console.error("[Auth] Rate limit skipped due to timeout or error:", err);
+          if (process.env.NODE_ENV === "production") {
+            throw new Error("Too many attempts. Please try again later.");
+          }
         }
 
-        if (!rateLimitSuccess) {
-          throw new Error("Too many attempts. Please try again later.");
+        if (!rateLimitResult.success) {
+          const retryAfterSec = rateLimitResult.reset ? Math.max(1, Math.ceil((rateLimitResult.reset - Date.now()) / 1000)) : 60;
+          throw new Error(`Too many attempts. Please try again in ${retryAfterSec} seconds.`);
         }
 
         const user = await db.user.findUnique({
@@ -88,6 +138,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
 
         if (!user || !user.password) return null;
+
+        if (user.suspendedAt !== null) {
+          throw new Error("AccountSuspended");
+        }
 
         const passwordsMatch = await compare(
           credentials.password as string,
