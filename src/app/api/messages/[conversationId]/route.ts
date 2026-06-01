@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { pusher } from "@/lib/pusher";
 import { rateLimiters } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
@@ -88,15 +89,12 @@ export async function POST(
     if (active.error) return active.error;
     const { session } = active;
 
-    // Rate limit: 30 messages per minute per user
-    const { success, reset } = await rateLimiters.messages.limit(session.user.id);
-    if (!success) {
-      const retryAfter = Math.ceil((reset - Date.now()) / 1000);
-      return NextResponse.json(
-        { error: "Sending too fast. Please slow down." },
-        { status: 429, headers: { "Retry-After": String(retryAfter) } }
-      );
-    }
+    const rateLimitResponse = await enforceRateLimit(
+      () => rateLimiters.messages.limit(session.user.id),
+      "Messages",
+      { quotaExceededMessage: "Sending too fast. Please slow down." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { conversationId } = await params;
 

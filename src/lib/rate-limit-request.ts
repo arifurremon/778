@@ -13,7 +13,8 @@ const RATE_LIMIT_TIMEOUT_MS = 2000;
  */
 export async function enforceRateLimit(
   limit: () => Promise<RateLimitResult>,
-  logLabel: string
+  logLabel: string,
+  options?: { quotaExceededMessage?: string }
 ): Promise<NextResponse | null> {
   let result: RateLimitResult = { success: true };
 
@@ -40,7 +41,11 @@ export async function enforceRateLimit(
       ? Math.max(1, Math.ceil((result.reset - Date.now()) / 1000))
       : 60;
     return NextResponse.json(
-      { error: "Too many attempts. Please try again later." },
+      {
+        error:
+          options?.quotaExceededMessage ??
+          "Too many attempts. Please try again later.",
+      },
       {
         status: 429,
         headers: { "Retry-After": String(retryAfterSec) },

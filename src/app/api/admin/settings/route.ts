@@ -84,9 +84,6 @@ export async function PATCH(req: NextRequest) {
   if (csrfError) return csrfError;
 
 try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 

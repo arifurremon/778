@@ -1,9 +1,9 @@
-import { validateCsrfRequest } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
-import { requireActiveUser } from "@/lib/session-guards";
+import { requireActiveMutation, requireActiveUser } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { z } from "zod";
 
 const orderSchema = z.object({
@@ -15,18 +15,17 @@ const orderSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
-try {
-    const active = await requireActiveUser();
+  try {
+    const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
 
-    const { success } = await rateLimiters.orders.limit(session.user.id);
-    if (!success) {
-      return NextResponse.json({ error: "Order limit reached (5/hour)" }, { status: 429 });
-    }
+    const rateLimitResponse = await enforceRateLimit(
+      () => rateLimiters.orders.limit(session.user.id),
+      "Orders",
+      { quotaExceededMessage: "Order limit reached (5/hour)" }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const body = await req.json();
     const result = orderSchema.safeParse(body);

@@ -25,7 +25,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/session-guards";
 import { pusher } from "@/lib/pusher";
 import { logErrorToSentry } from "@/lib/error-handler";
 
@@ -36,11 +36,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (csrfError) return csrfError;
 
 try {
-    // 1. Require an authenticated session.
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveUser();
+    if (active.error) return active.error;
+    const { session } = active;
 
     // 2. Pusher is optional (may be null if env vars are missing).
     if (!pusher) {

@@ -1,4 +1,4 @@
-import { validateCsrfRequest } from "@/lib/csrf";
+import { requireActiveMutation, requireActiveUser } from "@/lib/session-guards";
 /**
  * src/app/api/notifications/route.ts
  *
@@ -14,7 +14,6 @@ import { validateCsrfRequest } from "@/lib/csrf";
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 
@@ -41,10 +40,9 @@ const notificationSelect = {
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveUser();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const notifications = await db.notification.findMany({
       where: { userId: session.user.id },
@@ -66,14 +64,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
-try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  try {
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     await db.notification.updateMany({
       where: { userId: session.user.id, isRead: false },

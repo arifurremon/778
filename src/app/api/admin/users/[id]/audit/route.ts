@@ -19,7 +19,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     // SCHEMA-FALLBACK: 'AuditLog' model may not exist — verify schema
     try {
       logs = await db.auditLog.findMany({
-        where: { entityId: id },
+        where: {
+          OR: [
+            { adminId: id },
+            { entityType: "User", entityId: id },
+          ],
+        },
         take: 20,
         orderBy: { createdAt: 'desc' },
         include: {

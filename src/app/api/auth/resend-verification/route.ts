@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
 import { rateLimiters } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import crypto from "crypto";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -45,17 +46,11 @@ try {
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
-    const result = await rateLimiters.resendVerification.limit(`${ip}:${email}`);
-    if (!result.success) {
-      const retryAfterSec = result.reset ? Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)) : 60;
-      return NextResponse.json(
-        { error: "Too many attempts. Please try again later." },
-        { 
-          status: 429,
-          headers: { 'Retry-After': String(retryAfterSec) }
-        }
-      );
-    }
+    const rateLimitResponse = await enforceRateLimit(
+      () => rateLimiters.resendVerification.limit(`${ip}:${email}`),
+      "ResendVerification"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const user = await db.user.findUnique({
       where: { email },

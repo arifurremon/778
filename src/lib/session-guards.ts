@@ -55,3 +55,4 @@ export async function requireActiveMutation(req: NextRequest) {
   }
   return requireActiveUser();
 }
+

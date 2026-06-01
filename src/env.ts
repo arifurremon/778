@@ -37,6 +37,7 @@ export function validateServerEnv(): void {
   const missing: string[] = [];
   if (!env.DATABASE_URL) missing.push("DATABASE_URL");
   if (!env.AUTH_SECRET) missing.push("AUTH_SECRET");
+  if (!env.NEXT_PUBLIC_APP_URL) missing.push("NEXT_PUBLIC_APP_URL");
   if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
     missing.push("UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN");
   }

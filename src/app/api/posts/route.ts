@@ -5,6 +5,7 @@ import { invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizePostContent } from "@/lib/sanitize";
 import { ConnectionStatus, PrivacyLevel, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
@@ -210,18 +211,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (active.error) return active.error;
     const { session } = active;
 
-    // Rate limiting: 10 posts per hour per user
-    const result = await rateLimiters.posts.limit(session.user.id);
-    if (!result.success) {
-      const retryAfterSec = result.reset ? Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)) : 3600;
-      return NextResponse.json(
-        { error: "Post limit reached. Please try again later." },
-        { 
-          status: 429,
-          headers: { 'Retry-After': String(retryAfterSec) }
-        }
-      );
-    }
+    const rateLimitResponse = await enforceRateLimit(
+      () => rateLimiters.posts.limit(session.user.id),
+      "Posts",
+      { quotaExceededMessage: "Post limit reached. Please try again later." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const body: unknown = await req.json();
     const parsed = createPostSchema.safeParse(body);

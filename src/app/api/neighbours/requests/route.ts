@@ -1,8 +1,7 @@
-import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { requireActiveMutation, requireActiveUser } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 // ---------------------------------------------------------------------------
@@ -10,10 +9,9 @@ import { db } from "@/lib/db";
 // ---------------------------------------------------------------------------
 export async function GET(_req: NextRequest): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveUser();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const requests = await db.neighbourConnection.findMany({
       where: {
@@ -50,16 +48,10 @@ const sendRequestSchema = z.object({
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
-try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const senderId = session.user.id;
+  try {
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const senderId = active.session.user.id;
 
     const body: unknown = await req.json();
     const parsed = sendRequestSchema.safeParse(body);

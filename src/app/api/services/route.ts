@@ -1,5 +1,5 @@
-import { validateCsrfRequest } from "@/lib/csrf";
 import { auth } from "@/lib/auth";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { cachedQuery, invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
@@ -105,14 +105,10 @@ const createServiceSchema = z.object({
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
-try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  try {
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     const body: unknown = await req.json();
     const parsed = createServiceSchema.safeParse(body);

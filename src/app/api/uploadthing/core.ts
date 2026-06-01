@@ -1,6 +1,6 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { UploadThingError, UTApi } from "uploadthing/server";
-import { auth } from "@/lib/auth";
+import { requireActiveUser } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 
 const f = createUploadthing();
@@ -9,9 +9,9 @@ const utapi = new UTApi();
 export const ourFileRouter = {
   profileImage: f({ image: { maxFileSize: "16MB", maxFileCount: 1 } })
     .middleware(async () => {
-      const session = await auth();
-      if (!session?.user?.id) throw new UploadThingError("Unauthorized");
-      return { userId: session.user.id };
+      const active = await requireActiveUser();
+      if (active.error) throw new UploadThingError("Unauthorized");
+      return { userId: active.session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       const existingUser = await db.user.findUnique({
@@ -34,9 +34,9 @@ export const ourFileRouter = {
     }),
   imageUploader: f({ image: { maxFileSize: "16MB", maxFileCount: 3 } })
     .middleware(async () => {
-      const session = await auth();
-      if (!session?.user?.id) throw new UploadThingError("Unauthorized");
-      return { userId: session.user.id };
+      const active = await requireActiveUser();
+      if (active.error) throw new UploadThingError("Unauthorized");
+      return { userId: active.session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
       return { uploadedBy: metadata.userId, url: file.url };

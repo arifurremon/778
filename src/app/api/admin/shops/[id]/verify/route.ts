@@ -10,14 +10,14 @@ import { NextRequest, NextResponse } from "next/server";
  * POST /api/admin/shops/[id]/verify
  * Approves a shop registration.
  */
-export async function POST(req: NextRequest, { params }: any) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const csrfError = validateCsrfRequest(req);
   if (csrfError) return csrfError;
 
 try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 

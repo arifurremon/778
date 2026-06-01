@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
         topUsers
       }
     }, {
-      headers: { 'Cache-Control': 'public, max-age=300' }
+      headers: { "Cache-Control": "private, no-store" }
     });
   } catch (err) {
     logErrorToSentry(err, {

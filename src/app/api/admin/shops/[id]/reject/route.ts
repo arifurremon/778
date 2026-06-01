@@ -15,14 +15,14 @@ const rejectSchema = z.object({
  * POST /api/admin/shops/[id]/reject
  * Rejects a shop registration request.
  */
-export async function POST(req: NextRequest, { params }: any) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const csrfError = validateCsrfRequest(req);
   if (csrfError) return csrfError;
 
 try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 

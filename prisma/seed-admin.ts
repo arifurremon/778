@@ -97,7 +97,7 @@ async function main() {
       console.log("✅ Super Admin user created.");
       console.log("-----------------------------------------");
       console.log(`📧 Email: ${adminEmail}`);
-      console.log(`🔑 Password: ${defaultPassword}`);
+      console.log("🔑 Password: [set via ADMIN_PASSWORD env var — not logged]");
       console.log("⚠️ IMPORTANT: Change this password immediately after login!");
       console.log("-----------------------------------------");
     } else {
