@@ -44,7 +44,15 @@ ALTER TABLE "Comment"
 CREATE INDEX IF NOT EXISTS "Comment_deletedAt_idx" ON "Comment"("deletedAt");
 
 -- ----------------------------------------------------------------------------
--- 5. ExpertService: Add missing discovery indexes
+-- 5. ExpertService: Ensure isVerified exists before indexes
+--    Prisma applies this migration (20260601) before 20260601000001_add_missing_fields
+--    on fresh databases, so the column must be created here as well.
+-- ----------------------------------------------------------------------------
+ALTER TABLE "ExpertService" DROP COLUMN IF EXISTS "is_verified";
+ALTER TABLE "ExpertService" ADD COLUMN IF NOT EXISTS "isVerified" BOOLEAN NOT NULL DEFAULT false;
+
+-- ----------------------------------------------------------------------------
+-- 6. ExpertService: Add missing discovery indexes
 -- ----------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS "ExpertService_category_idx"             ON "ExpertService"("category");
 CREATE INDEX IF NOT EXISTS "ExpertService_location_idx"             ON "ExpertService"("location");
@@ -52,14 +60,14 @@ CREATE INDEX IF NOT EXISTS "ExpertService_isVerified_idx"           ON "ExpertSe
 CREATE INDEX IF NOT EXISTS "ExpertService_category_isVerified_idx"  ON "ExpertService"("category", "isVerified");
 
 -- ----------------------------------------------------------------------------
--- 6. Shop: Add missing discovery indexes
+-- 7. Shop: Add missing discovery indexes
 -- ----------------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS "Shop_category_idx"   ON "Shop"("category");
 CREATE INDEX IF NOT EXISTS "Shop_location_idx"   ON "Shop"("location");
 CREATE INDEX IF NOT EXISTS "Shop_isVerified_idx" ON "Shop"("isVerified");
 
 -- ----------------------------------------------------------------------------
--- 7. AuditLog.ipAddress: Make non-nullable
+-- 8. AuditLog.ipAddress: Make non-nullable
 --    Step 1: Back-fill existing NULL rows with empty string placeholder.
 --    Step 2: Apply NOT NULL constraint.
 --    NOTE: In production, back-fill with actual IPs from server logs BEFORE
