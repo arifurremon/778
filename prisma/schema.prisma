@@ -6,7 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -20,12 +22,15 @@ model User {
   location        String?
   profession      String?   @default("Not specified")
   bio             String?
-  dob             String?
+  // FIX(P1): Changed from String? to DateTime? for correct date handling,
+  // sorting, age calculation, and timezone safety.
+  dob             DateTime?
   profileImage    String?
   image           String?
   emailVerified   DateTime?
   nameChangeCount Int       @default(0)
-  joinDate        String?
+  // FIX(P1): Changed from String? to DateTime? for correct temporal queries.
+  joinDate        DateTime?
   isAdmin         Boolean   @default(false)
 
   // Security & Lifecycle
@@ -192,32 +197,16 @@ model Notification {
   type NotificationType
 
   // Polymorphic entity reference
-  // entityType: the logical name of the source table ("Post", "Comment",
-  //             "Order", "NeighbourConnection", "Shop", "ExpertService").
-  // entityId:   the UUID primary key of the referenced row.
-  // Both are nullable because SYSTEM_ALERT notifications may not reference
-  // any specific entity.
   entityType String?
   entityId   String?
 
   // Type-specific contextual payload.
-  // Examples:
-  //   POST_REACTION:  { "emoji": "👍", "postPreview": "Great news about..." }
-  //   ORDER_UPDATED:  { "oldStatus": "PENDING", "newStatus": "CONFIRMED" }
-  //   SHOP_VERIFIED:  { "approved": true }
-  //   NEW_COMMENT:    { "commentPreview": "Great point! I also think..." }
-  //   SYSTEM_ALERT:   { "message": "Your account was flagged for review." }
   metadata Json @default("{}")
 
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  // Covering index for the inbox query: fetch all notifications for a user
-  // ordered by recency. Postgres can satisfy ORDER BY createdAt DESC with
-  // this index without a separate sort step.
   @@index([userId, createdAt])
-  // Partial-style index for the unread badge count query:
-  // SELECT COUNT(*) WHERE userId = ? AND isRead = false
   @@index([userId, isRead])
 }
 
@@ -255,11 +244,16 @@ model Comment {
   text      String
   likes     Int                   @default(0)
   unlikes   Int                   @default(0)
+  // FIX(P1): Added soft delete support — mirrors Post.deletedAt pattern.
+  // Allows moderation to restore comments and maintain audit trail.
+  deletedAt DateTime?
   createdAt DateTime              @default(now())
   reactions UserCommentReaction[]
 
   @@index([postId])
   @@index([authorId])
+  // FIX(P1): Added index on deletedAt for efficient soft-delete filtering.
+  @@index([deletedAt])
 }
 
 model ActivityLog {
@@ -296,6 +290,9 @@ model Shop {
   updatedAt       DateTime  @updatedAt
 
   @@index([userId])
+  @@index([category])
+  @@index([location])
+  @@index([isVerified])
 }
 
 model Product {
@@ -331,6 +328,14 @@ model ExpertService {
   rejectionReason String?
   payoutMethod    PayoutMethod?
   createdAt       DateTime  @default(now())
+
+  // FIX(P1): Added missing indexes — category/location/isVerified are the
+  // primary filter axes for expert discovery queries. Without these, every
+  // search triggers a full table scan.
+  @@index([category])
+  @@index([location])
+  @@index([isVerified])
+  @@index([category, isVerified])
 }
 
 enum RegistrationStatus {
@@ -387,35 +392,30 @@ enum ActivityType {
 // ---------------------------------------------------------------------------
 enum NotificationType {
   // --- Community ---
-  POST_REACTION // Someone reacted to your post
-  NEW_COMMENT // Someone commented on your post
-  COMMENT_REPLY // Someone replied to your comment
-  POST_FLAGGED // A moderator flagged your post
+  POST_REACTION    // Someone reacted to your post
+  NEW_COMMENT      // Someone commented on your post
+  COMMENT_REPLY    // Someone replied to your comment
+  POST_FLAGGED     // A moderator flagged your post
 
   // --- Connections ---
-  NEIGHBOR_REQUEST // Someone sent you a neighbour request
+  NEIGHBOR_REQUEST  // Someone sent you a neighbour request
   NEIGHBOR_ACCEPTED // Your neighbour request was accepted
 
   // --- E-commerce (Shop) ---
-  NEW_ORDER // A buyer placed an order on your shop
-  ORDER_UPDATED // The status of an order changed
-  SHOP_VERIFIED // Your shop application was approved or rejected
+  NEW_ORDER          // A buyer placed an order on your shop
+  ORDER_UPDATED      // The status of an order changed
+  SHOP_VERIFIED      // Your shop application was approved or rejected
   NEW_PRODUCT_REVIEW // A buyer left a review on your product
 
   // --- Service Directory ---
-  SERVICE_BOOKED // Someone booked your expert service
-  SERVICE_UPDATED // A service booking status changed
+  SERVICE_BOOKED   // Someone booked your expert service
+  SERVICE_UPDATED  // A service booking status changed
   SERVICE_VERIFIED // Your expert profile was approved or rejected
 
   // --- Admin / System ---
-  SYSTEM_ALERT // Platform-wide or account-targeted system message
+  SYSTEM_ALERT      // Platform-wide or account-targeted system message
   MODERATION_ACTION // An admin took action on your content or account
 }
-
-// -----------------------------------------------------------------------------
-// INSTRUCTION: Run `npx prisma migrate dev --name add_admin_settings_audit` 
-// to apply these new schema models to the database.
-// -----------------------------------------------------------------------------
 
 model Settings {
   id                    String   @id @default("global")
@@ -432,6 +432,9 @@ model Settings {
   updatedBy             String?
 }
 
+// FIX(P1): ipAddress is now required (non-nullable) to enforce complete
+// forensic audit trails for all admin actions. Every admin route MUST
+// capture the IP from the request headers before writing an AuditLog row.
 model AuditLog {
   id         String   @id @default(uuid())
   adminId    String
@@ -440,7 +443,8 @@ model AuditLog {
   entityType String
   entityId   String
   details    Json     @default("{}")
-  ipAddress  String?
+  // FIX(P1): Changed from String? to String — IP is mandatory for audit integrity.
+  ipAddress  String
   userAgent  String?
   createdAt  DateTime @default(now())
 

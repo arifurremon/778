@@ -4,7 +4,8 @@ import { NextAuthConfig } from "next-auth";
  * Shared Auth.js configuration that is Edge-compatible.
  * This file should NOT import the database or any Node.js-only APIs.
  *
- * JWT strategy is intentional: CredentialsProvider does not support database sessions. PrismaAdapter is retained for OAuth account linking (Account model) only.
+ * JWT strategy is intentional: CredentialsProvider does not support database sessions.
+ * PrismaAdapter is retained for OAuth account linking (Account model) only.
  * JWT callbacks below are used only for enriching the session token
  * with extra fields (id, username, isAdmin, profileImage).
  */
@@ -19,7 +20,7 @@ export const authConfig: NextAuthConfig = {
         // Fallback to Google image if profileImage is not set
         token.profileImage = user.profileImage || user.image;
       }
-      
+
       // Support manual session updates
       if (trigger === "update" && session) {
         // Only merge safe, scalar session fields to prevent JWT size overflow
@@ -29,7 +30,7 @@ export const authConfig: NextAuthConfig = {
         }
         return token;
       }
-      
+
       return token;
     },
     async session({ session, token }) {
@@ -47,14 +48,38 @@ export const authConfig: NextAuthConfig = {
 
       // Propagate EmailNotVerified error to the login page with proper context
       if (nextUrl.searchParams.get("error") === "EmailNotVerified") {
-        return Response.redirect(new URL("/login?error=EmailNotVerified", nextUrl.origin));
+        return Response.redirect(
+          new URL("/login?error=EmailNotVerified", nextUrl.origin)
+        );
       }
-      
+
+      // FIX(P1): Added missing protected routes that were previously accessible
+      // without authentication:
+      //   - /register-service  (service provider registration)
+      //   - /register-shop     (seller shop registration)
+      //   - /employee          (employee-only area)
+      // Unauthenticated access to these routes allowed partial form submissions
+      // and data exposure before login enforcement.
       const isProtectedRoute = [
-        "/dashboard", "/profile", "/settings", "/community", 
-        "/messages", "/admin", "/seller", "/expert", 
-        "/activity", "/neighbours", "/emergency", "/shops", "/services", "/directory"
-      ].some(path => nextUrl.pathname.startsWith(path));
+        "/dashboard",
+        "/profile",
+        "/settings",
+        "/community",
+        "/messages",
+        "/admin",
+        "/seller",
+        "/expert",
+        "/activity",
+        "/neighbours",
+        "/emergency",
+        "/shops",
+        "/services",
+        "/directory",
+        // --- Previously missing routes (FIX) ---
+        "/register-service",
+        "/register-shop",
+        "/employee",
+      ].some((path) => nextUrl.pathname.startsWith(path));
 
       const isAdminRoute = nextUrl.pathname.startsWith("/admin");
 
@@ -63,7 +88,9 @@ export const authConfig: NextAuthConfig = {
           return false;
         }
         if (isAdminRoute && !isAdmin) {
-          return Response.redirect(new URL("/dashboard?error=unauthorized", nextUrl.origin));
+          return Response.redirect(
+            new URL("/dashboard?error=unauthorized", nextUrl.origin)
+          );
         }
         return true;
       }
@@ -78,5 +105,5 @@ export const authConfig: NextAuthConfig = {
   secret: process.env.AUTH_SECRET,
   trustHost: true,
   // Auth.js native debug output in development — no manual console.log needed
-  debug: process.env.NODE_ENV === "development"
+  debug: process.env.NODE_ENV === "development",
 };
