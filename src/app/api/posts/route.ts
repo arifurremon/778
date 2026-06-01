@@ -1,5 +1,6 @@
 import { validateCsrfRequest } from "@/lib/csrf";
 import { auth } from "@/lib/auth";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
@@ -204,14 +205,10 @@ const createPostSchema = z.object({
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
-try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  try {
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
 
     // Rate limiting: 10 posts per hour per user
     const result = await rateLimiters.posts.limit(session.user.id);

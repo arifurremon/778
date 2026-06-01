@@ -27,7 +27,10 @@ const registerSchema = z.object({
   name: z.string().min(1, "Name is required."),
   mobile: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Invalid Bangladeshi phone number."),
   location: z.string().min(1, "Location is required."),
-  dob: z.string().min(1, "Date of birth is required."),
+  dob: z
+    .string()
+    .min(1, "Date of birth is required.")
+    .refine((value) => !Number.isNaN(Date.parse(value)), "Invalid date of birth."),
   profession: z.string().optional(),
 });
 
@@ -138,7 +141,7 @@ try {
           name,
           mobile,
           location,
-          dob,
+          dob: new Date(dob),
           profession: profession || null,
           emailToken,
           emailTokenExp,

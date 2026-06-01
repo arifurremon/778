@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Requires an authenticated user that is not soft-deleted or suspended.
@@ -44,4 +45,13 @@ export async function requireActiveUser() {
   }
 
   return { session, dbUser };
+}
+
+/** CSRF + active-user check for cookie-authenticated mutations. */
+export async function requireActiveMutation(req: NextRequest) {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) {
+    return { error: csrfError };
+  }
+  return requireActiveUser();
 }

@@ -77,8 +77,6 @@ export async function DELETE(req: NextRequest): Promise<NextResponse> {
   if (csrfError) return csrfError;
 
 try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
     const { error } = await requireAdmin();
     if (error) return error;
 

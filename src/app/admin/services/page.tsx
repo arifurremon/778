@@ -104,8 +104,8 @@ export default function AdminServicesPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/services/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.del(`/api/admin/services/${id}`);
       toast({ title: "Deleted", description: "Service removed successfully." });
       fetchServices();
     } catch (error) {
@@ -117,12 +117,10 @@ export default function AdminServicesPage() {
 
   const handleVerify = async (id: string, approve: boolean) => {
     try {
-      const res = await fetch(`/api/admin/services/${id}/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: approve ? 'approve' : 'reject' })
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.post(`/api/admin/services/${id}/verify`, {
+        action: approve ? "approve" : "reject",
       });
-      if (!res.ok) throw new Error();
       toast({ title: approve ? "Verified" : "Rejected", description: `Service ${approve ? 'verified' : 'rejected'} successfully.` });
       fetchServices();
     } catch (error) {

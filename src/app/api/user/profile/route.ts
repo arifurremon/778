@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { cachedQuery, invalidateCache } from "@/lib/cache";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sanitizeUserInput } from "@/lib/sanitize";
@@ -95,10 +96,21 @@ const updateProfileSchema = z.object({
 }).strict();
 
 export const PATCH = auth(async (req) => {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
   try {
     const userId = req.auth?.user?.id;
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const dbUser = await db.user.findUnique({
+      where: { id: userId },
+      select: { deletedAt: true, suspendedAt: true },
+    });
+    if (!dbUser || dbUser.deletedAt || dbUser.suspendedAt) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body: unknown = await req.json();

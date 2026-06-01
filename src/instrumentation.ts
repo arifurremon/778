@@ -2,6 +2,8 @@ import * as Sentry from "@sentry/nextjs";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { validateServerEnv } = await import("./env");
+    validateServerEnv();
     await import("../sentry.server.config");
   }
   // Edge runtime: no sentry.edge.config.ts — omit to avoid import error

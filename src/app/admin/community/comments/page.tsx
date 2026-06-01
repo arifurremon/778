@@ -88,12 +88,8 @@ export default function AdminCommentsPage() {
 
   const handleDelete = async (ids: string[]) => {
     try {
-      const res = await fetch("/api/admin/comments", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ commentIds: ids }),
-      });
-      if (!res.ok) throw new Error();
+      const { adminApi } = await import("@/lib/admin-api");
+      await adminApi.del("/api/admin/comments", { commentIds: ids });
       toast({ title: `${ids.length} comment(s) deleted.` });
       setSelected(new Set());
       void fetchComments();

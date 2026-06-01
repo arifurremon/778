@@ -57,13 +57,9 @@ export default function GeneralSettingsPage() {
     }
   };
 
-  const handleSaveSettings = async (endpoint: string, data: Record<string, unknown>) => {
-    const res = await fetch('/api/admin/settings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error('Failed to save settings');
+  const handleSaveSettings = async (_endpoint: string, data: Record<string, unknown>) => {
+    const { adminApi } = await import("@/lib/admin-api");
+    await adminApi.patch("/api/admin/settings", data);
   };
 
   const handleMaintenanceToggle = (checked: boolean) => {

@@ -49,7 +49,7 @@ export const api = {
     return res.json();
   },
 
-  async del<T>(url: string): Promise<T> {
+  async del<T>(url: string, body?: unknown): Promise<T> {
     const csrfToken = await getCsrfToken();
     const res = await fetch(url, {
       method: "DELETE",
@@ -57,6 +57,7 @@ export const api = {
         "Content-Type": "application/json",
         ...(csrfToken && { "x-csrf-token": csrfToken }),
       },
+      body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
