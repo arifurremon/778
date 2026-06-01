@@ -338,7 +338,7 @@ export default function RegisterServicePage() {
                           <button
                             key={mode}
                             type="button"
-                            onClick={() => setValue("serviceMode", mode as any)}
+                            onClick={() => setValue("serviceMode", mode as "Home" | "Office" | "Remote")}
                             className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase border transition-smooth ${
                               watchAll.serviceMode === mode ? 'bg-accent border-accent text-accent-foreground shadow-lg' : 'bg-background/40 border-border/30 text-muted-foreground'
                             }`}
@@ -427,7 +427,7 @@ export default function RegisterServicePage() {
                           <button
                             key={method}
                             type="button"
-                            onClick={() => setValue("payoutMethod", method as any)}
+                            onClick={() => setValue("payoutMethod", method as "bKash" | "Nagad" | "Bank")}
                             className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase border transition-smooth ${
                               watchAll.payoutMethod === method ? 'bg-accent border-accent text-accent-foreground shadow-lg' : 'bg-background/40 border-border/30 text-muted-foreground'
                             }`}

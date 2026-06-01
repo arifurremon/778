@@ -68,6 +68,7 @@ export interface User {
   name?: string;
   preferredName?: string;
   bio?: string;
+  profession?: string;
   mobile?: string;
   location?: string;
   dob?: string;

@@ -90,6 +90,13 @@ interface CommentApiResponse {
   };
 }
 
+function mapVisibilityFromAPI(v: string): PrivacyLevel {
+  if (v === 'PUBLIC') return 'Public';
+  if (v === 'NEIGHBOURS') return 'Neighbours';
+  if (v === 'PRIVATE') return 'Only Me';
+  return 'Public';
+}
+
 const CommunityContext = createContext<CommunityContextType | null>(null);
 
 export function CommunityProvider({ children }: { children: React.ReactNode }) {
@@ -142,15 +149,29 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
         checkInLocation: postData.checkInLocation,
         visibility: postData.visibility === 'Public' ? 'PUBLIC' : postData.visibility === 'Neighbours' ? 'NEIGHBOURS' : 'PRIVATE'
       });
-      const newPost = { ...newPostRaw, timestamp: newPostRaw.createdAt, author: { ...newPostRaw.author, avatar: newPostRaw.author.profileImage } };
-      setPosts(prev => [{
-        ...newPost,
+      const newPost: Post = {
+        id: newPostRaw.id,
+        content: newPostRaw.content,
+        timestamp: newPostRaw.createdAt,
+        images: newPostRaw.images,
+        checkInLocation: newPostRaw.checkInLocation,
+        visibility: mapVisibilityFromAPI(newPostRaw.visibility),
+        author: {
+          name: newPostRaw.author.name,
+          username: newPostRaw.author.username,
+          avatar: newPostRaw.author.profileImage ?? '',
+          location: '',
+          isVerified: newPostRaw.author.isVerified,
+          isSeller: newPostRaw.author.isSeller,
+          isServiceProvider: newPostRaw.author.isServiceProvider,
+        },
         comments: [],
         isSaved: false,
         isFollowing: false,
         helpfulCount: 0,
         notHelpfulCount: 0,
-      } as any, ...prev]);
+      };
+      setPosts(prev => [newPost, ...prev]);
     } catch (err) {
       console.error(err);
       throw err;
