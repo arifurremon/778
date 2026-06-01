@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
@@ -17,16 +18,14 @@ const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 // ---------------------------------------------------------------------------
 const registerSchema = z.object({
   email: z.string().email("Invalid email address."),
-  password: z
-    .string()
-    .min(6, "Password must be at least 6 characters."),
+  password: z.string().min(8, "Password must be at least 8 characters.").regex(/[0-9!@#$%^&*(),.?":{}|<>_]/, "Password must contain at least one number or symbol."),
   username: z
     .string()
     .min(3, "Username must be at least 3 characters.")
     .max(20, "Username cannot exceed 20 characters.")
     .regex(/^\w+$/, "Username may only contain letters, numbers, and underscores."),
   name: z.string().min(1, "Name is required."),
-  mobile: z.string().min(1, "Mobile is required."),
+  mobile: z.string().regex(/^(?:\\+8801|01)[3-9]\\d{8}$/, "Invalid Bangladeshi phone number."),
   location: z.string().min(1, "Location is required."),
   dob: z.string().min(1, "Date of birth is required."),
   profession: z.string().optional(),
@@ -55,7 +54,10 @@ function formatUniqueConstraintMessage(err: Prisma.PrismaClientKnownRequestError
 // POST /api/auth/register
 // ---------------------------------------------------------------------------
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const headersList = await headers();
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";

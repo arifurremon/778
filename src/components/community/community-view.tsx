@@ -102,7 +102,7 @@ export default function CommunityView() {
           id: user?.id || `guest-${Date.now()}`,
           name: user?.name || "Guest User",
           username: user?.username || "guest",
-          avatar: user?.profileImage || `https://picsum.photos/seed/${user?.email}/100`,
+          avatar: user?.profileImage || `/city_background.png${user?.email}/100`,
           location: user?.location || "Unknown",
           isVerified: user?.isVerified,
           isSeller: user?.isSeller,

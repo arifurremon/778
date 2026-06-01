@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 /**
  * src/app/api/pusher/auth/route.ts
  *
@@ -31,7 +32,10 @@ import { logErrorToSentry } from "@/lib/error-handler";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     // 1. Require an authenticated session.
     const session = await auth();
     if (!session?.user?.id) {

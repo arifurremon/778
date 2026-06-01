@@ -73,7 +73,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 // DELETE /api/admin/comments  — bulk delete comments by IDs
 // ---------------------------------------------------------------------------
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const csrfError = validateCsrfRequest(req);
     if (csrfError) return csrfError;
     const { error } = await requireAdmin();

@@ -157,7 +157,7 @@ export default function ExpertPublicProfile() {
           <div className="absolute -bottom-16 left-8 md:left-16 flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
             <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-[3rem] overflow-hidden border-8 border-background shadow-2xl ring-8 ring-accent/5 bg-background">
               <Image
-                src={expert.image ?? "https://placehold.co/400x400/1e293b/94a3b8?text=Expert"}
+                src={expert.image ?? "/city_background.png"}
                 alt={expert.name}
                 fill
                 className="object-cover"

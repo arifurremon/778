@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useBusiness } from "@/hooks/use-business";
 import { toast } from "@/hooks/use-toast";
+import { UploadButton } from "@/lib/uploadthing";
 
 const productSchema = z.object({
   name: z.string().min(3, "Name is too short"),
@@ -35,9 +36,7 @@ export function ProductForm({ onSuccess, shopId = "s-my-shop" }: ProductFormProp
   });
 
   const addMockImage = () => {
-    if (images.length >= 3) return;
-    const newImage = `https://picsum.photos/seed/${Math.random()}/600/600`;
-    setImages([...images, newImage]);
+    // Legacy mock function replaced by UploadThing
   };
 
   const removeImage = (idx: number) => {
@@ -81,14 +80,28 @@ export function ProductForm({ onSuccess, shopId = "s-my-shop" }: ProductFormProp
               </div>
             ))}
             {images.length < 3 && (
-              <button
-                type="button"
-                onClick={addMockImage}
-                className="aspect-square rounded-xl border-2 border-dashed border-border/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-accent/50 hover:text-accent transition-colors"
-              >
-                <Plus size={20} />
-                <span className="text-[8px] font-bold uppercase">Add Photo</span>
-              </button>
+              <div className="aspect-square rounded-xl border-2 border-dashed border-border/50 flex flex-col items-center justify-center p-2 text-muted-foreground hover:border-accent/50 hover:text-accent transition-colors">
+                <UploadButton
+                  endpoint="imageUploader"
+                  onClientUploadComplete={(res) => {
+                    if (res) {
+                      setImages([...images, ...res.map((r) => r.url)].slice(0, 3));
+                    }
+                  }}
+                  onUploadError={(error: Error) => {
+                    toast({ variant: "destructive", title: "Upload Failed", description: error.message });
+                  }}
+                  appearance={{
+                    button: "w-full text-[10px] font-bold uppercase tracking-widest bg-accent text-accent-foreground rounded-lg h-8 px-2 py-0",
+                    container: "w-full h-full flex flex-col items-center justify-center",
+                    allowedContent: "text-[8px] uppercase mt-2 opacity-50"
+                  }}
+                  content={{
+                    button: "Add Photo",
+                    allowedContent: "Image (Max 3)"
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>

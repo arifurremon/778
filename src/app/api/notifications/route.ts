@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 /**
  * src/app/api/notifications/route.ts
  *
@@ -65,7 +66,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function PATCH(req: NextRequest): Promise<NextResponse> {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

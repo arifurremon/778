@@ -89,6 +89,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user || !user.password) return null;
 
+        if (user.suspendedAt !== null) {
+          throw new Error("AccountSuspended");
+        }
+
         const passwordsMatch = await compare(
           credentials.password as string,
           user.password

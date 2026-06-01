@@ -5,7 +5,10 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(req: NextRequest) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const csrfError = validateCsrfRequest(req);
     if (csrfError) return csrfError;
 

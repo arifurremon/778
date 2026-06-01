@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Search | The Chattala',
-  description: 'Search for anything in The Chattala.',
+  title: 'Emergency | The Chattala',
+  description: 'Emergency contacts in Chittagong.',
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

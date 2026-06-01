@@ -43,7 +43,7 @@ const registerSchema = z.object({
   categories: z.array(z.string()).min(1, "Select at least one category"),
   customCategory: z.string().optional(),
   businessEmail: z.string().email("Invalid business email"),
-  businessPhone: z.string().min(11, "Invalid phone number"),
+  businessPhone: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Invalid Bangladeshi phone number"),
   isOffline: z.boolean().default(false),
   address: z.string().optional(),
   deliveryAreas: z.array(z.string()).min(1, "Select at least one delivery area"),

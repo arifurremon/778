@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -8,14 +9,17 @@ import { z } from "zod";
 const orderSchema = z.object({
   shopId: z.string().uuid(),
   productId: z.string().uuid(),
-  phone: z.string().min(1, "Phone is required"),
+  phone: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Invalid Bangladeshi phone number"),
   address: z.string().min(1, "Address is required"),
   price: z.number().positive("Price must be a positive number."),
   note: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

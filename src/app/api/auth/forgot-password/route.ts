@@ -34,7 +34,10 @@ function buildResetUrl(req: NextRequest, token: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const csrfError = validateCsrfRequest(req);
     if (csrfError) return csrfError;
 

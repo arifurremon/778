@@ -1,3 +1,4 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
@@ -13,7 +14,10 @@ const suspendSchema = z.object({
  * POST /api/admin/users/[id]/suspend
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 

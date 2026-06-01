@@ -184,7 +184,7 @@ function NeighbourCard({ user, onRemove }: { user: any, onRemove: () => void }) 
        <div className="flex items-center gap-4 text-left">
           <Link href={`/profile/${username}`}>
             <Avatar className="w-12 h-12 border border-border/50 hover:ring-2 hover:ring-accent transition-all cursor-pointer">
-              <AvatarImage src={user.profileImage || `https://picsum.photos/seed/${username}/100`} />
+              <AvatarImage src={user.profileImage || `/city_background.png${username}/100`} />
               <AvatarFallback>{(user.name?.[0] || username?.[0] || '').toUpperCase()}</AvatarFallback>
             </Avatar>
           </Link>
@@ -219,7 +219,7 @@ function RequestCard({ sender, onAccept, onDecline }: { sender: any, onAccept: (
        <div className="flex items-center gap-4 text-left w-full sm:w-auto">
           <Link href={`/profile/${username}`}>
             <Avatar className="w-14 h-14 border-2 border-background ring-2 ring-accent/10 shadow-lg hover:ring-accent transition-all cursor-pointer">
-              <AvatarImage src={sender.profileImage || `https://picsum.photos/seed/${username}/100`} />
+              <AvatarImage src={sender.profileImage || `/city_background.png${username}/100`} />
               <AvatarFallback>{(sender.name?.[0] || username?.[0] || '').toUpperCase()}</AvatarFallback>
             </Avatar>
           </Link>

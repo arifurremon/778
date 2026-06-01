@@ -79,7 +79,9 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.pusher.com https://js.sentry-cdn.com",
+              process.env.NODE_ENV === 'development' 
+                ? "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.pusher.com https://js.sentry-cdn.com"
+                : "script-src 'self' https://js.pusher.com https://js.sentry-cdn.com",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "font-src 'self'",

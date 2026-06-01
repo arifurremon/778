@@ -11,7 +11,10 @@ import { NextRequest, NextResponse } from "next/server";
  * Approves a shop registration.
  */
 export async function POST(req: NextRequest, { params }: any) {
-  try {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
+try {
     const csrfError = validateCsrfRequest(req);
     if (csrfError) return csrfError;
 

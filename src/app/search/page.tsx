@@ -79,7 +79,7 @@ type RealProvider = {
 };
 
 function shopImageSrc(shop: RealShop): string {
-  return shop.user.profileImage ?? "https://placehold.co/800x450/1e293b/94a3b8?text=Shop";
+  return shop.user.profileImage ?? "/city_background.png";
 }
 
 function SearchResults() {

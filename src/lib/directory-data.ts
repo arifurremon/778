@@ -40,7 +40,7 @@ export const TOURISM_SPOTS: TourismSpot[] = [
     name: 'Patenga Sea Beach',
     category: 'Scenic Spot',
     description: 'The most popular beach in the city, famous for its sunset and stone-lined shore.',
-    image: 'https://picsum.photos/seed/patenga/600/400',
+    image: '/city_background.png',
     location: 'Patenga',
     entryFee: 'Free',
     timing: '24/7'
@@ -50,7 +50,7 @@ export const TOURISM_SPOTS: TourismSpot[] = [
     name: "Foy's Lake",
     category: 'Theme Park',
     description: 'An artificial lake surrounded by hills and home to a popular amusement park.',
-    image: 'https://picsum.photos/seed/foyslake/600/400',
+    image: '/city_background.png',
     location: 'Pahartali',
     entryFee: '৳300+',
     timing: '10 AM - 7 PM'
@@ -60,7 +60,7 @@ export const TOURISM_SPOTS: TourismSpot[] = [
     name: 'Naval Avenue',
     category: 'Scenic Spot',
     description: 'A beautiful riverside road perfect for evening walks and street food.',
-    image: 'https://picsum.photos/seed/naval/600/400',
+    image: '/city_background.png',
     location: 'Patenga',
     entryFee: 'Free',
     timing: 'Best in evening'
@@ -70,7 +70,7 @@ export const TOURISM_SPOTS: TourismSpot[] = [
     name: 'Guliakhali Beach',
     category: 'Nature',
     description: 'Known as the "Green Beach" for its unique swamp-like grass vegetation.',
-    image: 'https://picsum.photos/seed/guliakhali/600/400',
+    image: '/city_background.png',
     location: 'Sitakunda',
     entryFee: 'Free',
     timing: 'Best in daylight'
@@ -80,7 +80,7 @@ export const TOURISM_SPOTS: TourismSpot[] = [
     name: 'Commonwealth War Cemetery',
     category: 'Heritage',
     description: 'A peaceful memorial honoring the soldiers of World War II.',
-    image: 'https://picsum.photos/seed/cemetery/600/400',
+    image: '/city_background.png',
     location: 'Panchlaish',
     entryFee: 'Free',
     timing: '9 AM - 5 PM'
@@ -90,7 +90,7 @@ export const TOURISM_SPOTS: TourismSpot[] = [
     name: 'Ethnological Museum',
     category: 'Museum',
     description: 'The only ethnological museum in Bangladesh showing tribal cultures.',
-    image: 'https://picsum.photos/seed/museum1/600/400',
+    image: '/city_background.png',
     location: 'Agrabad',
     entryFee: '৳20',
     timing: '10 AM - 5 PM'
@@ -100,7 +100,7 @@ export const TOURISM_SPOTS: TourismSpot[] = [
     name: 'Chandranath Hill',
     category: 'Religious/Hiking',
     description: 'A famous pilgrimage site and the highest peak in Chittagong district.',
-    image: 'https://picsum.photos/seed/hills/600/400',
+    image: '/city_background.png',
     location: 'Sitakunda',
     entryFee: 'Free',
     timing: 'Early morning hike recommended'
@@ -110,7 +110,7 @@ export const TOURISM_SPOTS: TourismSpot[] = [
     name: 'DC Hill',
     category: 'Park',
     description: 'A central park and cultural hub where Pohela Boishakh is celebrated.',
-    image: 'https://picsum.photos/seed/dchill/600/400',
+    image: '/city_background.png',
     location: 'Kotwali',
     entryFee: 'Free',
     timing: '6 AM - 8 PM'
@@ -124,7 +124,7 @@ export const HERITAGE_PEOPLE: HeritagePerson[] = [
     role: 'Revolutionary Leader',
     lifespan: '1894 – 1934',
     bio: 'An Indian revolutionary who was influential in the Indian independence movement and best known for leading the 1930 Chittagong armoury raid.',
-    image: 'https://picsum.photos/seed/suryasen/400/500'
+    image: '/city_background.png'
   },
   {
     id: 'h2',
@@ -132,7 +132,7 @@ export const HERITAGE_PEOPLE: HeritagePerson[] = [
     role: 'Revolutionary Leader',
     lifespan: '1911 – 1932',
     bio: 'A Bengali revolutionary nationalist who was influential in the Indian independence movement. She was the first woman to lead a raid against British authorities.',
-    image: 'https://picsum.photos/seed/pritilata/400/500'
+    image: '/city_background.png'
   },
   {
     id: 'h3',
@@ -140,7 +140,7 @@ export const HERITAGE_PEOPLE: HeritagePerson[] = [
     role: 'Poet & Activist',
     lifespan: '1927 – 2007',
     bio: 'A Bangladeshi poet, journalist and activist. He was the author of the first poem of the Language Movement in 1952.',
-    image: 'https://picsum.photos/seed/poet1/400/500'
+    image: '/city_background.png'
   },
   {
     id: 'h4',
@@ -148,7 +148,7 @@ export const HERITAGE_PEOPLE: HeritagePerson[] = [
     role: 'Educationist',
     lifespan: '1863 – 1926',
     bio: 'A prominent educationist and social worker who played a vital role in spreading modern education in Chittagong.',
-    image: 'https://picsum.photos/seed/edu1/400/500'
+    image: '/city_background.png'
   },
   {
     id: 'h5',
@@ -156,7 +156,7 @@ export const HERITAGE_PEOPLE: HeritagePerson[] = [
     role: 'Political Leader',
     lifespan: '1885 – 1933',
     bio: 'Known as "Deshapriya", he was a prominent lawyer and freedom fighter who served as the Mayor of Calcutta and leader of Chittagong.',
-    image: 'https://picsum.photos/seed/leader1/400/500'
+    image: '/city_background.png'
   }
 ];
 
@@ -177,21 +177,21 @@ export const NEWS_OUTLETS: NewsOutlet[] = [
   { 
     id: 'n1', 
     name: 'Dainik Azadi', 
-    logo: 'https://picsum.photos/seed/azadi/200/100', 
+    logo: '/city_background.png', 
     url: 'https://dainikazadi.net/', 
     description: 'The oldest and most respected local newspaper of Chittagong.' 
   },
   { 
     id: 'n2', 
     name: 'Dainik Purbokone', 
-    logo: 'https://picsum.photos/seed/purbokone/200/100', 
+    logo: '/city_background.png', 
     url: 'https://purbokone.com/', 
     description: 'A leading daily known for comprehensive local news coverage.' 
   },
   { 
     id: 'n3', 
     name: 'Chattogram Pratidin', 
-    logo: 'https://picsum.photos/seed/pratidin/200/100', 
+    logo: '/city_background.png', 
     url: 'https://chattogrampratidin.com/', 
     description: 'Popular digital-first news outlet serving the port city.' 
   }

@@ -109,7 +109,7 @@ export default function ShopStorefront() {
         <div className="relative h-[400px] md:h-[500px]">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/30 via-background/60 to-background z-0" />
           <Image 
-            src={`https://picsum.photos/seed/${shop.id}-cover/1600/800`} 
+            src={`/city_background.png${shop.id}-cover/1600/800`} 
             alt="Cover" 
             fill 
             className="object-cover opacity-40 z-[-1]"

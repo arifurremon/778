@@ -81,7 +81,7 @@ export const GET = auth(async (req) => {
 const updateProfileSchema = z.object({
   name:            z.string().min(1).optional(),
   preferredName:   z.string().min(1).optional(),
-  mobile:          z.string().optional(),
+  mobile:          z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Invalid Bangladeshi phone number.").optional(),
   location:        z.string().optional(),
   profession:      z.string().optional(),
   bio:             z.string().max(500, "Bio must be 500 characters or less.").optional(),
