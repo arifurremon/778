@@ -40,7 +40,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     const category = searchParams.get("category") ?? undefined;
     const location = searchParams.get("location") ?? undefined;
-    const search   = searchParams.get("search") ?? undefined;
+    const search = searchParams.get("search") || "";
     const page     = Math.max(1, parseInt(searchParams.get("page")  ?? "1",  10));
     const limit    = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12", 10)));
     const skip     = (page - 1) * limit;
@@ -53,15 +53,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         const where = {
           ...(category ? { category } : {}),
           ...(location ? { location: { contains: location, mode: "insensitive" as const } } : {}),
-          ...(search
-            ? {
-                OR: [
-                  { profession: { contains: search, mode: "insensitive" as const } },
-                  { category: { contains: search, mode: "insensitive" as const } },
-                  { bio: { contains: search, mode: "insensitive" as const } },
-                ],
-              }
-            : {}),
+          ...(search && {
+            OR: [
+              { profession: { contains: search, mode: "insensitive" as const } },
+              { category: { contains: search, mode: "insensitive" as const } },
+              { bio: { contains: search, mode: "insensitive" as const } },
+            ],
+          }),
         };
 
         return Promise.all([
