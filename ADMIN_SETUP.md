@@ -1,125 +1,53 @@
-# 🔐 Admin Setup Guide
+# Admin setup guide
 
-## ✅ Admin Credentials
+## Credentials
 
-আপনার admin account এর credentials:
+Set admin seed credentials via environment variables only — never commit real passwords:
 
 ```bash
-Email:    admin@thechattala.com
-Password: StrongPassword123!@#
+ADMIN_EMAIL="admin@yourdomain.com"
+ADMIN_PASSWORD="use-a-strong-random-password"
 ```
 
----
+Generate a password: `openssl rand -base64 24`
 
-## 🚀 Setup Steps
+## Setup steps
 
-### Step 1: Create `.env.local` file
+### 1. Create `.env.local`
 
 ```bash
 cp .env.example .env.local
 ```
 
-এটি `.env.example` থেকে সব production credentials copy করবে।
+Fill in all values from `.env.example` using your secret manager or service dashboards.
 
-### Step 2: Verify Admin Credentials in `.env.local`
+### 2. Set admin variables in `.env.local`
 
 ```bash
-ADMIN_EMAIL="admin@thechattala.com"
-ADMIN_PASSWORD="StrongPassword123!@#"
+ADMIN_EMAIL="admin@yourdomain.com"
+ADMIN_PASSWORD="your-strong-password"
 ```
 
-### Step 3: Run Database Migrations
+### 3. Run database migrations
 
 ```bash
 npx prisma migrate deploy
 ```
 
-### Step 4: Seed the Admin User
+### 4. Seed the admin user
 
 ```bash
-tsx prisma/seed-admin.ts
+npx tsx prisma/seed-admin.ts
 ```
 
-**Output আসবে:**
-```
-🌱 Starting Admin and Settings Seed...
-✅ Global settings initialized.
-✅ Admin user created successfully!
-```
+Expected output includes confirmation that the admin user was created or updated.
 
-### Step 5: Verify Admin User Created
+### 5. Sign in
 
-```bash
-# Optional: Check in database
-npx prisma studio
-```
+Open `/login` and sign in with `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
 
-Prisma Studio খুলবে যেখানে আপনি users দেখতে পারবেন।
+## Security notes
 
----
-
-## 🔑 Login to Admin Panel
-
-এখন আপনি এই credentials দিয়ে login করতে পারবেন:
-
-- **Email:** `admin@thechattala.com`
-- **Password:** `StrongPassword123!@#`
-
----
-
-## 🔒 Security Notes
-
-⚠️ **IMPORTANT:**
-
-1. **Production deployment এর আগে:**
-   - Strong password দিন (min 12 characters, numbers + symbols)
-   - `StrongPassword123!@#` change করুন নিজের password এ
-
-2. **Password generate করো:**
-   ```bash
-   openssl rand -base64 16
-   ```
-
-3. **কখনো commit করবে না:**
-   ```bash
-   .env.local        # ❌ Never commit
-   .env.production   # ❌ Never commit
-   ```
-
----
-
-## 📋 Quick Checklist
-
-- [ ] `.env.local` created from `.env.example`
-- [ ] Admin email & password verified
-- [ ] Database migrations run (`npx prisma migrate deploy`)
-- [ ] Seed script executed (`tsx prisma/seed-admin.ts`)
-- [ ] Verified admin user in database (Prisma Studio)
-- [ ] Admin login successful
-- [ ] Changed default password (production)
-
----
-
-## 🆘 Troubleshooting
-
-### "Admin already exists" error
-```
-→ Admin user already created. Check database with:
-  npx prisma studio
-```
-
-### "Settings model not found"
-```
-→ Migrations haven't run yet. Run:
-  npx prisma migrate deploy
-```
-
-### "Cannot connect to database"
-```
-→ Check DATABASE_URL in .env.local
-→ Verify Neon connection is active
-```
-
----
-
-**Happy admin! 🎉**
+- Rotate `ADMIN_PASSWORD` after first login if it was shared during setup.
+- Grant `isAdmin` only to trusted accounts in the database.
+- Admin API routes use live DB checks for the `isAdmin` flag.

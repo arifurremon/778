@@ -67,7 +67,12 @@ async function main() {
 
   // 2. Check or Create Super Admin
   const adminEmail = process.env.ADMIN_EMAIL || "admin@thechattala.com";
-  const defaultPassword = process.env.ADMIN_PASSWORD || "ChattalaAdmin!2026";
+  const defaultPassword = process.env.ADMIN_PASSWORD;
+  if (!defaultPassword) {
+    throw new Error(
+      "ADMIN_PASSWORD must be set in the environment before running seed-admin.ts"
+    );
+  }
   
   try {
     const existingAdmin = await prisma.user.findUnique({

@@ -2,6 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { hash } from "bcryptjs";
 import crypto from "crypto";
 import { headers } from "next/headers";
@@ -22,33 +23,15 @@ export async function POST(req: NextRequest) {
   if (csrfError) return csrfError;
 
 try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-
     const headersList = await headers();
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
-    let rateLimitResult: { success: boolean; reset?: number } = { success: true };
-    try {
-      rateLimitResult = await Promise.race([
-        rateLimiters.resetPassword.limit(ip),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000)),
-      ]);
-    } catch (err) {
-      console.error("[ResetPassword] Rate limit skipped due to timeout or Upstash error:", err);
-    }
-
-    if (!rateLimitResult.success) {
-      const retryAfterSec = rateLimitResult.reset ? Math.max(1, Math.ceil((rateLimitResult.reset - Date.now()) / 1000)) : 60;
-      return NextResponse.json(
-        { error: "Too many attempts. Please try again later." },
-        { 
-          status: 429,
-          headers: { 'Retry-After': String(retryAfterSec) }
-        }
-      );
-    }
+    const rateLimitResponse = await enforceRateLimit(
+      () => rateLimiters.resetPassword.limit(ip),
+      "ResetPassword"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const body: unknown = await req.json();
     const parsed = resetPasswordSchema.safeParse(body);

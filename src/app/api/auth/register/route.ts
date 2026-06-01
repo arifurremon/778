@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
 import { rateLimiters } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
@@ -65,25 +66,14 @@ try {
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
-    // Check Redis-based rate limit
-    let rateLimitResult: { success: boolean; reset?: number } = { success: true };
-    try {
-      rateLimitResult = await Promise.race([
-        rateLimiters.register.limit(ip),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000)),
-      ]);
-    } catch (err) {
-      console.error("[Register] Rate limit skipped due to timeout or Upstash error:", err);
-    }
-
-    if (!rateLimitResult.success) {
-      const retryAfterSec = rateLimitResult.reset ? Math.max(1, Math.ceil((rateLimitResult.reset - Date.now()) / 1000)) : 60;
+    const rateLimitResponse = await enforceRateLimit(
+      () => rateLimiters.register.limit(ip),
+      "Register"
+    );
+    if (rateLimitResponse) {
       return NextResponse.json(
         { success: false, message: "Too many attempts. Please try again later." },
-        { 
-          status: 429,
-          headers: { 'Retry-After': String(retryAfterSec) }
-        }
+        { status: rateLimitResponse.status, headers: rateLimitResponse.headers }
       );
     }
 

@@ -67,9 +67,9 @@ describe("GET /api/admin — Integration", () => {
 
     prismaMock.user.count
       .mockResolvedValueOnce(50) // totalUsers
-      .mockResolvedValueOnce(3) // pendingShops
-      .mockResolvedValueOnce(1) // pendingServices
       .mockResolvedValueOnce(5); // pendingVerifications
+    prismaMock.shop.count.mockResolvedValueOnce(3); // pendingShops
+    prismaMock.expertService.count.mockResolvedValueOnce(1); // pendingServices
 
     const res = await GET(makeRequest());
     const json = await res.json();

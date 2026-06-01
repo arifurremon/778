@@ -1,7 +1,9 @@
-# 🚨 Deployment Environment Variables — Critical Analysis
+# Deployment environment variables — analysis notes
 
-**Date:** May 18, 2026  
-**Status:** ⚠️ **ISSUES FOUND - Read Below**
+**Date:** June 2026  
+**Status:** Reference only — **no secrets in this file**
+
+> Use `.env.example` as the template. Store real values in `.env.local` or Vercel environment variables only.
 
 ---
 
@@ -65,7 +67,7 @@ NODE_ENV="production"
 ```bash
 # For Prisma seed-admin.ts
 ADMIN_EMAIL="admin@thechattala.com"
-ADMIN_PASSWORD="StrongPassword123!@#"
+ADMIN_PASSWORD="your-strong-admin-password"
 ```
 **কেন:** Admin user create করার সময় লাগবে  
 **Impact:** Development কাজ করবে, production এ manually admin create করতে হবে
@@ -106,22 +108,13 @@ DIRECT_URL="postgresql://neondb_owner:npg_hOywq5Z4xQAs@ep-rapid-bonus-aonj8ih9.c
 ```
 ✅ Same database for both dev & prod (OK if testing), but consider separate DB for prod safety
 
-#### **Step 4: Redis Status**
-```bash
-UPSTASH_REDIS_REST_URL="https://nice-whale-90599.upstash.io"
-UPSTASH_REDIS_REST_TOKEN="gQAAAAAAAWHnAAIgcDFhNDQ3MTMwZDA2MzY0NzE3OTVmZDk3ODlkZWZlODY1Mw"
-```
-✅ Active, will enable caching & rate limiting
+#### **Step 4: Redis status**
 
-#### **Step 5: Email Configuration**
-```bash
-SMTP_HOST="smtp-relay.brevo.com"
-SMTP_PORT="587"
-SMTP_USER="aa0dcf001@smtp-brevo.com"
-SMTP_PASSWORD="your_brevo_smtp_password_here"
-SMTP_FROM="hello@thechattala.com"
-```
-✅ Verified Brevo account
+Set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` from the Upstash console. Required for production rate limiting (fail-closed).
+
+#### **Step 5: Email configuration**
+
+Set `SMTP_*` variables from your Brevo (or other SMTP) dashboard. See `.env.example`.
 
 ---
 
@@ -137,45 +130,15 @@ SMTP_FROM="hello@thechattala.com"
 
 ---
 
-## ✅ Fixed Environment Variables
+## Production environment template
 
-**Use this for production deployment:**
+Copy `.env.example` to `.env.local` or configure the same keys in Vercel. **Do not paste real secrets into markdown files.**
 
 ```bash
-# Database (Neon DB) — SAME AS PROVIDED ✅
-DATABASE_URL="postgresql://neondb_owner:npg_hOywq5Z4xQAs@ep-rapid-bonus-aonj8ih9-pooler.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
-DIRECT_URL="postgresql://neondb_owner:npg_hOywq5Z4xQAs@ep-rapid-bonus-aonj8ih9.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
-
-# NextAuth Settings — SAME AS PROVIDED ✅
-AUTH_SECRET="bMBE9HyKukDzsC8jRztAbspSW6zG4B2XNY7tDn0d1nA="
-NEXTAUTH_SECRET="TheChattala_2026_Secure_!@#_Inievo_v1_7b9f8a2w1e"
-NEXTAUTH_URL="https://thechattala.com"
-
-# OAuth Settings (Google) — SAME AS PROVIDED ✅
-GOOGLE_CLIENT_ID="798178360328-mp2s85i9f23gu5b0vde0av3uvq86l9q9.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="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"
-
-# Email Service (SMTP Brevo) — SAME AS PROVIDED ✅
-SMTP_HOST="smtp-relay.brevo.com"
-SMTP_PORT="587"
-SMTP_USER="aa0dcf001@smtp-brevo.com"
-SMTP_PASSWORD="your_brevo_smtp_password_here"
-SMTP_FROM="hello@thechattala.com"
-
-# File Uploads (UploadThing) — SAME AS PROVIDED ✅
-UPLOADTHING_SECRET="sk_live_49f1bec90ae5dfaa0ba224898783b5db4fd6cd9f36b290d7d1c0c34be9dcc00b"
-UPLOADTHING_APP_ID="d6fpgbi73a"
-
-# Redis & Monitoring — SAME AS PROVIDED ✅
-UPSTASH_REDIS_REST_URL="https://nice-whale-90599.upstash.io"
-UPSTASH_REDIS_REST_TOKEN="gQAAAAAAAWHnAAIgcDFhNDQ3MTMwZDA2MzY0NzE3OTVmZDk3ODlkZWZlODY1Mw"
-NEXT_PUBLIC_SENTRY_DSN="https://8d9643cc0862e357dc24e06b9b044fed@o4511376317743104.ingest.us.sentry.io/4511376352870400"
-
-# ⚠️ CRITICAL FIX: Change development to production ⚠️
-NODE_ENV="production"
+cp .env.example .env.local
+# Fill values from service dashboards (Neon, Upstash, Brevo, UploadThing, Sentry)
+NODE_ENV="production"   # Vercel Production environment only
 ```
-
----
 
 ## 🚀 Final Deployment Steps
 

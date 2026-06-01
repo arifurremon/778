@@ -1,8 +1,9 @@
 # 🚀 The Chattala — Deployment Environment Variables
 
-**Last Updated:** May 18, 2026  
-**Environment:** Production  
-**Status:** ✅ Configured & Ready to Deploy
+**Last Updated:** June 2026  
+**Environment:** Production template (no secrets in this file)
+
+> **Security:** This document uses placeholders only. Copy values from `.env.example` into `.env.local` or your host's secret manager (e.g. Vercel). Never commit real credentials to Git.
 
 ---
 
@@ -37,7 +38,7 @@ DIRECT_URL="postgresql://neondb_owner:npg_hOywq5Z4xQAs@ep-rapid-bonus-aonj8ih9.c
 - Database Name: `neondb`
 - User: `neondb_owner`
 - Connection: SSL Required ✅
-- Endpoint: `ep-rapid-bonus-aonj8ih9-pooler`
+- Endpoint: your Neon pooler host (see Neon console)
 - Console: https://console.neon.tech
 
 ---
@@ -49,13 +50,15 @@ DIRECT_URL="postgresql://neondb_owner:npg_hOywq5Z4xQAs@ep-rapid-bonus-aonj8ih9.c
 
 ```bash
 # Primary authentication secret (minimum 32 characters)
-AUTH_SECRET="bMBE9HyKukDzsC8jRztAbspSW6zG4B2XNY7tDn0d1nA="
+# Generate: openssl rand -base64 32
+AUTH_SECRET="your-auth-secret-min-32-chars"
 
-# Session encryption secret
-NEXTAUTH_SECRET="TheChattala_2026_Secure_!@#_Inievo_v1_7b9f8a2w1e"
+# Optional legacy alias (app uses AUTH_SECRET for sessions)
+NEXTAUTH_SECRET="your-nextauth-secret-if-needed"
 
-# Production application URL
+# Production application URL (no trailing slash)
 NEXTAUTH_URL="https://thechattala.com"
+NEXT_PUBLIC_APP_URL="https://thechattala.com"
 ```
 
 **Key Details:**
@@ -72,11 +75,9 @@ NEXTAUTH_URL="https://thechattala.com"
 **Status:** ✅ Active
 
 ```bash
-# Google OAuth Client ID
-GOOGLE_CLIENT_ID="798178360328-mp2s85i9f23gu5b0vde0av3uvq86l9q9.apps.googleusercontent.com"
-
-# Google OAuth Client Secret
-GOOGLE_CLIENT_SECRET="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"
+# Google OAuth (optional — not wired in app yet)
+GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
 ```
 
 **Key Details:**
@@ -100,7 +101,7 @@ SMTP_HOST="smtp-relay.brevo.com"
 SMTP_PORT="587"
 
 # Brevo SMTP Account
-SMTP_USER="aa0dcf001@smtp-brevo.com"
+SMTP_USER="your-brevo-smtp-user"
 
 # Brevo SMTP API Key
 SMTP_PASSWORD="your_brevo_smtp_password_here"
@@ -125,15 +126,12 @@ SMTP_FROM="hello@thechattala.com"
 **Status:** ✅ Active
 
 ```bash
-# UploadThing Secret Key
-UPLOADTHING_SECRET="sk_live_49f1bec90ae5dfaa0ba224898783b5db4fd6cd9f36b290d7d1c0c34be9dcc00b"
-
-# UploadThing App ID
-UPLOADTHING_APP_ID="d6fpgbi73a"
+UPLOADTHING_SECRET="sk_live_your_uploadthing_secret"
+UPLOADTHING_APP_ID="your_uploadthing_app_id"
 ```
 
 **Key Details:**
-- App ID: `d6fpgbi73a`
+- App ID: from UploadThing dashboard
 - Max File Size: 4MB (images), 16MB (videos)
 - File Types: Images (JPG, PNG, WebP), Videos (MP4, WebM)
 - Usage: Profile pictures, post images
@@ -150,11 +148,8 @@ UPLOADTHING_APP_ID="d6fpgbi73a"
 **Status:** ✅ Active
 
 ```bash
-# Upstash Redis REST Endpoint
-UPSTASH_REDIS_REST_URL="https://nice-whale-90599.upstash.io"
-
-# Upstash Redis REST Token
-UPSTASH_REDIS_REST_TOKEN="gQAAAAAAAWHnAAIgcDFhNDQ3MTMwZDA2MzY0NzE3OTVmZDk3ODlkZWZlODY1Mw"
+UPSTASH_REDIS_REST_URL="https://your-instance.upstash.io"
+UPSTASH_REDIS_REST_TOKEN="your-upstash-rest-token"
 ```
 
 **Used For:**
@@ -173,8 +168,7 @@ UPSTASH_REDIS_REST_TOKEN="gQAAAAAAAWHnAAIgcDFhNDQ3MTMwZDA2MzY0NzE3OTVmZDk3ODlkZW
 **Status:** ✅ Configured (Optional but recommended)
 
 ```bash
-# Sentry DSN (Data Source Name)
-NEXT_PUBLIC_SENTRY_DSN="https://8d9643cc0862e357dc24e06b9b044fed@o4511376317743104.ingest.us.sentry.io/4511376352870400"
+NEXT_PUBLIC_SENTRY_DSN="https://your-key@your-org.ingest.sentry.io/your-project-id"
 ```
 
 **Monitors:**
