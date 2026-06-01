@@ -2,7 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/mail";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -34,8 +34,7 @@ export async function POST(req: NextRequest, { params }: any) {
         where: { id },
         data: { 
           isVerified: true,
-          // SCHEMA-FALLBACK: 'verifiedAt' may not exist — verify schema
-          ...(('verifiedAt' in tx.shop) ? { verifiedAt: new Date() } : {})
+          verifiedAt: new Date()
         }
       });
 
@@ -112,9 +111,3 @@ export async function POST(req: NextRequest, { params }: any) {
   }
 }
 
-// Helper to check if a field exists in a Prisma model at runtime (simplistic)
-function tryField(model: Record<string, unknown>, fieldName: string): boolean {
-  // SCHEMA-FALLBACK: Check if field exists in schema
-  // In a real scenario, we might use Prisma.dmmf or a try/catch on a dummy query
-  return false; // Defaulting to false since we know it's missing in current schema
-}

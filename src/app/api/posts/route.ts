@@ -58,6 +58,14 @@ async function resolveNeighborIds(userId: string): Promise<string[]> {
   return [...new Set(neighborIds)];
 }
 
+async function resolveBlockedIds(userId: string): Promise<string[]> {
+  const blocks = await db.blockedUser.findMany({
+    where: { blockerId: userId },
+    select: { blockedId: true },
+  });
+  return blocks.map((b) => b.blockedId);
+}
+
 // ---------------------------------------------------------------------------
 // buildFeedWhereClause
 //
@@ -77,29 +85,34 @@ async function resolveNeighborIds(userId: string): Promise<string[]> {
 // ---------------------------------------------------------------------------
 function buildFeedWhereClause(
   userId: string | null,
-  neighborIds: string[]
+  neighborIds: string[],
+  blockedIds: string[]
 ): Prisma.PostWhereInput {
   if (!userId) {
     return { visibility: PrivacyLevel.PUBLIC };
   }
 
   return {
-    OR: [
-      // Arm 1 — public content from the entire community
-      { visibility: PrivacyLevel.PUBLIC },
-      // Arm 2 — the user's own posts (all visibility levels)
-      { authorId: userId },
-      // Arm 3 — neighbour-restricted posts from accepted connections
-      // Guard: only emit this arm when the user actually has neighbours.
-      // An empty `in: []` would never match any row, but omitting the arm
-      // entirely keeps the query plan cleaner when neighborIds is empty.
-      ...(neighborIds.length > 0
-        ? [
-            {
-              visibility: PrivacyLevel.NEIGHBOURS,
-              authorId: { in: neighborIds },
-            },
-          ]
+    AND: [
+      {
+        OR: [
+          // Arm 1 — public content from the entire community
+          { visibility: PrivacyLevel.PUBLIC },
+          // Arm 2 — the user's own posts (all visibility levels)
+          { authorId: userId },
+          // Arm 3 — neighbour-restricted posts from accepted connections
+          ...(neighborIds.length > 0
+            ? [
+                {
+                  visibility: PrivacyLevel.NEIGHBOURS,
+                  authorId: { in: neighborIds },
+                },
+              ]
+            : []),
+        ],
+      },
+      ...(blockedIds.length > 0
+        ? [{ NOT: { authorId: { in: blockedIds } } }]
         : []),
     ],
   };
@@ -125,8 +138,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const session = await auth();
     const userId = session?.user?.id ?? null;
     const neighborIds = userId ? await resolveNeighborIds(userId) : [];
+    const blockedIds = userId ? await resolveBlockedIds(userId) : [];
 
-    const where = buildFeedWhereClause(userId, neighborIds);
+    const where = buildFeedWhereClause(userId, neighborIds, blockedIds);
 
     // The Prisma $transaction ensures the count and findMany observe the
     // same DB snapshot, preventing pagination corruption from concurrent
@@ -196,11 +210,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Rate limiting: 10 posts per hour per user
-    const { success } = await rateLimiters.posts.limit(session.user.id);
-    if (!success) {
+    const result = await rateLimiters.posts.limit(session.user.id);
+    if (!result.success) {
+      const retryAfterSec = result.reset ? Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)) : 3600;
       return NextResponse.json(
         { error: "Post limit reached. Please try again later." },
-        { status: 429 }
+        { 
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSec) }
+        }
       );
     }
 

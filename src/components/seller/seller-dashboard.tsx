@@ -49,7 +49,7 @@ export function SellerDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
 
   const stats = useMemo(() => ({
-    totalSales: orders.filter(o => o.status === 'Delivered').reduce((acc, curr) => acc + parseInt(curr.price.replace(/[^0-9]/g, '')), 0),
+    totalSales: orders.filter(o => o.status === 'Delivered').reduce((acc, curr) => acc + curr.price, 0),
     activeOrders: orders.filter(o => ['Pending', 'Processing', 'Sent'].includes(o.status)).length,
     activeProducts: products.length,
     rating: "4.8"

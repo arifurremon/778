@@ -61,21 +61,24 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
     // Check Redis-based rate limit
-    let rateLimitSuccess = true;
+    let rateLimitResult: { success: boolean; reset?: number } = { success: true };
     try {
-      const result = await Promise.race([
+      rateLimitResult = await Promise.race([
         rateLimiters.register.limit(ip),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000)),
       ]);
-      rateLimitSuccess = result.success;
     } catch (err) {
       console.error("[Register] Rate limit skipped due to timeout or Upstash error:", err);
     }
 
-    if (!rateLimitSuccess) {
+    if (!rateLimitResult.success) {
+      const retryAfterSec = rateLimitResult.reset ? Math.max(1, Math.ceil((rateLimitResult.reset - Date.now()) / 1000)) : 60;
       return NextResponse.json(
         { success: false, message: "Too many attempts. Please try again later." },
-        { status: 429 }
+        { 
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSec) }
+        }
       );
     }
 

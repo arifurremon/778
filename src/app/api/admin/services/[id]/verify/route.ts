@@ -2,7 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/mail";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -32,20 +32,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Prisma transaction for atomic updates
     await db.$transaction(async (tx) => {
       // Update service status
-      try {
-        // SCHEMA-FALLBACK: 'isVerified' or 'verifiedAt' may not exist — verify schema
-        await tx.expertService.update({
-          where: { id },
-          data: { 
-            // @ts-ignore
-            isVerified: true,
-            // @ts-ignore
-            verifiedAt: new Date()
-          }
-        });
-      } catch (e) {
-        // Handled by User status update below
-      }
+      await tx.expertService.update({
+        where: { id },
+        data: { 
+          isVerified: true,
+          verifiedAt: new Date()
+        }
+      });
 
       // Update user status
       await tx.user.update({

@@ -16,7 +16,7 @@ import { toast } from "@/hooks/use-toast";
 const productSchema = z.object({
   name: z.string().min(3, "Name is too short"),
   description: z.string().min(10, "Provide a better description"),
-  price: z.string().regex(/^৳?\d+(,\d+)*$/, "Enter a valid price (e.g. ৳1,500)"),
+  price: z.number({ invalid_type_error: "Enter a valid price" }).positive("Price must be greater than 0"),
   deliveryCharge: z.string().default("৳50"),
 });
 
@@ -102,7 +102,7 @@ export function ProductForm({ onSuccess, shopId = "s-my-shop" }: ProductFormProp
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="price" className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Price</Label>
-            <Input id="price" {...register("price")} placeholder="৳1,200" className="bg-card/20 border-border/50 h-11" />
+            <Input id="price" type="number" step="0.01" {...register("price", { valueAsNumber: true })} placeholder="1200" className="bg-card/20 border-border/50 h-11" />
             {errors.price && <p className="text-[10px] text-destructive">{errors.price.message}</p>}
           </div>
           <div className="space-y-2">

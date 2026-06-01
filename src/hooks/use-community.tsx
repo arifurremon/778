@@ -22,6 +22,7 @@ export interface Comment {
 export interface Post {
   id: string;
   author: {
+    id: string;
     name: string;
     avatar: string;
     location: string;
@@ -35,6 +36,7 @@ export interface Post {
   images?: string[];
   helpfulCount: number;
   notHelpfulCount: number;
+  userReaction?: "helpful" | "notHelpful" | null;
   comments: Comment[];
   isSaved?: boolean;
   isFollowing?: boolean;
@@ -46,8 +48,13 @@ export interface Post {
 interface CommunityContextType {
   posts: Post[];
   loading: boolean;
+  loadingMore: boolean;
   error: string | null;
+  hasNextPage: boolean;
+  currentPage: number;
   fetchPosts: () => Promise<void>;
+  fetchMorePosts: () => Promise<void>;
+  refresh: () => Promise<void>;
   addPost: (post: Omit<Post, 'id' | 'timestamp' | 'helpfulCount' | 'notHelpfulCount' | 'comments'>) => Promise<void>;
   deletePost: (id: string) => Promise<void>;
   addComment: (postId: string, comment: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'unlikes'>) => Promise<void>;
@@ -67,6 +74,8 @@ interface PostApiResponse {
   checkInLocation?: string;
   visibility: string;
   createdAt: string;
+  helpfulCount?: number;
+  notHelpfulCount?: number;
   author: {
     id: string;
     name: string;
@@ -98,103 +107,134 @@ function mapVisibilityFromAPI(v: string): PrivacyLevel {
   return 'Public';
 }
 
+function mapApiPost(p: any): Post {
+  return {
+    ...p,
+    timestamp: p.createdAt,
+    author: { ...p.author, id: p.author.id, avatar: p.author.profileImage },
+    comments: (p.comments || []).map((c: any) => ({
+      ...c,
+      timestamp: c.createdAt,
+      author: { ...c.author, avatar: c.author.profileImage },
+      likes: c.likes ?? 0,
+      unlikes: c.unlikes ?? 0,
+    })),
+    isSaved: false,
+    isFollowing: false,
+    helpfulCount: p.helpfulCount ?? 0,
+    notHelpfulCount: p.notHelpfulCount ?? 0,
+    userReaction: null,
+  };
+}
+
+const LIMIT = 10;
+
 const CommunityContext = createContext<CommunityContextType | null>(null);
 
 export function CommunityProvider({ children }: { children: React.ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const hasFetchedRef = useRef(false);
-  const fetchInFlightRef = useRef<Promise<void> | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+
+  // Prevent concurrent fetches without blocking re-fetches (unlike hasFetchedRef)
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
-    const savedBlocked = localStorage.getItem("chattala_blocked_users");
-    if (savedBlocked) setBlockedUsers(JSON.parse(savedBlocked));
+    api.get<{ blockedUserIds: string[] }>('/api/user/block')
+      .then(res => {
+        if (res.blockedUserIds) setBlockedUsers(res.blockedUserIds);
+      })
+      .catch(err => {
+        // Ignored. User might not be authenticated.
+      });
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem("chattala_blocked_users", JSON.stringify(blockedUsers));
-  }, [blockedUsers]);
-
+  // Fetches page 1 and REPLACES the posts array
   const fetchPosts = useCallback(async () => {
-    if (hasFetchedRef.current && fetchInFlightRef.current) {
-      return fetchInFlightRef.current;
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.get<{ posts: any[]; nextPage: number | null }>(
+        `/api/posts?page=1&limit=${LIMIT}`
+      );
+      setPosts(data.posts.map(mapApiPost));
+      setCurrentPage(1);
+      setHasNextPage(data.nextPage !== null);
+    } catch (err) {
+      console.error("Failed to fetch posts:", err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+      isFetchingRef.current = false;
     }
-    if (hasFetchedRef.current) return;
-
-    const run = async () => {
-      hasFetchedRef.current = true;
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await api.get<{ posts: any[] }>('/api/posts?page=1&limit=10');
-        const fetchedPosts = data.posts.map((p: any) => ({
-          ...p,
-          timestamp: p.createdAt,
-          author: { ...p.author, avatar: p.author.profileImage },
-          comments: (p.comments || []).map((c: any) => ({
-            ...c,
-            timestamp: c.createdAt,
-            author: { ...c.author, avatar: c.author.profileImage },
-            likes: c.likes ?? 0,
-            unlikes: c.unlikes ?? 0,
-          })),
-          isSaved: false,
-          isFollowing: false,
-          helpfulCount: p.helpfulCount ?? 0,
-          notHelpfulCount: p.notHelpfulCount ?? 0,
-        }));
-        setPosts(fetchedPosts);
-      } catch (err) {
-        console.error("Failed to fetch posts:", err);
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        hasFetchedRef.current = false;
-      } finally {
-        setLoading(false);
-        fetchInFlightRef.current = null;
-      }
-    };
-
-    fetchInFlightRef.current = run();
-    return fetchInFlightRef.current;
   }, []);
+
+  // Fetches currentPage + 1 and APPENDS to the posts array
+  const fetchMorePosts = useCallback(async () => {
+    if (isFetchingRef.current || !hasNextPage) return;
+    isFetchingRef.current = true;
+    setLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const data = await api.get<{ posts: any[]; nextPage: number | null }>(
+        `/api/posts?page=${nextPage}&limit=${LIMIT}`
+      );
+      setPosts(prev => [...prev, ...data.posts.map(mapApiPost)]);
+      setCurrentPage(nextPage);
+      setHasNextPage(data.nextPage !== null);
+    } catch (err) {
+      console.error("Failed to load more posts:", err);
+    } finally {
+      setLoadingMore(false);
+      isFetchingRef.current = false;
+    }
+  }, [currentPage, hasNextPage]);
+
+  // Resets to page 1 and re-fetches from scratch
+  const refresh = useCallback(async () => {
+    isFetchingRef.current = false; // allow re-fetch even if one was in progress
+    await fetchPosts();
+  }, [fetchPosts]);
 
   const addPost = async (postData: Omit<Post, 'id' | 'timestamp' | 'helpfulCount' | 'notHelpfulCount' | 'comments'>) => {
-    try {
-      const newPostRaw = await api.post<PostApiResponse>('/api/posts', {
-        content: postData.content,
-        images: postData.images,
-        checkInLocation: postData.checkInLocation,
-        visibility: postData.visibility === 'Public' ? 'PUBLIC' : postData.visibility === 'Neighbours' ? 'NEIGHBOURS' : 'PRIVATE'
-      });
-      const newPost: Post = {
-        id: newPostRaw.id,
-        content: newPostRaw.content,
-        timestamp: newPostRaw.createdAt,
-        images: newPostRaw.images,
-        checkInLocation: newPostRaw.checkInLocation,
-        visibility: mapVisibilityFromAPI(newPostRaw.visibility),
-        author: {
-          name: newPostRaw.author.name,
-          username: newPostRaw.author.username,
-          avatar: newPostRaw.author.profileImage ?? '',
-          location: '',
-          isVerified: newPostRaw.author.isVerified,
-          isSeller: newPostRaw.author.isSeller,
-          isServiceProvider: newPostRaw.author.isServiceProvider,
-        },
-        comments: [],
-        isSaved: false,
-        isFollowing: false,
-        helpfulCount: 0,
-        notHelpfulCount: 0,
-      };
-      setPosts(prev => [newPost, ...prev]);
-    } catch (err) {
-      console.error(err);
-      throw err;
-    }
+    const newPostRaw = await api.post<PostApiResponse>('/api/posts', {
+      content: postData.content,
+      images: postData.images,
+      checkInLocation: postData.checkInLocation,
+      visibility: postData.visibility === 'Public' ? 'PUBLIC' : postData.visibility === 'Neighbours' ? 'NEIGHBOURS' : 'PRIVATE'
+    });
+    const newPost: Post = {
+      id: newPostRaw.id,
+      content: newPostRaw.content,
+      timestamp: newPostRaw.createdAt,
+      images: newPostRaw.images,
+      checkInLocation: newPostRaw.checkInLocation,
+      visibility: mapVisibilityFromAPI(newPostRaw.visibility),
+      author: {
+        id: newPostRaw.author.id,
+        name: newPostRaw.author.name,
+        username: newPostRaw.author.username,
+        avatar: newPostRaw.author.profileImage ?? '',
+        location: '',
+        isVerified: newPostRaw.author.isVerified,
+        isSeller: newPostRaw.author.isSeller,
+        isServiceProvider: newPostRaw.author.isServiceProvider,
+      },
+      comments: [],
+      isSaved: false,
+      isFollowing: false,
+      helpfulCount: 0,
+      notHelpfulCount: 0,
+      userReaction: null,
+    };
+    // Optimistically prepend without resetting pagination state
+    setPosts(prev => [newPost, ...prev]);
   };
 
   const deletePost = async (id: string) => {
@@ -221,20 +261,20 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
   };
 
   const likeComment = async (postId: string, commentId: string) => {
+    // Optimistic update
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         return {
           ...p,
           comments: p.comments.map(c => {
             if (c.id === commentId) {
-              const wasUnliked = c.unlikedByMe;
-              const isLiked = !c.likedByMe;
+              const isCurrentlyLiked = c.likedByMe;
               return {
                 ...c,
-                likedByMe: isLiked,
-                likes: isLiked ? c.likes + 1 : c.likes - 1,
+                likedByMe: !isCurrentlyLiked,
+                likes: isCurrentlyLiked ? c.likes - 1 : c.likes + 1,
                 unlikedByMe: false,
-                unlikes: wasUnliked ? c.unlikes - 1 : c.unlikes
+                unlikes: c.unlikedByMe ? c.unlikes - 1 : c.unlikes,
               };
             }
             return c;
@@ -245,27 +285,44 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     }));
 
     try {
-      await api.post(`/api/posts/${postId}/comments/${commentId}/react`, { type: 'like' });
+      const res = await api.post<{ likes: number; unlikes: number; userReaction: "like" | "unlike" | null }>(
+        `/api/posts/${postId}/comments/${commentId}/react`,
+        { type: 'like' }
+      );
+      // Reconcile with server-authoritative counts
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            comments: p.comments.map(c =>
+              c.id === commentId
+                ? { ...c, likes: res.likes, unlikes: res.unlikes, likedByMe: res.userReaction === 'like', unlikedByMe: res.userReaction === 'unlike' }
+                : c
+            )
+          };
+        }
+        return p;
+      }));
     } catch (error) {
       console.error("Failed to like comment", error);
     }
   };
 
   const unlikeComment = async (postId: string, commentId: string) => {
+    // Optimistic update
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         return {
           ...p,
           comments: p.comments.map(c => {
             if (c.id === commentId) {
-              const wasLiked = c.likedByMe;
-              const isUnliked = !c.unlikedByMe;
+              const isCurrentlyUnliked = c.unlikedByMe;
               return {
                 ...c,
-                unlikedByMe: isUnliked,
-                unlikes: isUnliked ? c.unlikes + 1 : c.unlikes - 1,
+                unlikedByMe: !isCurrentlyUnliked,
+                unlikes: isCurrentlyUnliked ? c.unlikes - 1 : c.unlikes + 1,
                 likedByMe: false,
-                likes: wasLiked ? c.likes - 1 : c.likes
+                likes: c.likedByMe ? c.likes - 1 : c.likes,
               };
             }
             return c;
@@ -276,7 +333,24 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     }));
 
     try {
-      await api.post(`/api/posts/${postId}/comments/${commentId}/react`, { type: 'unlike' });
+      const res = await api.post<{ likes: number; unlikes: number; userReaction: "like" | "unlike" | null }>(
+        `/api/posts/${postId}/comments/${commentId}/react`,
+        { type: 'unlike' }
+      );
+      // Reconcile with server-authoritative counts
+      setPosts(prev => prev.map(p => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            comments: p.comments.map(c =>
+              c.id === commentId
+                ? { ...c, likes: res.likes, unlikes: res.unlikes, likedByMe: res.userReaction === 'like', unlikedByMe: res.userReaction === 'unlike' }
+                : c
+            )
+          };
+        }
+        return p;
+      }));
     } catch (error) {
       console.error("Failed to unlike comment", error);
     }
@@ -285,13 +359,18 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
   const interactPost = async (postId: string, type: 'helpful' | 'not-helpful') => {
     try {
       const dbType = type === 'helpful' ? 'helpful' : 'notHelpful';
-      const updatedCounts = await api.post<{ helpfulCount: number; notHelpfulCount: number }>(`/api/posts/${postId}/react`, { type: dbType });
+      const res = await api.post<{ helpfulCount: number; notHelpfulCount: number; userReaction: "helpful" | "notHelpful" | null }>(
+        `/api/posts/${postId}/react`,
+        { type: dbType }
+      );
+      // Use server-authoritative counts + reaction state (handles toggle-off correctly)
       setPosts(prev => prev.map(p => {
         if (p.id === postId) {
           return {
             ...p,
-            helpfulCount: updatedCounts.helpfulCount,
-            notHelpfulCount: updatedCounts.notHelpfulCount,
+            helpfulCount: res.helpfulCount,
+            notHelpfulCount: res.notHelpfulCount,
+            userReaction: res.userReaction,
           };
         }
         return p;
@@ -310,8 +389,16 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     setPosts(prev => prev.map(p => p.id === id ? { ...p, isFollowing: !p.isFollowing } : p));
   };
 
-  const blockUser = (username: string) => {
-    setBlockedUsers(prev => [...prev, username]);
+  const blockUser = async (username: string) => {
+    try {
+      const res = await api.get<{ id: string }>(`/api/user/resolve?username=${encodeURIComponent(username)}`);
+      if (res.id) {
+        await api.post('/api/user/block', { blockedId: res.id });
+        setBlockedUsers(prev => [...prev, res.id]);
+      }
+    } catch (err) {
+      console.error("Failed to block user:", err);
+    }
   };
 
   const repost = (postId: string, caption: string, user: Post['author']) => {
@@ -322,6 +409,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
 
     addPost({
       author: {
+        id: user.id,
         name: user.name,
         username: user.username,
         avatar: (user as { profileImage?: string }).profileImage ?? user.avatar ?? '',
@@ -336,14 +424,19 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const filteredPosts = posts.filter(p => !blockedUsers.includes(p.author.username));
+  const filteredPosts = posts.filter(p => !blockedUsers.includes(p.author.id));
 
   return (
     <CommunityContext.Provider value={{
       posts: filteredPosts,
       loading,
+      loadingMore,
       error,
+      hasNextPage,
+      currentPage,
       fetchPosts,
+      fetchMorePosts,
+      refresh,
       addPost,
       deletePost,
       addComment,

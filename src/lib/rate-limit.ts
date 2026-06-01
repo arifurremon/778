@@ -82,4 +82,22 @@ export const rateLimiters = {
         analytics: true,
       })
     : mockRatelimit,
+
+  // Keyed by user ID. 5 orders per hour per authenticated user.
+  orders: hasRedisConfigs
+    ? new Ratelimit({
+        redis: redis!,
+        limiter: Ratelimit.slidingWindow(5, "1 h"),
+        analytics: true,
+      })
+    : mockRatelimit,
+
+  // Keyed by user ID. 30 messages per minute per user.
+  messages: hasRedisConfigs
+    ? new Ratelimit({
+        redis: redis!,
+        limiter: Ratelimit.slidingWindow(30, "1 m"),
+        analytics: true,
+      })
+    : mockRatelimit,
 };

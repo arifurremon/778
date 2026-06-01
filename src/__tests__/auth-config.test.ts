@@ -15,9 +15,9 @@ describe("authConfig JWT callback", () => {
       },
     } as any);
 
-    expect(updated.username).toBe("new-name");
-    expect(updated.profileImage).toBe("https://example.com/avatar.png");
-    expect(updated.isAdmin).toBe(false);
+    expect(updated!.username).toBe("new-name");
+    expect(updated!.profileImage).toBe("https://example.com/avatar.png");
+    expect(updated!.isAdmin).toBe(false);
   });
 
   it("still records the database-backed admin flag at sign-in", async () => {
@@ -31,9 +31,9 @@ describe("authConfig JWT callback", () => {
       },
     } as any);
 
-    expect(updated.id).toBe("admin-1");
-    expect(updated.username).toBe("admin");
-    expect(updated.isAdmin).toBe(true);
-    expect(updated.profileImage).toBe("https://example.com/admin.png");
+    expect(updated!.id).toBe("admin-1");
+    expect(updated!.username).toBe("admin");
+    expect(updated!.isAdmin).toBe(true);
+    expect(updated!.profileImage).toBe("https://example.com/admin.png");
   });
 });

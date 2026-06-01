@@ -53,21 +53,24 @@ export async function POST(req: NextRequest) {
 
     const email = parsed.data.email.toLowerCase().trim();
 
-    let rateLimitSuccess = true;
+    let rateLimitResult: { success: boolean; reset?: number } = { success: true };
     try {
-      const result = await Promise.race([
+      rateLimitResult = await Promise.race([
         rateLimiters.forgotPassword.limit(`${ip}:${email}`),
         new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000)),
       ]);
-      rateLimitSuccess = result.success;
     } catch (err) {
       console.error("[ForgotPassword] Rate limit skipped:", err);
     }
 
-    if (!rateLimitSuccess) {
+    if (!rateLimitResult.success) {
+      const retryAfterSec = rateLimitResult.reset ? Math.max(1, Math.ceil((rateLimitResult.reset - Date.now()) / 1000)) : 60;
       return NextResponse.json(
         { error: "Too many attempts. Please try again later." },
-        { status: 429 }
+        { 
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSec) }
+        }
       );
     }
 

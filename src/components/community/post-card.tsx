@@ -153,6 +153,7 @@ export default function PostCard({ post }: PostCardProps) {
   const handleRepost = () => {
     if (!user) return;
     repost(post.id, repostCaption, {
+      id: user.id || `guest-${Date.now()}`,
       name: user.name || 'Anonymous',
       avatar: user.profileImage ?? '',
       location: user.location ?? '',

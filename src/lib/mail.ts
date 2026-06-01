@@ -137,3 +137,18 @@ export const sendNotificationEmail = async (
     console.error("Error sending notification email:", error);
   }
 };
+
+export const sendEmail = async (to: string, subject: string, html: string) => {
+  try {
+    const transporter = createTransporter();
+    await transporter.sendMail({
+      from: `"The Chattala" <${process.env.SMTP_FROM}>`,
+      to,
+      subject,
+      html,
+    });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw error;
+  }
+};

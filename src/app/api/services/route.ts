@@ -45,8 +45,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const limit    = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12", 10)));
     const skip     = (page - 1) * limit;
 
-    const cacheKey = `services:list:page:${page}:limit:${limit}:category:${category}:location:${location}:search:${search}`;
+    const cacheKey = `list:page:${page}:limit:${limit}:cat:${category ?? ''}:loc:${location ?? ''}:q:${search ?? ''}`;
 
+    // Pattern: cachedQuery(key, fetcher, ttl, namespace)
+    // The namespace 'services' allows us to atomically invalidate all related cache entries at once
     const [services, total] = await cachedQuery(
       cacheKey,
       async () => {
@@ -75,7 +77,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           db.expertService.count({ where }),
         ]);
       },
-      600
+      600,
+      'services'
     );
 
     return NextResponse.json({
@@ -142,7 +145,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       data: { serviceRegistrationStatus: "PENDING" },
     });
 
-    await invalidateCache('services:list:*');
+    await invalidateCache('services');
 
     return NextResponse.json(service, { status: 201 });
   } catch (error) {

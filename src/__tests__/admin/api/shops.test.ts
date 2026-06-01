@@ -2,7 +2,7 @@ import { POST as rejectShop } from "@/app/api/admin/shops/[id]/reject/route";
 import { POST as verifyShop } from "@/app/api/admin/shops/[id]/verify/route";
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/mail";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

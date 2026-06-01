@@ -51,17 +51,21 @@ export function ChatList() {
                 <div className="flex justify-between items-baseline mb-0.5">
                   <div className="flex items-center min-w-0">
                     <h4 className="text-sm font-bold truncate tracking-tight">{conv.participantName}</h4>
-                    <GlobalUserBadges user={{ isVerified: true, isSeller: conv.participantRole.includes('Shop') || conv.participantRole.includes('Restaurant'), isServiceProvider: !conv.participantRole.includes('Shop') && !conv.participantRole.includes('Restaurant') }} />
+                    <GlobalUserBadges user={{ isVerified: true, isSeller: Boolean(conv.participantRole && (conv.participantRole.includes('Shop') || conv.participantRole.includes('Restaurant'))), isServiceProvider: Boolean(conv.participantRole && !conv.participantRole.includes('Shop') && !conv.participantRole.includes('Restaurant')) }} />
                   </div>
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold ml-2">{conv.timestamp}</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold ml-2">
+                    {new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 mb-1">
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-accent bg-accent/10 px-1.5 py-0.5 rounded border border-accent/10">
-                    {conv.participantRole}
-                  </span>
+                  {conv.participantRole && (
+                    <span className="text-[8px] font-bold uppercase tracking-widest text-accent bg-accent/10 px-1.5 py-0.5 rounded border border-accent/10">
+                      {conv.participantRole}
+                    </span>
+                  )}
                   {conv.context && (
                     <span className="text-[8px] text-muted-foreground uppercase truncate opacity-60 font-bold">
-                      • {conv.context}
+                      ? {conv.context}
                     </span>
                   )}
                 </div>

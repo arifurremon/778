@@ -61,8 +61,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       db.product.count({ where }),
     ]);
 
+    const formattedProducts = products.map(p => ({
+      ...p,
+      price: p.price.toNumber(),
+      originalPrice: p.originalPrice ? p.originalPrice.toNumber() : null,
+    }));
+
     return NextResponse.json({
-      products,
+      products: formattedProducts,
       total,
       page,
       totalPages: Math.ceil(total / limit),

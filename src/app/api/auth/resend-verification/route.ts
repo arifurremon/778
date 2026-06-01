@@ -41,11 +41,15 @@ export async function POST(req: NextRequest) {
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
-    const { success } = await rateLimiters.resendVerification.limit(`${ip}:${email}`);
-    if (!success) {
+    const result = await rateLimiters.resendVerification.limit(`${ip}:${email}`);
+    if (!result.success) {
+      const retryAfterSec = result.reset ? Math.max(1, Math.ceil((result.reset - Date.now()) / 1000)) : 60;
       return NextResponse.json(
         { error: "Too many attempts. Please try again later." },
-        { status: 429 }
+        { 
+          status: 429,
+          headers: { 'Retry-After': String(retryAfterSec) }
+        }
       );
     }
 

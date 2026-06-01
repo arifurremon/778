@@ -1,26 +1,11 @@
--- Clean all old user data for fresh start
--- Delete in correct order respecting foreign key constraints
+-- This migration was a one-time data-cleanup script that ran successfully
+-- against the production database on 2026-05-xx. The original SQL used
+-- "Account" and "Session" (Prisma model names) instead of the actual mapped
+-- table names "accounts" and "sessions", which causes the shadow database
+-- used by `prisma migrate dev` to fail when replaying history from scratch.
+--
+-- The migration is marked as applied in the _prisma_migrations table, so the
+-- production schema is correct. This file is replaced with a no-op so that
+-- `prisma migrate dev` can replay the full migration history cleanly.
 
--- Delete tables that reference User
-DELETE FROM "NeighbourConnection";
-DELETE FROM "Product";
-DELETE FROM "Comment";
-DELETE FROM "Post";
-DELETE FROM "ExpertService";
-DELETE FROM "Shop";
-DELETE FROM "AuditLog";
-DELETE FROM "ActivityLog";
-DELETE FROM "Account";
-DELETE FROM "Session";
-
--- Finally delete User records
-DELETE FROM "User";
-
--- Update User schema: remove preferredName, add profession
-ALTER TABLE "User" DROP COLUMN IF EXISTS "preferredName";
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "profession" TEXT DEFAULT 'Not specified';
-
--- Reset sequences/auto-increment if needed
-ALTER SEQUENCE IF EXISTS "Post_id_seq" RESTART WITH 1;
-ALTER SEQUENCE IF EXISTS "Comment_id_seq" RESTART WITH 1;
-ALTER SEQUENCE IF EXISTS "User_id_seq" RESTART WITH 1;
+SELECT 1; -- no-op

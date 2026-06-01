@@ -2,7 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail } from "@/lib/mail";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -40,8 +40,8 @@ export async function POST(req: NextRequest, { params }: any) {
         where: { id },
         data: {
           isVerified: false,
-          // SCHEMA-FALLBACK: 'rejectedAt' or 'rejectionReason' may not exist — verify schema
-          // We'll update the User's registration status as a fallback
+          rejectedAt: new Date(),
+          rejectionReason: validatedData.reason
         }
       });
 

@@ -32,6 +32,7 @@ import { useState } from "react";
 
 interface CreatePostInput {
   author: {
+    id: string;
     name: string;
     avatar: string;
     location: string;
@@ -68,6 +69,7 @@ export default function CreatePost({ onCreate }: CreatePostProps) {
     
     onCreate({
       author: {
+        id: user?.id || `guest-${Date.now()}`,
         name: user?.name || "Guest User",
         avatar: user?.profileImage || `https://picsum.photos/seed/${user?.email}/100`,
         location: user?.location || "Unknown",

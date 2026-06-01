@@ -71,6 +71,11 @@ export async function GET(
     // Enrich with fallback fields for UI compatibility
     const enrichedShop = {
       ...shop,
+      products: shop.products.map(p => ({
+        ...p,
+        price: p.price.toNumber(),
+        originalPrice: p.originalPrice ? p.originalPrice.toNumber() : null,
+      })),
       owner: shop.user,
       verificationHistory: [],
       auditLogs: [],

@@ -14,7 +14,7 @@ export interface Order {
   buyerEmail: string;
   phone: string;
   address: string;
-  price: string;
+  price: number;
   status: OrderStatus;
   timestamp: string;
 }
@@ -24,7 +24,7 @@ export interface Product {
   shopId: string;
   name: string;
   description: string;
-  price: string;
+  price: number;
   deliveryCharge: string;
   images: string[];
 }
@@ -65,20 +65,15 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const initializeBusiness = useCallback(() => {
     if (hasFetchedRef.current) return;
     hasFetchedRef.current = true;
-    const savedOrders = localStorage.getItem("chattala_orders");
     const savedProducts = localStorage.getItem("chattala_products");
     const savedReviews = localStorage.getItem("chattala_reviews");
 
-    if (savedOrders) setOrders(JSON.parse(savedOrders));
     if (savedProducts) setProducts(JSON.parse(savedProducts));
     if (savedReviews) setReviews(JSON.parse(savedReviews));
     setIsHydrated(true);
   }, []);
 
-  useEffect(() => {
-    if (!isHydrated) return;
-    localStorage.setItem("chattala_orders", JSON.stringify(orders));
-  }, [orders, isHydrated]);
+  // Order persistence has been moved to the backend via API
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -90,14 +85,22 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("chattala_reviews", JSON.stringify(reviews));
   }, [reviews, isHydrated]);
 
-  const addOrder = (orderData: Omit<Order, 'id' | 'status' | 'timestamp'>) => {
-    const newOrder: Order = {
-      ...orderData,
-      id: `ord-${Math.random().toString(36).substr(2, 9)}`,
-      status: 'Pending',
-      timestamp: new Date().toLocaleString(),
-    };
-    setOrders(prev => [newOrder, ...prev]);
+  const addOrder = async (orderData: Omit<Order, 'id' | 'status' | 'timestamp'>) => {
+    try {
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shopId: orderData.shopId,
+          productId: orderData.productId,
+          phone: orderData.phone,
+          address: orderData.address,
+          price: orderData.price,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to add order", error);
+    }
   };
 
   const updateOrderStatus = (orderId: string, status: OrderStatus) => {

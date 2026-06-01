@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 import type { MockProduct } from "@/lib/mock-data";
 import { CheckCircle2, MapPin, Phone as PhoneIcon, ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface OrderModalProps {
   product: MockProduct & { shopName?: string };
@@ -27,7 +28,8 @@ interface OrderModalProps {
 
 export function OrderModal({ product, shopId, isOpen, onClose }: OrderModalProps) {
   const { user } = useAuth();
-  const { addOrder, initializeBusiness } = useBusiness();
+  const { initializeBusiness } = useBusiness();
+  const router = useRouter();
 
   useEffect(() => {
     initializeBusiness();
@@ -44,25 +46,47 @@ export function OrderModal({ product, shopId, isOpen, onClose }: OrderModalProps
     e.preventDefault();
     setIsSubmitting(true);
     
-    addOrder({
-      shopId,
-      productId: product.id,
-      productName: product.name,
-      buyerName: user?.name || "Anonymous",
-      buyerEmail: user?.email || "",
-      phone: formData.phone,
-      address: formData.address,
-      price: String(product.price),
-    });
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          shopId,
+          productId: product.id,
+          phone: formData.phone,
+          address: formData.address,
+          price: String(product.price),
+        }),
+      });
 
-    await new Promise(r => setTimeout(r, 1500));
-    setIsSubmitting(false);
-    setStep(2);
-    
-    toast({
-      title: "Order Placed!",
-      description: "The seller has been notified of your order.",
-    });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to place order");
+      }
+
+      setStep(2);
+      toast({
+        title: "Order Placed!",
+        description: "The seller has been notified of your order.",
+      });
+
+      // Redirect after showing success
+      setTimeout(() => {
+        router.push('/activity');
+      }, 2000);
+
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

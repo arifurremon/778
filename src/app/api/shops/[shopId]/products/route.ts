@@ -79,7 +79,13 @@ export async function GET(
       },
     });
 
-    return NextResponse.json({ products });
+    const formattedProducts = products.map(p => ({
+      ...p,
+      price: p.price.toNumber(),
+      originalPrice: p.originalPrice ? p.originalPrice.toNumber() : null,
+    }));
+
+    return NextResponse.json({ products: formattedProducts });
   } catch (error) {
     logErrorToSentry(error, { route: "[GET /api/shops/[shopId]/products]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -92,13 +98,8 @@ export async function GET(
 const createProductSchema = z.object({
   name:          z.string().min(2, "Product name must be at least 2 characters."),
   description:   z.string().min(5, "Description must be at least 5 characters."),
-  price:         z
-    .string()
-    .refine(
-      (v) => !isNaN(parseFloat(v)) && parseFloat(v) > 0,
-      "Price must be a positive number."
-    ),
-  originalPrice: z.string().optional(),
+  price:         z.number().positive("Price must be a positive number."),
+  originalPrice: z.number().optional(),
   images:        z.array(z.string().url("Each image must be a valid URL.")).min(1, "At least one image is required."),
   category:      z.string().min(1, "Category is required."),
 });
@@ -144,7 +145,13 @@ export async function POST(
       },
     });
 
-    return NextResponse.json(product, { status: 201 });
+    const formattedProduct = {
+      ...product,
+      price: product.price.toNumber(),
+      originalPrice: product.originalPrice ? product.originalPrice.toNumber() : null,
+    };
+
+    return NextResponse.json(formattedProduct, { status: 201 });
   } catch (error) {
     logErrorToSentry(error, { route: "[POST /api/shops/[shopId]/products]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

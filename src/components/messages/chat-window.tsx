@@ -49,7 +49,9 @@ export function ChatWindow() {
             <div className="flex flex-col text-left">
               <h3 className="text-sm font-bold tracking-tight">{activeChat.participantName}</h3>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-accent">{activeChat.participantRole}</span>
+                {activeChat.participantRole && (
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-accent">{activeChat.participantRole}</span>
+                )}
                 {activeChat.context && (
                    <span className="text-[10px] text-muted-foreground font-bold opacity-70">• {activeChat.context}</span>
                 )}
@@ -92,7 +94,7 @@ export function ChatWindow() {
                   {msg.text}
                 </div>
                 <span className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mt-1 px-1 opacity-60">
-                  {msg.timestamp}
+                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             </motion.div>
