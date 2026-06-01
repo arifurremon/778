@@ -24,8 +24,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (status === "unauthenticated" || (status === "authenticated" && !isLoading && !user)) {
-      router.push("/");
+      router.replace("/");
     }
+  }, [status, isLoading, user, router]);
   }, [status, isLoading, user, router]);
 
   if (status === "loading" || isLoading || (status === "authenticated" && !user && isLoading)) {
