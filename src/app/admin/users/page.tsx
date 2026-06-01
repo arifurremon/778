@@ -106,8 +106,11 @@ export default function AdminUsersPage() {
 
   const handleSuspend = async (userId: string) => {
     try {
-      const res = await fetch(`/api/admin/users/${userId}/suspend`, { method: 'PATCH' });
-      if (!res.ok) throw new Error('Failed to suspend user');
+      const { api } = await import("@/lib/api");
+      await api.post(`/api/admin/users/${userId}/suspend`, {
+        suspended: true,
+        reason: "Suspended by administrator from user management panel",
+      });
       toast({ title: "Success", description: "User suspension status updated." });
       fetchUsers();
     } catch (error) {

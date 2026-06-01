@@ -148,7 +148,7 @@ export const testPosts = {
 // ---------------------------------------------------------------------------
 export const validRegistrationPayload = {
   email: "newuser@chattala.test",
-  password: "newPassword123",
+  password: "newPassword123!",
   username: "new_user",
   name: "New User",
   preferredName: "Newbie",

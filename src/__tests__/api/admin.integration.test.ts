@@ -31,17 +31,23 @@ describe("GET /api/admin — Integration", () => {
     mockAuth.mockResolvedValue(null);
   });
 
-  it("returns 403 for unauthenticated requests", async () => {
+  it("returns 401 for unauthenticated requests", async () => {
     const res = await GET(makeRequest());
     const json = await res.json();
 
-    expect(res.status).toBe(403);
-    expect(json.error).toContain("Forbidden");
+    expect(res.status).toBe(401);
+    expect(json.error).toContain("Unauthorized");
   });
 
   it("returns 403 for non-admin users", async () => {
     mockAuth.mockResolvedValue({
       user: { id: testUsers.regular.id, isAdmin: false },
+    });
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: testUsers.regular.id,
+      isAdmin: false,
+      deletedAt: null,
+      suspendedAt: null,
     });
 
     const res = await GET(makeRequest());
@@ -51,6 +57,12 @@ describe("GET /api/admin — Integration", () => {
   it("returns admin dashboard counts for admin users", async () => {
     mockAuth.mockResolvedValue({
       user: { id: testUsers.admin.id, isAdmin: true },
+    });
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: testUsers.admin.id,
+      isAdmin: true,
+      deletedAt: null,
+      suspendedAt: null,
     });
 
     prismaMock.user.count

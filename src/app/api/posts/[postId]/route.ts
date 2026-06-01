@@ -1,20 +1,23 @@
+import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { requireActiveUser } from "@/lib/session-guards";
 
 // ---------------------------------------------------------------------------
 // DELETE /api/posts/[postId]
 // ---------------------------------------------------------------------------
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
 ): Promise<NextResponse> {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) return csrfError;
+
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveUser();
+    if (active.error) return active.error;
+    const { session, dbUser } = active;
 
     const { postId } = await params;
 
@@ -28,7 +31,7 @@ export async function DELETE(
     }
 
     const isAuthor = post.authorId === session.user.id;
-    const isAdmin = session.user.isAdmin === true;
+    const isAdmin = dbUser.isAdmin === true;
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json(

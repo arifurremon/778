@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
 import { useBusiness } from "@/hooks/use-business";
 import { toast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 import type { MockProduct } from "@/lib/mock-data";
 import { CheckCircle2, MapPin, Phone as PhoneIcon, ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -47,25 +48,12 @@ export function OrderModal({ product, shopId, isOpen, onClose }: OrderModalProps
     setIsSubmitting(true);
     
     try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          shopId,
-          productId: product.id,
-          phone: formData.phone,
-          address: formData.address,
-          price: String(product.price),
-        }),
+      await api.post("/api/orders", {
+        shopId,
+        productId: product.id,
+        phone: formData.phone,
+        address: formData.address,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to place order");
-      }
 
       setStep(2);
       toast({

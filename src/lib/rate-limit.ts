@@ -13,9 +13,9 @@ export const redis = hasRedisConfigs
     })
   : null;
 
+const isProduction = process.env.NODE_ENV === "production";
+
 // Fallback used when Redis credentials are absent (e.g. local dev without .env).
-// All requests are allowed through — rate limiting is effectively disabled.
-// Never deploy to production without UPSTASH_REDIS_REST_URL/TOKEN set.
 const mockRatelimit = {
   limit: async () => ({
     success: true,
@@ -26,78 +26,65 @@ const mockRatelimit = {
   }),
 };
 
+// In production, missing Redis must fail closed rather than allow unlimited traffic.
+const failClosedRatelimit = {
+  limit: async () => ({
+    success: false,
+    pending: Promise.resolve(),
+    limit: 0,
+    remaining: 0,
+    reset: Date.now() + 60_000,
+  }),
+};
+
+function createLimiter(
+  build: (redisClient: Redis) => ConstructorParameters<typeof Ratelimit>[0]
+) {
+  if (hasRedisConfigs && redis) {
+    return new Ratelimit(build(redis));
+  }
+  return isProduction ? failClosedRatelimit : mockRatelimit;
+}
+
 export const rateLimiters = {
-  // Keyed by IP. 5 registration attempts per 15 minutes per IP.
-  register: hasRedisConfigs
-    ? new Ratelimit({
-        redis: redis!,
-        limiter: Ratelimit.slidingWindow(5, "15 m"),
-        analytics: true,
-      })
-    : mockRatelimit,
-
-  // Keyed by composite `${ip}:${email}` (constructed in src/lib/auth.ts).
-  // 10 attempts per 15 minutes per unique ip+account pair.
-  // See auth.ts authorize() for the full rationale on the composite key.
-  signin: hasRedisConfigs
-    ? new Ratelimit({
-        redis: redis!,
-        limiter: Ratelimit.slidingWindow(10, "15 m"),
-        analytics: true,
-      })
-    : mockRatelimit,
-
-  // Keyed by IP. 3 attempts per 15 minutes.
-  forgotPassword: hasRedisConfigs
-    ? new Ratelimit({
-        redis: redis!,
-        limiter: Ratelimit.slidingWindow(3, "15 m"),
-        analytics: true,
-      })
-    : mockRatelimit,
-
-  // Keyed by IP. 5 attempts per 15 minutes.
-  resetPassword: hasRedisConfigs
-    ? new Ratelimit({
-        redis: redis!,
-        limiter: Ratelimit.slidingWindow(5, "15 m"),
-        analytics: true,
-      })
-    : mockRatelimit,
-
-  // Keyed by IP. 3 attempts per hour.
-  resendVerification: hasRedisConfigs
-    ? new Ratelimit({
-        redis: redis!,
-        limiter: Ratelimit.slidingWindow(3, "1 h"),
-        analytics: true,
-      })
-    : mockRatelimit,
-
-  // Keyed by user ID. 10 posts per hour per authenticated user.
-  posts: hasRedisConfigs
-    ? new Ratelimit({
-        redis: redis!,
-        limiter: Ratelimit.slidingWindow(10, "1 h"),
-        analytics: true,
-      })
-    : mockRatelimit,
-
-  // Keyed by user ID. 5 orders per hour per authenticated user.
-  orders: hasRedisConfigs
-    ? new Ratelimit({
-        redis: redis!,
-        limiter: Ratelimit.slidingWindow(5, "1 h"),
-        analytics: true,
-      })
-    : mockRatelimit,
-
-  // Keyed by user ID. 30 messages per minute per user.
-  messages: hasRedisConfigs
-    ? new Ratelimit({
-        redis: redis!,
-        limiter: Ratelimit.slidingWindow(30, "1 m"),
-        analytics: true,
-      })
-    : mockRatelimit,
+  register: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(5, "15 m"),
+    analytics: true,
+  })),
+  signin: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(10, "15 m"),
+    analytics: true,
+  })),
+  forgotPassword: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(3, "15 m"),
+    analytics: true,
+  })),
+  resetPassword: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(5, "15 m"),
+    analytics: true,
+  })),
+  resendVerification: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(3, "1 h"),
+    analytics: true,
+  })),
+  posts: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(10, "1 h"),
+    analytics: true,
+  })),
+  orders: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(5, "1 h"),
+    analytics: true,
+  })),
+  messages: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(30, "1 m"),
+    analytics: true,
+  })),
 };

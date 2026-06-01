@@ -105,12 +105,8 @@ export default function AdminPostsPage() {
 
   const handleAction = async (action: 'hide' | 'delete', ids: string[]) => {
     try {
-      const res = await fetch(`/api/admin/posts/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, ids })
-      });
-      if (!res.ok) throw new Error();
+      const { api } = await import("@/lib/api");
+      await api.post(`/api/admin/posts/bulk`, { action, ids });
       
       toast({ title: "Success", description: `${ids.length} post(s) ${action === 'hide' ? 'hidden' : 'deleted'}.` });
       setSelectedIds([]);

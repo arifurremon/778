@@ -27,7 +27,7 @@ vi.mock("@/lib/admin-auth", () => ({
   requireAdmin: vi.fn(),
 }));
 
-vi.mock("@/lib/email", () => ({
+vi.mock("@/lib/mail", () => ({
   sendEmail: vi.fn().mockResolvedValue(true),
 }));
 

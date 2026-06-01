@@ -76,6 +76,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           ]);
         } catch (err) {
           console.error("[Auth] Rate limit skipped due to timeout or error:", err);
+          if (process.env.NODE_ENV === "production") {
+            throw new Error("Too many attempts. Please try again later.");
+          }
         }
 
         if (!rateLimitResult.success) {

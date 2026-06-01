@@ -25,7 +25,7 @@ const registerSchema = z.object({
     .max(20, "Username cannot exceed 20 characters.")
     .regex(/^\w+$/, "Username may only contain letters, numbers, and underscores."),
   name: z.string().min(1, "Name is required."),
-  mobile: z.string().regex(/^(?:\\+8801|01)[3-9]\\d{8}$/, "Invalid Bangladeshi phone number."),
+  mobile: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Invalid Bangladeshi phone number."),
   location: z.string().min(1, "Location is required."),
   dob: z.string().min(1, "Date of birth is required."),
   profession: z.string().optional(),

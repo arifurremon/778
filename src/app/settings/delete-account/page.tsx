@@ -14,6 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { AlertTriangle, ArrowLeft, Trash2 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
+import { api } from "@/lib/api";
 import { useState } from "react";
 
 export default function DeleteAccountPage() {
@@ -23,14 +24,7 @@ export default function DeleteAccountPage() {
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/user/delete-account", {
-        method: "DELETE",
-      });
-      
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to delete account");
-      }
+      await api.del("/api/user/delete-account");
 
       toast({
         title: "Account Deleted",
