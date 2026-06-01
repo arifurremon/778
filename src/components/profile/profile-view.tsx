@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { GlobalUserBadges } from "@/components/user/global-user-badges";
 import type { User } from "@/hooks/use-auth";
 import { PrivacyLevel, useAuth } from "@/hooks/use-auth";
+
+type UserBooleanKeys = 'showShopBadge' | 'showExpertBadge' | 'showFullAge' | 'showBirthdayOnly';
 import { useCommunity } from "@/hooks/use-community";
 import { toast } from "@/hooks/use-toast";
 import { validateFileUpload } from "@/lib/sanitize";
@@ -66,7 +68,7 @@ export default function ProfileView() {
   const [editLocation, setEditLocation] = useState(user?.location || "");
   const [editDob, setEditDob]         = useState(user?.dob || "");
   const [editBio, setEditBio]         = useState(user?.bio || "");
-  const [editProfession, setEditProfession] = useState((user as any)?.profession || "");
+  const [editProfession, setEditProfession] = useState(user?.profession || "");
 
   const ageData = useMemo(() => {
     if (!user?.dob) return null;
@@ -81,7 +83,7 @@ export default function ProfileView() {
       setEditLocation(user.location || "");
       setEditDob(user.dob || "");
       setEditBio(user.bio || "");
-      setEditProfession((user as any).profession || "");
+      setEditProfession(user.profession || "");
     }
   }, [user]);
 
@@ -91,7 +93,7 @@ export default function ProfileView() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const updates: Partial<User & { profession?: string }> = {};
+      const updates: Partial<User> = {};
       if (editName !== user?.name) {
         if ((user?.nameChangeCount || 0) >= 3) {
           toast({ variant: "destructive", title: "Name change limit reached", description: "You have used all 3 name changes." });
@@ -103,8 +105,8 @@ export default function ProfileView() {
       updates.location  = editLocation;
       updates.dob       = editDob;
       updates.bio       = editBio;
-      (updates as any).profession = editProfession;
-      await updateUser(updates as any);
+      updates.profession = editProfession;
+      await updateUser(updates);
       toast({ title: "Profile saved", description: "Your changes have been updated." });
     } catch (err: any) {
       toast({
@@ -162,7 +164,7 @@ export default function ProfileView() {
                     }}
                     onClientUploadComplete={(res) => {
                       if (res?.[0]) {
-                        updateUser({ profileImage: res[0].url } as any);
+                        updateUser({ profileImage: res[0].url });
                         toast({ title: "Photo updated!" });
                         setTimeout(() => window.location.reload(), 800);
                       }
@@ -217,9 +219,9 @@ export default function ProfileView() {
                   <MapPin size={13} className="text-blue-500" /> {user.location}
                 </span>
               )}
-              {(user as any)?.profession && (
+              {user?.profession && (
                 <span className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-                  <Briefcase size={13} className="text-purple-500" /> {(user as any).profession}
+                  <Briefcase size={13} className="text-purple-500" /> {user.profession}
                 </span>
               )}
               {ageData && user?.privacySettings?.dob !== 'Only Me' && (
@@ -422,8 +424,8 @@ export default function ProfileView() {
                         {icon} {label}
                       </span>
                       <Switch
-                        checked={!!(user as any)?.[key]}
-                        onCheckedChange={(v) => updateUser({ [key]: v } as any)}
+                        checked={!!user?.[key as UserBooleanKeys]}
+                        onCheckedChange={(v) => updateUser({ [key as UserBooleanKeys]: v })}
                       />
                     </div>
                   ))}

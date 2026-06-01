@@ -152,17 +152,15 @@ export default function PostCard({ post }: PostCardProps) {
 
   const handleRepost = () => {
     if (!user) return;
-    const anyUser = user as any;
     repost(post.id, repostCaption, {
-      id: anyUser.id || '',
-      name: anyUser.name || 'Anonymous',
-      avatar: anyUser.image ?? anyUser.avatar ?? anyUser.image ?? '',
-      location: anyUser.location ?? '',
-      username: anyUser.username ?? '',
-      isVerified: anyUser.isVerified,
-      isSeller: anyUser.isSeller,
-      isServiceProvider: anyUser.isServiceProvider,
-    } as any);
+      name: user.name || 'Anonymous',
+      avatar: user.profileImage ?? '',
+      location: user.location ?? '',
+      username: user.username ?? '',
+      isVerified: user.isVerified,
+      isSeller: user.isSeller,
+      isServiceProvider: user.isServiceProvider,
+    });
     setRepostCaption("");
     setIsRepostModalOpen(false);
     setIsShareModalOpen(false);

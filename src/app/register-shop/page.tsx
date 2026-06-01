@@ -297,7 +297,7 @@ export default function RegisterShopPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="p-4 bg-background/20 rounded-2xl border border-border/30 space-y-3">
                         <Label className="text-xs font-bold uppercase tracking-widest opacity-60">Fulfillment</Label>
-                        <Select onValueChange={(v) => setValue("deliveryMethod", v as any)} defaultValue={watchAll.deliveryMethod}>
+                        <Select onValueChange={(v) => setValue("deliveryMethod", v as "Self" | "Third-party")} defaultValue={watchAll.deliveryMethod}>
                           <SelectTrigger className="bg-background/40 h-11"><SelectValue placeholder="Delivery Method" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Self">Self / Own Delivery</SelectItem>
@@ -356,7 +356,7 @@ export default function RegisterShopPage() {
                           <button
                             key={method}
                             type="button"
-                            onClick={() => setValue("payoutMethod", method as any)}
+                            onClick={() => setValue("payoutMethod", method as "bKash" | "Nagad" | "Bank")}
                             className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase border transition-smooth ${
                               watchAll.payoutMethod === method ? 'bg-accent border-accent text-accent-foreground shadow-lg' : 'bg-background/40 border-border/30 text-muted-foreground'
                             }`}
