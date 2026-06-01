@@ -1,7 +1,7 @@
 "use client";
 
 import { api } from "@/lib/api";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { PrivacyLevel } from "./use-auth";
 
 export interface Comment {
@@ -47,6 +47,7 @@ interface CommunityContextType {
   posts: Post[];
   loading: boolean;
   error: string | null;
+  fetchPosts: () => Promise<void>;
   addPost: (post: Omit<Post, 'id' | 'timestamp' | 'helpfulCount' | 'notHelpfulCount' | 'comments'>) => Promise<void>;
   deletePost: (id: string) => Promise<void>;
   addComment: (postId: string, comment: Omit<Comment, 'id' | 'timestamp' | 'likes' | 'unlikes'>) => Promise<void>;
@@ -102,25 +103,42 @@ const CommunityContext = createContext<CommunityContextType | null>(null);
 export function CommunityProvider({ children }: { children: React.ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
+  const fetchInFlightRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     const savedBlocked = localStorage.getItem("chattala_blocked_users");
     if (savedBlocked) setBlockedUsers(JSON.parse(savedBlocked));
+  }, []);
 
-    api.get<{ posts: any[] }>('/api/posts?page=1&limit=10')
-      .then(data => {
+  useEffect(() => {
+    localStorage.setItem("chattala_blocked_users", JSON.stringify(blockedUsers));
+  }, [blockedUsers]);
+
+  const fetchPosts = useCallback(async () => {
+    if (hasFetchedRef.current && fetchInFlightRef.current) {
+      return fetchInFlightRef.current;
+    }
+    if (hasFetchedRef.current) return;
+
+    const run = async () => {
+      hasFetchedRef.current = true;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await api.get<{ posts: any[] }>('/api/posts?page=1&limit=10');
         const fetchedPosts = data.posts.map((p: any) => ({
           ...p,
           timestamp: p.createdAt,
           author: { ...p.author, avatar: p.author.profileImage },
-          comments: (p.comments || []).map((c: any) => ({ 
-            ...c, 
-            timestamp: c.createdAt, 
+          comments: (p.comments || []).map((c: any) => ({
+            ...c,
+            timestamp: c.createdAt,
             author: { ...c.author, avatar: c.author.profileImage },
             likes: c.likes ?? 0,
-            unlikes: c.unlikes ?? 0
+            unlikes: c.unlikes ?? 0,
           })),
           isSaved: false,
           isFollowing: false,
@@ -128,18 +146,19 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
           notHelpfulCount: p.notHelpfulCount ?? 0,
         }));
         setPosts(fetchedPosts);
-        setLoading(false);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error("Failed to fetch posts:", err);
         setError(err instanceof Error ? err.message : 'An error occurred');
+        hasFetchedRef.current = false;
+      } finally {
         setLoading(false);
-      });
-  }, []);
+        fetchInFlightRef.current = null;
+      }
+    };
 
-  useEffect(() => {
-    localStorage.setItem("chattala_blocked_users", JSON.stringify(blockedUsers));
-  }, [blockedUsers]);
+    fetchInFlightRef.current = run();
+    return fetchInFlightRef.current;
+  }, []);
 
   const addPost = async (postData: Omit<Post, 'id' | 'timestamp' | 'helpfulCount' | 'notHelpfulCount' | 'comments'>) => {
     try {
@@ -192,7 +211,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     try {
       const newCommentRaw = await api.post<CommentApiResponse>(`/api/posts/${postId}/comments`, { text: commentData.text });
       const newComment = { ...newCommentRaw, timestamp: newCommentRaw.createdAt, author: { ...newCommentRaw.author, avatar: newCommentRaw.author.profileImage }, likes: 0, unlikes: 0 };
-      setPosts(prev => prev.map(p => 
+      setPosts(prev => prev.map(p =>
         p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p
       ));
     } catch (err) {
@@ -202,7 +221,6 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
   };
 
   const likeComment = async (postId: string, commentId: string) => {
-    // Optimistic Update
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         return {
@@ -225,18 +243,15 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
       }
       return p;
     }));
-    
-    // Background API call
+
     try {
       await api.post(`/api/posts/${postId}/comments/${commentId}/react`, { type: 'like' });
     } catch (error) {
       console.error("Failed to like comment", error);
-      // Silently fail — optimistic update stays
     }
   };
 
   const unlikeComment = async (postId: string, commentId: string) => {
-    // Optimistic Update
     setPosts(prev => prev.map(p => {
       if (p.id === postId) {
         return {
@@ -260,12 +275,10 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
       return p;
     }));
 
-    // Background API call
     try {
       await api.post(`/api/posts/${postId}/comments/${commentId}/react`, { type: 'unlike' });
     } catch (error) {
       console.error("Failed to unlike comment", error);
-      // Silently fail — optimistic update stays
     }
   };
 
@@ -306,7 +319,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     if (!originalPost) return;
 
     const repostContent = `${caption}\n\n---\nReposted from @${originalPost.author.username}:\n"${originalPost.content}"`;
-    
+
     addPost({
       author: {
         name: user.name,
@@ -326,13 +339,14 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
   const filteredPosts = posts.filter(p => !blockedUsers.includes(p.author.username));
 
   return (
-    <CommunityContext.Provider value={{ 
+    <CommunityContext.Provider value={{
       posts: filteredPosts,
       loading,
       error,
-      addPost, 
-      deletePost, 
-      addComment, 
+      fetchPosts,
+      addPost,
+      deletePost,
+      addComment,
       likeComment,
       unlikeComment,
       interactPost,

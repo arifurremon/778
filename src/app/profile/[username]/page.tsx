@@ -49,7 +49,7 @@ type ConnectionStatus = "NONE" | "PENDING_SENT" | "PENDING_RECEIVED" | "ACCEPTED
 export default function PublicProfilePage() {
   const { username } = useParams() as { username: string };
   const { user: currentUser } = useAuth();
-  const { posts } = useCommunity();
+  const { posts, fetchPosts } = useCommunity();
   const router = useRouter();
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -57,6 +57,10 @@ export default function PublicProfilePage() {
   const [connectionId, setConnectionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   useEffect(() => {
     if (currentUser?.username === username) {

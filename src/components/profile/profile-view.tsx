@@ -60,7 +60,11 @@ function PrivacySelector({ field, current, onChange }: {
 
 export default function ProfileView() {
   const { user, updateUser } = useAuth();
-  const { posts } = useCommunity();
+  const { posts, fetchPosts } = useCommunity();
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
   const [activeTab, setActiveTab] = useState("posts");
   const [isSaving, setIsSaving] = useState(false);
 

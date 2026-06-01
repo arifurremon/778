@@ -48,13 +48,16 @@ export async function POST(req: NextRequest, { params }: any) {
       // [cite_start]Create an in-app notification for the owner. [cite: 109]
       // SCHEMA-FALLBACK: 'notification' may not exist — verify schema
       try {
-        // @ts-ignore
         await tx.notification.create({
           data: {
             userId: shop.userId,
-            title: "Shop Verified",
-            message: "Your Chattala Shop Has Been Verified! 🎉 You can now start listing products.",
-            type: "SUCCESS"
+            type: "SHOP_VERIFIED",
+            entityType: "Shop",
+            entityId: shop.id,
+            metadata: {
+              approved: true,
+              message: "Your Chattala Shop Has Been Verified! You can now start listing products.",
+            },
           }
         });
       } catch (e) {

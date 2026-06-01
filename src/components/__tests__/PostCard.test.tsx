@@ -6,9 +6,20 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/hooks/use-community', () => ({
   useCommunity: () => ({
-    likePost: vi.fn(),
-    unlikePost: vi.fn(),
+    posts: [],
+    loading: false,
+    error: null,
+    fetchPosts: vi.fn(),
+    addPost: vi.fn(),
+    deletePost: vi.fn(),
     addComment: vi.fn(),
+    likeComment: vi.fn(),
+    unlikeComment: vi.fn(),
+    interactPost: vi.fn(),
+    toggleSavePost: vi.fn(),
+    toggleFollowPost: vi.fn(),
+    blockUser: vi.fn(),
+    repost: vi.fn(),
   }),
 }));
 

@@ -10,8 +10,12 @@ import PostCard from "./post-card";
 
 export default function CommunityView() {
   const { user } = useAuth();
-  const { posts, addPost } = useCommunity();
+  const { posts, addPost, fetchPosts } = useCommunity();
   const [showSubtitle, setShowSubtitle] = useState(false);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   useEffect(() => {
     // One-time session animation logic

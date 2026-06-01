@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 export type OrderStatus = 'Pending' | 'Processing' | 'Sent' | 'Delivered' | 'Cancelled';
 
@@ -50,6 +50,7 @@ interface BusinessContextType {
   addProduct: (product: Omit<Product, 'id'>) => void;
   addReview: (review: Omit<Review, 'id' | 'timestamp' | 'isVerified'>) => void;
   addReply: (reviewId: string, reply: string) => void;
+  initializeBusiness: () => void;
 }
 
 const BusinessContext = createContext<BusinessContextType | null>(null);
@@ -58,9 +59,12 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const hasFetchedRef = useRef(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Initialize with some mock data if empty
-  useEffect(() => {
+  const initializeBusiness = useCallback(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     const savedOrders = localStorage.getItem("chattala_orders");
     const savedProducts = localStorage.getItem("chattala_products");
     const savedReviews = localStorage.getItem("chattala_reviews");
@@ -68,19 +72,23 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     if (savedOrders) setOrders(JSON.parse(savedOrders));
     if (savedProducts) setProducts(JSON.parse(savedProducts));
     if (savedReviews) setReviews(JSON.parse(savedReviews));
+    setIsHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem("chattala_orders", JSON.stringify(orders));
-  }, [orders]);
+  }, [orders, isHydrated]);
 
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem("chattala_products", JSON.stringify(products));
-  }, [products]);
+  }, [products, isHydrated]);
 
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem("chattala_reviews", JSON.stringify(reviews));
-  }, [reviews]);
+  }, [reviews, isHydrated]);
 
   const addOrder = (orderData: Omit<Order, 'id' | 'status' | 'timestamp'>) => {
     const newOrder: Order = {
@@ -105,10 +113,9 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addReview = (reviewData: Omit<Review, 'id' | 'timestamp' | 'isVerified'>) => {
-    // Check if user has a delivered order for this product
-    const hasOrder = orders.some(o => 
-      o.productId === reviewData.productId && 
-      o.buyerEmail === reviewData.userEmail && 
+    const hasOrder = orders.some(o =>
+      o.productId === reviewData.productId &&
+      o.buyerEmail === reviewData.userEmail &&
       o.status === 'Delivered'
     );
 
@@ -126,15 +133,16 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <BusinessContext.Provider value={{ 
-      orders, 
-      products, 
-      reviews, 
-      addOrder, 
-      updateOrderStatus, 
-      addProduct, 
-      addReview, 
-      addReply 
+    <BusinessContext.Provider value={{
+      orders,
+      products,
+      reviews,
+      addOrder,
+      updateOrderStatus,
+      addProduct,
+      addReview,
+      addReply,
+      initializeBusiness,
     }}>
       {children}
     </BusinessContext.Provider>

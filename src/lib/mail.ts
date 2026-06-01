@@ -1,6 +1,11 @@
 import DOMPurify from "isomorphic-dompurify";
 import nodemailer from "nodemailer";
 
+function appLogoUrl(): string {
+  const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://thechattala.com";
+  return process.env.NEXT_PUBLIC_APP_LOGO_URL ?? `${base}/logo-full.png`;
+}
+
 function createTransporter() {
   const port = Number(process.env.SMTP_PORT) || 587;
   return nodemailer.createTransport({
@@ -33,7 +38,7 @@ export const sendWelcomeEmail = async ({ to, name }: SendWelcomeEmailParams) => 
         <div style="background-color: #f9fafb; padding: 40px 20px; text-align: center;">
           <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 40px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <img src="https://res.cloudinary.com/det1qnlrh/image/upload/v1779171235/NEW_af42tm.png" alt="The Chattala Logo" style="width: 140px; height: auto;" />
+              <img src="${appLogoUrl()}" alt="The Chattala Logo" style="width: 140px; height: auto;" />
             </div>
             <div style="font-family: Georgia, serif; color: #111827; font-size: 16px; line-height: 1.8;">
               <p>Dear ${name},</p>

@@ -1,17 +1,20 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import Layout from "../dashboard/layout";
+import { useEffect } from "react";
 import { ChatList } from "@/components/messages/chat-list";
 import { ChatWindow } from "@/components/messages/chat-window";
 import { useMessages } from "@/hooks/use-messages";
 import { MessageSquare } from "lucide-react";
 
 export default function MessagesPage() {
-  const { activeChatId } = useMessages();
+  const { activeChatId, initializeMessages } = useMessages();
+
+  useEffect(() => {
+    initializeMessages();
+  }, [initializeMessages]);
 
   return (
-    <Layout>
       <div className="h-[calc(100vh-80px)] flex flex-col overflow-hidden">
         <div className={`p-6 pb-0 md:hidden ${activeChatId ? 'hidden' : 'block'}`}>
           <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px] mb-2">
@@ -54,6 +57,5 @@ export default function MessagesPage() {
           </div>
         </div>
       </div>
-    </Layout>
   );
 }

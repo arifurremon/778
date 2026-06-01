@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, 
@@ -39,7 +39,11 @@ import { toast } from "@/hooks/use-toast";
 
 export function ExpertDashboard() {
   const { user } = useAuth();
-  const { bookings, reviews, wallet, acceptBooking, declineBooking, updateOngoingStatus, completeBooking, replyToReview } = useServices();
+  const { bookings, reviews, wallet, acceptBooking, declineBooking, updateOngoingStatus, completeBooking, replyToReview, initializeServices } = useServices();
+
+  useEffect(() => {
+    initializeServices();
+  }, [initializeServices]);
   const [isOnline, setIsOnline] = useState(true);
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
 

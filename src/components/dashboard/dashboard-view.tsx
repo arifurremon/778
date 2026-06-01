@@ -246,10 +246,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           ) : (
             notifications.map((n) => {
-              const isLike = n.type === 'LIKE' || n.type === 'COMMENT_LIKE';
-              const isComment = n.type === 'COMMENT';
-              const isConnection = n.type === 'CONNECTION_REQUEST' || n.type === 'CONNECTION_ACCEPTED';
-              const isPopular = n.type === 'POPULAR';
+              const isLike = n.type === 'POST_REACTION';
+              const isComment = n.type === 'NEW_COMMENT' || n.type === 'COMMENT_REPLY';
+              const isConnection = n.type === 'NEIGHBOR_REQUEST' || n.type === 'NEIGHBOR_ACCEPTED';
+              const isPopular = n.type === 'SYSTEM_ALERT';
 
               return (
                 <div 

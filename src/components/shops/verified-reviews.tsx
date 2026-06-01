@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star, MessageSquare, ShieldCheck, CornerDownRight, Send } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,7 +19,12 @@ interface VerifiedReviewsProps {
 
 export function VerifiedReviews({ productId, shopId, isOwner }: VerifiedReviewsProps) {
   const { user } = useAuth();
-  const { reviews, addReview, addReply, orders } = useBusiness();
+  const { reviews, addReview, addReply, orders, initializeBusiness } = useBusiness();
+
+  useEffect(() => {
+    initializeBusiness();
+  }, [initializeBusiness]);
+
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(5);
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});

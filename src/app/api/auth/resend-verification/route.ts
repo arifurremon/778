@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const email = parsed.data.email.toLowerCase().trim();
     const headersList = await headers();
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
-    const ip = rawForwarded.split(",")[0].trim() || "unknown";
+    const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
     const { success } = await rateLimiters.resendVerification.limit(`${ip}:${email}`);
     if (!success) {

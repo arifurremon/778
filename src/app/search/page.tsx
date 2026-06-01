@@ -31,8 +31,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useMemo, useState } from "react";
-import Layout from "../dashboard/layout";
-
 const CHITTAGONG_AREAS = [
   "Akbar Shah", "Bakalia", "Bandar", "Bayezid Bostami", "Chandgaon",
   "Chawkbazar", "Double Mooring", "EPZ", "Halishahar", "Karnaphuli",
@@ -87,7 +85,11 @@ function shopImageSrc(shop: RealShop): string {
 function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
-  const { posts } = useCommunity();
+  const { posts, fetchPosts } = useCommunity();
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const [activeTab, setActiveTab] = useState("all");
   const [filterArea, setFilterArea] = useState("All Areas");
@@ -329,17 +331,18 @@ function SearchResults() {
 
 export default function SearchPage() {
   return (
-    <Layout>
-      <Suspense
-        fallback={
-          <div className="h-full w-full flex items-center justify-center p-20">
-            <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-muted-foreground">Loading search...</p>
           </div>
-        }
-      >
-        <SearchResults />
-      </Suspense>
-    </Layout>
+        </div>
+      }
+    >
+      <SearchResults />
+    </Suspense>
   );
 }
 
