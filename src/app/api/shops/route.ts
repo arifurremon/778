@@ -40,11 +40,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     const category = searchParams.get("category") ?? undefined;
     const location = searchParams.get("location") ?? undefined;
+    const search   = searchParams.get("search") ?? undefined;
     const page     = Math.max(1, parseInt(searchParams.get("page")  ?? "1",  10));
     const limit    = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "12", 10)));
     const skip     = (page - 1) * limit;
 
-    const cacheKey = `shops:list:page:${page}:limit:${limit}:category:${category}:location:${location}`;
+    const cacheKey = `shops:list:page:${page}:limit:${limit}:category:${category}:location:${location}:search:${search}`;
 
     const [shops, total] = await cachedQuery(
       cacheKey,
@@ -52,6 +53,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         const where = {
           ...(category ? { category } : {}),
           ...(location ? { location: { contains: location, mode: "insensitive" as const } } : {}),
+          ...(search
+            ? {
+                OR: [
+                  { name: { contains: search, mode: "insensitive" as const } },
+                  { category: { contains: search, mode: "insensitive" as const } },
+                  { description: { contains: search, mode: "insensitive" as const } },
+                ],
+              }
+            : {}),
         };
 
         return Promise.all([
