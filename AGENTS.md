@@ -45,6 +45,7 @@ tmux -f /exec-daemon/tmux.portal.conf new-session -d -s next-dev-server -c /work
 
 ### Gotchas
 
+- **Quoted cloud secrets:** If `DATABASE_URL` / `DIRECT_URL` are injected with literal `"` characters around the URL, they override `.env.local` and Prisma fails with `P1013` (invalid scheme). Keep clean URLs in `.env.local`, `unset DATABASE_URL DIRECT_URL` before `npx prisma …`, and start the dev server with `set -a && source .env.local && set +a` so the file wins over the environment.
 - Restart `npm run dev` after editing `.env.local`.
 - `scripts/check-db.ts` loads `dotenv` after importing `@/lib/db`; prefer verifying DB via an API call or Prisma CLI, not that script alone.
 - `npm run build` runs `prisma migrate deploy` and needs valid `DATABASE_URL` / `DIRECT_URL`.
