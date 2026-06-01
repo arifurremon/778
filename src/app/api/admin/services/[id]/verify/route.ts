@@ -14,10 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const csrfError = validateCsrfRequest(req);
   if (csrfError) return csrfError;
 
-try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-
+  try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 

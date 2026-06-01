@@ -22,7 +22,7 @@ export async function POST(
   const csrfError = validateCsrfRequest(req);
   if (csrfError) return csrfError;
 
-try {
+  try {
     const { session, error } = await requireAdmin();
     if (error || !session) return error;
 
