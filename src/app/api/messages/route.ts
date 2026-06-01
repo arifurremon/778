@@ -106,7 +106,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     // Normalise participant order so [A,B] and [B,A] map to the same row
-    const [participantA, participantB] = [userId, recipientId].sort();
+    const sorted = [userId, recipientId].sort();
+    const participantA = sorted[0] as string;
+    const participantB = sorted[1] as string;
 
     const conversation = await db.conversation.upsert({
       where: { participantA_participantB: { participantA, participantB } },

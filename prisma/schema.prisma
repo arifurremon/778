@@ -60,10 +60,15 @@ model User {
   auditLogs            AuditLog[]
   shop                 Shop?
   expertService        ExpertService?
+  postReactions        UserPostReaction[]
+  commentReactions     UserCommentReaction[]
+  orders               Order[]
   
   // Social Trust
   sentRequests         NeighbourConnection[] @relation("Sender")
   receivedRequests     NeighbourConnection[] @relation("Receiver")
+  blockedUsers         BlockedUser[]         @relation("BlockerList")
+  blockedBy            BlockedUser[]         @relation("BlockedList")
 
   // Notifications
   notifications        Notification[]        @relation("NotificationRecipient")
@@ -228,6 +233,7 @@ model Post {
   flagged          Boolean      @default(false)
   moderationStatus String       @default("APPROVED")
   comments         Comment[]
+  reactions        UserPostReaction[]
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
@@ -247,6 +253,7 @@ model Comment {
   likes       Int      @default(0)
   unlikes     Int      @default(0)
   createdAt   DateTime @default(now())
+  reactions   UserCommentReaction[]
 }
 
 model ActivityLog {
@@ -271,7 +278,11 @@ model Shop {
   trustScore        Int                @default(100)
   rating            Float              @default(5.0)
   isVerified        Boolean            @default(false)
+  verifiedAt        DateTime?
+  rejectedAt        DateTime?
+  rejectionReason   String?
   products          Product[]
+  orders            Order[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
@@ -284,12 +295,13 @@ model Product {
   shop           Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   name           String
   description    String
-  price          String
-  originalPrice  String?
+  price          Decimal   @db.Decimal(10, 2)
+  originalPrice  Decimal?  @db.Decimal(10, 2)
   images         String[]
   inStock        Boolean  @default(true)
   category       String
   createdAt      DateTime @default(now())
+  orders         Order[]
 }
 
 model ExpertService {
@@ -305,6 +317,9 @@ model ExpertService {
   qualifications  String[]
   rating          Float    @default(5.0)
   isVerified      Boolean  @default(false)
+  verifiedAt      DateTime?
+  rejectedAt      DateTime?
+  rejectionReason String?
   createdAt       DateTime @default(now())
 }
 
@@ -373,13 +388,6 @@ enum NotificationType {
   MODERATION_ACTION    // An admin took action on your content or account
 }
 
-enum NotificationEmailStatus {
-  NONE         // No email for this notification
-  PENDING      // Queued, not yet sent
-  SENT         // Delivered successfully
-  FAILED       // Delivery attempt failed
-}
-
 // -----------------------------------------------------------------------------
 // INSTRUCTION: Run `npx prisma migrate dev --name add_admin_settings_audit` 
 // to apply these new schema models to the database.
@@ -440,4 +448,68 @@ model Message {
 
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REJECTED
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  shopId      String
+  shop        Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyerId     String
+  buyer       User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerName   String?
+  buyerPhone  String?
+  status      OrderStatus @default(PENDING)
+  quantity    Int         @default(1)
+  totalPrice  Decimal     @db.Decimal(10, 2)
+  address     String
+  note        String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([shopId])
+  @@index([buyerId])
+}
+
+model BlockedUser {
+  blockerId  String
+  blockedId  String
+  blocker    User     @relation("BlockerList", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked    User     @relation("BlockedList", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([blockerId, blockedId])
+}
+
+model UserPostReaction {
+  userId    String
+  postId    String
+  type      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+}
+
+model UserCommentReaction {
+  userId    String
+  commentId String
+  type      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, commentId])
 }
