@@ -1,13 +1,18 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
 import { ChatList } from "@/components/messages/chat-list";
 import { ChatWindow } from "@/components/messages/chat-window";
 import { useMessages } from "@/hooks/use-messages";
 import { MessageSquare } from "lucide-react";
 
 export default function MessagesPage() {
-  const { activeChatId } = useMessages();
+  const { activeChatId, initializeMessages } = useMessages();
+
+  useEffect(() => {
+    initializeMessages();
+  }, [initializeMessages]);
 
   return (
       <div className="h-[calc(100vh-80px)] flex flex-col overflow-hidden">

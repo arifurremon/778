@@ -16,7 +16,7 @@ import { useBusiness } from "@/hooks/use-business";
 import { toast } from "@/hooks/use-toast";
 import type { MockProduct } from "@/lib/mock-data";
 import { CheckCircle2, MapPin, Phone as PhoneIcon, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface OrderModalProps {
   product: MockProduct & { shopName?: string };
@@ -27,7 +27,12 @@ interface OrderModalProps {
 
 export function OrderModal({ product, shopId, isOpen, onClose }: OrderModalProps) {
   const { user } = useAuth();
-  const { addOrder } = useBusiness();
+  const { addOrder, initializeBusiness } = useBusiness();
+
+  useEffect(() => {
+    initializeBusiness();
+  }, [initializeBusiness]);
+
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({

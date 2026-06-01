@@ -57,13 +57,16 @@ export async function POST(req: NextRequest, { params }: any) {
 
       // [cite_start]Notify owner via in-app notification. [cite: 110]
       try {
-        // @ts-ignore
         await tx.notification.create({
           data: {
             userId: shop.userId,
-            title: "Shop Registration Rejected",
-            message: `Your shop registration was not approved. Reason: ${validatedData.reason}`,
-            type: "ERROR"
+            type: "SHOP_VERIFIED",
+            entityType: "Shop",
+            entityId: shop.id,
+            metadata: {
+              approved: false,
+              message: `Your shop registration was not approved. Reason: ${validatedData.reason}`,
+            },
           }
         });
       } catch (e) {

@@ -85,7 +85,11 @@ function shopImageSrc(shop: RealShop): string {
 function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") || "";
-  const { posts } = useCommunity();
+  const { posts, fetchPosts } = useCommunity();
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const [activeTab, setActiveTab] = useState("all");
   const [filterArea, setFilterArea] = useState("All Areas");

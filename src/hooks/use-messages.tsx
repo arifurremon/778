@@ -1,9 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { useAuth } from "./use-auth";
-
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 export interface Message {
   id: string;
   senderId: string;
@@ -31,6 +29,7 @@ interface MessagesContextType {
   sendMessage: (text: string) => void;
   startConversation: (participant: { id: string, name: string, avatar: string, role: string, context?: string }) => void;
   totalUnread: number;
+  initializeMessages: () => void;
 }
 
 const MessagesContext = createContext<MessagesContextType | null>(null);
@@ -70,18 +69,27 @@ const MOCK_CONVERSATIONS: Conversation[] = [
 ];
 
 export function MessagesProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  useEffect(() => {
+  const initializeMessages = useCallback(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     const saved = localStorage.getItem("chattala_messages");
-    if (saved) setConversations(JSON.parse(saved));
+    if (saved) {
+      setConversations(JSON.parse(saved));
+    } else {
+      setConversations(MOCK_CONVERSATIONS);
+    }
+    setIsHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!isHydrated) return;
     localStorage.setItem("chattala_messages", JSON.stringify(conversations));
-  }, [conversations]);
+  }, [conversations, isHydrated]);
 
   const totalUnread = conversations.reduce((acc, curr) => acc + curr.unreadCount, 0);
 
@@ -120,33 +128,25 @@ export function MessagesProvider({ children }: { children: React.ReactNode }) {
       participantName: participant.name,
       participantAvatar: participant.avatar,
       participantRole: participant.role,
-      lastMessage: "",
+      lastMessage: "Conversation started",
       timestamp: "Just now",
       unreadCount: 0,
       context: participant.context,
       messages: []
     };
-
     setConversations(prev => [newConv, ...prev]);
     setActiveChatId(newConv.id);
   };
 
-  const markAsRead = (id: string) => {
-    setConversations(prev => prev.map(c => c.id === id ? { ...c, unreadCount: 0 } : c));
-  };
-
-  useEffect(() => {
-    if (activeChatId) markAsRead(activeChatId);
-  }, [activeChatId]);
-
   return (
-    <MessagesContext.Provider value={{ 
-      conversations, 
-      activeChatId, 
-      setActiveChatId, 
-      sendMessage, 
+    <MessagesContext.Provider value={{
+      conversations,
+      activeChatId,
+      setActiveChatId,
+      sendMessage,
       startConversation,
-      totalUnread
+      totalUnread,
+      initializeMessages,
     }}>
       {children}
     </MessagesContext.Provider>

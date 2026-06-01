@@ -43,7 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // on a multi-hop deployment produces a unique key per proxy path,
         // silently defeating the limiter for a rotating-proxy attacker.
         const rawForwarded = headersList.get("x-forwarded-for") ?? "";
-        const ip = rawForwarded.split(",")[0].trim() || "unknown";
+        const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
         // Normalise email to lowercase to prevent key fragmentation.
         // An attacker using "Victim@Evil.com" vs "victim@evil.com" would

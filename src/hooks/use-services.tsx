@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useCallback, useContext, useRef, useState } from "react";
 
 export type BookingStatus = 'Pending' | 'Ongoing' | 'Completed' | 'Cancelled';
 export type OngoingSubStatus = 'Confirmed' | 'On My Way' | 'Service Started';
@@ -42,6 +42,7 @@ interface ServicesContextType {
     balance: number;
     history: { id: string, amount: string, type: 'Credit' | 'Withdrawal', date: string, status: string }[];
   };
+  initializeServices: () => void;
 }
 
 const ServicesContext = createContext<ServicesContextType | null>(null);
@@ -69,7 +70,7 @@ const MOCK_BOOKINGS: Booking[] = [
     status: 'Ongoing',
     subStatus: 'On My Way',
     timestamp: "Today, 2:00 PM",
-    address: "Agrabad C/A, Chattogram",
+    address: "Agrabad C/A, Chattagram",
   }
 ];
 
@@ -84,16 +85,27 @@ const MOCK_REVIEWS: ServiceReview[] = [
   }
 ];
 
+const MOCK_WALLET = {
+  balance: 5400,
+  history: [
+    { id: 'w1', amount: '৳2,000', type: 'Withdrawal' as const, date: 'Oct 15, 2024', status: 'Completed' },
+    { id: 'w2', amount: '৳1,000', type: 'Credit' as const, date: 'Oct 12, 2024', status: 'Settled' },
+  ]
+};
+
 export function ServicesProvider({ children }: { children: React.ReactNode }) {
-  const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
-  const [reviews, setReviews] = useState<ServiceReview[]>(MOCK_REVIEWS);
-  const [wallet, setWallet] = useState({
-    balance: 5400,
-    history: [
-      { id: 'w1', amount: '৳2,000', type: 'Withdrawal' as const, date: 'Oct 15, 2024', status: 'Completed' },
-      { id: 'w2', amount: '৳1,000', type: 'Credit' as const, date: 'Oct 12, 2024', status: 'Settled' },
-    ]
-  });
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reviews, setReviews] = useState<ServiceReview[]>([]);
+  const [wallet, setWallet] = useState(MOCK_WALLET);
+  const hasFetchedRef = useRef(false);
+
+  const initializeServices = useCallback(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+    setBookings(MOCK_BOOKINGS);
+    setReviews(MOCK_REVIEWS);
+    setWallet(MOCK_WALLET);
+  }, []);
 
   const acceptBooking = (id: string) => {
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Ongoing', subStatus: 'Confirmed' } : b));
@@ -109,7 +121,6 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
 
   const completeBooking = (id: string) => {
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Completed', subStatus: undefined } : b));
-    // Add to wallet balance logic would go here
   };
 
   const replyToReview = (id: string, reply: string) => {
@@ -117,15 +128,16 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <ServicesContext.Provider value={{ 
-      bookings, 
-      reviews, 
-      acceptBooking, 
-      declineBooking, 
-      updateOngoingStatus, 
+    <ServicesContext.Provider value={{
+      bookings,
+      reviews,
+      acceptBooking,
+      declineBooking,
+      updateOngoingStatus,
       completeBooking,
       replyToReview,
-      wallet
+      wallet,
+      initializeServices,
     }}>
       {children}
     </ServicesContext.Provider>

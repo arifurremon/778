@@ -58,7 +58,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const headersList = await headers();
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
-    const ip = rawForwarded.split(",")[0].trim() || "unknown";
+    const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
     // Check Redis-based rate limit
     let rateLimitSuccess = true;

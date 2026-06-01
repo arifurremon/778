@@ -27,7 +27,6 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       router.replace("/");
     }
   }, [status, isLoading, user, router]);
-  }, [status, isLoading, user, router]);
 
   if (status === "loading" || isLoading || (status === "authenticated" && !user && isLoading)) {
     return <GlobalLoader />;

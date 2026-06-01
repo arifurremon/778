@@ -38,10 +38,14 @@ import {
     Truck
 } from "lucide-react";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function SellerDashboard() {
-  const { orders, products, updateOrderStatus } = useBusiness();
+  const { orders, products, updateOrderStatus, initializeBusiness } = useBusiness();
+
+  useEffect(() => {
+    initializeBusiness();
+  }, [initializeBusiness]);
   const [activeTab, setActiveTab] = useState("overview");
 
   const stats = useMemo(() => ({

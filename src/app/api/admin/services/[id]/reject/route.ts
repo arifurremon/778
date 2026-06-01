@@ -67,13 +67,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Notification on reject
       // SCHEMA-FALLBACK: 'notification' may not exist — verify schema
       try {
-        // @ts-ignore
         await tx.notification.create({
           data: {
             userId: service.userId,
-            title: "Service Application Rejected",
-            message: `Your service application was not approved. Reason: ${validatedData.reason}`,
-            type: "MODERATION_ACTION"
+            type: "SERVICE_VERIFIED",
+            entityType: "ExpertService",
+            entityId: service.id,
+            metadata: {
+              approved: false,
+              message: `Your service application was not approved. Reason: ${validatedData.reason}`,
+            },
           }
         });
       } catch (e) {

@@ -59,13 +59,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // [cite_start]Notification on verify: "Your service '[title]' has been verified and is now live!" [cite: 117]
       // SCHEMA-FALLBACK: 'notification' may not exist — verify schema
       try {
-        // @ts-ignore
         await tx.notification.create({
           data: {
             userId: service.userId,
-            title: "Service Verified",
-            message: `Your service '${serviceTitle}' has been verified and is now live!`,
-            type: "SUCCESS"
+            type: "SERVICE_VERIFIED",
+            entityType: "ExpertService",
+            entityId: service.id,
+            metadata: {
+              approved: true,
+              message: `Your service '${serviceTitle}' has been verified and is now live!`,
+            },
           }
         });
       } catch (e) {
