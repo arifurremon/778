@@ -29,12 +29,11 @@ const devOnlyImageDomains =
       ]
     : [];
 
-/** CSP sources for third-party scripts (Pusher, Sentry, Vercel observability). */
+/** CSP sources for third-party scripts (Pusher, Sentry, Google Analytics). */
 const cspScriptHosts = [
   'https://js.pusher.com',
   'https://js.sentry-cdn.com',
-  // Vercel Analytics (dev debug script) + Speed Insights loader when not first-party
-  'https://va.vercel-scripts.com',
+  'https://www.googletagmanager.com',
 ].join(' ');
 
 /**
@@ -52,8 +51,10 @@ const cspConnectHosts = [
   'https://*.sentry.io',
   'https://uploadthing.com',
   'https://utfs.io',
-  'https://vitals.vercel-insights.com',
-  'https://va.vercel-scripts.com',
+  'https://www.google-analytics.com',
+  'https://analytics.google.com',
+  'https://*.google-analytics.com',
+  'https://*.analytics.google.com',
 ].join(' ');
 
 const nextConfig: NextConfig = {
