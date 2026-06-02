@@ -11,6 +11,7 @@ const orderSchema = z.object({
   productId: z.string().uuid(),
   phone: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Invalid Bangladeshi phone number"),
   address: z.string().min(1, "Address is required"),
+  quantity: z.number().int().positive().max(99).optional().default(1),
   note: z.string().optional(),
 });
 
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.error.errors[0]?.message ?? "Validation failed." }, { status: 400 });
     }
 
-    const { shopId, productId, phone, address, note } = result.data;
+    const { shopId, productId, phone, address, quantity, note } = result.data;
 
     const shop = await db.shop.findUnique({
       where: { id: shopId },
@@ -49,14 +50,14 @@ export async function POST(req: NextRequest) {
     });
 
     if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      return NextResponse.json({ error: "Product not found" }, { status: 400 });
     }
 
     if (!product.inStock) {
       return NextResponse.json({ error: "Product is out of stock" }, { status: 400 });
     }
 
-    const totalPrice = Number(product.price);
+    const totalPrice = product.price.toNumber() * quantity;
 
     const newOrder = await db.$transaction(async (tx) => {
       const order = await tx.order.create({
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
           buyerName: session.user!.name || "Anonymous",
           buyerPhone: phone,
           address,
-          quantity: 1,
+          quantity,
           totalPrice,
           note,
           status: "PENDING",

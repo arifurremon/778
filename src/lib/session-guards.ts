@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
  * Requires an authenticated user that is not soft-deleted or suspended.
  * Use for privileged API routes instead of trusting the JWT alone.
  */
-export async function requireActiveUser() {
+export async function requireActiveSession() {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -26,7 +26,7 @@ export async function requireActiveUser() {
     },
   });
 
-  if (!dbUser || dbUser.deletedAt) {
+  if (!dbUser || dbUser.deletedAt !== null) {
     return {
       error: NextResponse.json(
         { error: "Forbidden: Account not found or deleted" },
@@ -35,7 +35,7 @@ export async function requireActiveUser() {
     };
   }
 
-  if (dbUser.suspendedAt) {
+  if (dbUser.suspendedAt !== null) {
     return {
       error: NextResponse.json(
         { error: "Forbidden: Account suspended" },
@@ -47,12 +47,15 @@ export async function requireActiveUser() {
   return { session, dbUser };
 }
 
+/** Alias used across API routes — same guard as `requireActiveSession`. */
+export const requireActiveUser = requireActiveSession;
+
 /** CSRF + active-user check for cookie-authenticated mutations. */
 export async function requireActiveMutation(req: NextRequest) {
   const csrfError = validateCsrfRequest(req);
   if (csrfError) {
     return { error: csrfError };
   }
-  return requireActiveUser();
+  return requireActiveSession();
 }
 

@@ -1,7 +1,9 @@
+import { auth } from "@/lib/auth";
 import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { canUserViewPost } from "@/lib/post-visibility";
 import { sanitizeUserInput } from "@/lib/sanitize";
-import { requireActiveUser } from "@/lib/session-guards";
+import { requireActiveSession } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -27,14 +29,24 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { postId } = await params;
+    const session = await auth();
+    const viewerUserId = session?.user?.id ?? null;
 
-    const postExists = await db.post.findUnique({
+    const post = await db.post.findUnique({
       where: { id: postId },
-      select: { id: true },
+      select: { id: true, authorId: true, visibility: true },
     });
 
-    if (!postExists) {
+    if (!post) {
       return NextResponse.json({ error: "Post not found." }, { status: 404 });
+    }
+
+    const allowed = await canUserViewPost(post, viewerUserId);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Forbidden. You do not have access to this post." },
+        { status: 403 }
+      );
     }
 
     const comments = await db.comment.findMany({
@@ -75,7 +87,7 @@ export async function POST(
   if (csrfError) return csrfError;
 
   try {
-    const active = await requireActiveUser();
+    const active = await requireActiveSession();
     if (active.error) return active.error;
     const { session } = active;
 
