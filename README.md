@@ -1,39 +1,4 @@
-development UI
-npm run genkit:dev
-```
 
-```
-
-Open http://localhost:9002 to view the app.  
-Open the Genkit UI (printed in terminal after `genkit:dev`) to test AI flows interactively.
-
----
-
-## Scripts
-
-| Command | Description |
-|---|---|
-| npm run dev | Start dev server with Turbopack on port 9002 |
-| npm run build | Production build |
-| npm run start | Start production server |
-| npm run lint | Run ESLint |
-| npm run typecheck | TypeScript type check (no emit) |
-| npm run genkit:dev | Start Genkit AI developer UI |
-| npm run genkit:watch | Genkit dev UI with file watching |
-
----
-
-## Deployment
-
-The Chattala is deployed on Firebase App Hosting via the apphosting.yaml configuration. Every push to main triggers an automatic build and deployment through Firebase's managed Next.js hosting infrastructure.
-
-Live at → [thechattala.com](https://thechattala.com)
-
----
-
-<br/>
-
----
 
 <p align="center">
   <sub>An initiative by</sub><br/><br/>
