@@ -1,21 +1,31 @@
+import { hasRedisConfigs, runRateLimit, type RateLimitResult } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
-
-type RateLimitResult = {
-  success: boolean;
-  reset?: number;
-};
 
 const RATE_LIMIT_TIMEOUT_MS = 2000;
 
+function rateLimitUnavailableResponse(): NextResponse {
+  return NextResponse.json(
+    { error: "Service temporarily unavailable. Please try again later." },
+    { status: 503, headers: { "Retry-After": "60" } }
+  );
+}
+
 /**
  * Enforces Upstash rate limits with production fail-closed semantics.
- * On Redis errors or timeouts in production, requests are rejected (429).
+ * - Missing Redis in production → 503
+ * - Redis errors / timeouts in production → 503
+ * - Quota exceeded → 429
  */
 export async function enforceRateLimit(
   limit: () => Promise<RateLimitResult>,
   logLabel: string,
   options?: { quotaExceededMessage?: string }
 ): Promise<NextResponse | null> {
+  if (process.env.NODE_ENV === "production" && !hasRedisConfigs()) {
+    console.error(`[${logLabel}] Rate limit unavailable: missing Upstash env`);
+    return rateLimitUnavailableResponse();
+  }
+
   let result: RateLimitResult = { success: true };
 
   try {
@@ -28,10 +38,7 @@ export async function enforceRateLimit(
   } catch (err) {
     console.error(`[${logLabel}] Rate limit error:`, err);
     if (process.env.NODE_ENV === "production") {
-      return NextResponse.json(
-        { error: "Too many attempts. Please try again later." },
-        { status: 429, headers: { "Retry-After": "60" } }
-      );
+      return rateLimitUnavailableResponse();
     }
     return null;
   }
@@ -55,3 +62,5 @@ export async function enforceRateLimit(
 
   return null;
 }
+
+export { runRateLimit };

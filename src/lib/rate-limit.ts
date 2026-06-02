@@ -1,15 +1,29 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-const hasRedisConfigs = !!(
-  process.env.UPSTASH_REDIS_REST_URL &&
-  process.env.UPSTASH_REDIS_REST_TOKEN
-);
+export function hasRedisConfigs(): boolean {
+  return !!(
+    process.env.UPSTASH_REDIS_REST_URL &&
+    process.env.UPSTASH_REDIS_REST_TOKEN
+  );
+}
 
-export const redis = hasRedisConfigs
+export type RateLimitResult = {
+  success: boolean;
+  reset?: number;
+  pending?: Promise<unknown>;
+  limit?: number;
+  remaining?: number;
+};
+
+type RateLimiterLike = {
+  limit: (key: string) => Promise<RateLimitResult>;
+};
+
+export const redis = hasRedisConfigs()
   ? new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
     })
   : null;
 
@@ -40,7 +54,7 @@ const failClosedRatelimit = {
 function createLimiter(
   build: (redisClient: Redis) => ConstructorParameters<typeof Ratelimit>[0]
 ) {
-  if (hasRedisConfigs && redis) {
+  if (hasRedisConfigs() && redis) {
     return new Ratelimit(build(redis));
   }
   return isProduction ? failClosedRatelimit : mockRatelimit;
@@ -88,3 +102,24 @@ export const rateLimiters = {
     analytics: true,
   })),
 };
+
+/**
+ * Runs a rate-limit check with production fail-closed semantics.
+ * - Missing Redis in production → throws (caller maps to 503).
+ * - Redis/network errors → throws (caller maps to 503).
+ */
+export async function runRateLimit(
+  limiter: RateLimiterLike,
+  key: string
+): Promise<RateLimitResult> {
+  if (isProduction && !hasRedisConfigs()) {
+    throw new Error("Rate limiting unavailable: Redis is not configured");
+  }
+
+  try {
+    return await limiter.limit(key);
+  } catch (err) {
+    console.error("[RateLimit] limit() failed:", err);
+    throw new Error("Rate limiting unavailable: Redis request failed");
+  }
+}

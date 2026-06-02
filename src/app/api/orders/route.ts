@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireActiveMutation, requireActiveUser } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
-import { rateLimiters } from "@/lib/rate-limit";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { z } from "zod";
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const { session } = active;
 
     const rateLimitResponse = await enforceRateLimit(
-      () => rateLimiters.orders.limit(session.user.id),
+      () => runRateLimit(rateLimiters.orders, session.user.id),
       "Orders",
       { quotaExceededMessage: "Order limit reached (5/hour)" }
     );

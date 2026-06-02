@@ -13,6 +13,11 @@ vi.mock("@/lib/error-handler", () => ({
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
+  hasRedisConfigs: vi.fn(() => true),
+  runRateLimit: vi.fn(
+    (limiter: { limit: (key: string) => Promise<{ success: boolean }> }, key: string) =>
+      limiter.limit(key)
+  ),
   rateLimiters: {
     resendVerification: { limit: vi.fn().mockResolvedValue({ success: true }) },
   },

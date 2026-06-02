@@ -2,8 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { ConnectionStatus } from "@prisma/client";
 
 type RouteContext = { params: Promise<{ username: string }> };
+
+function neighbourIdsFromEdges(
+  userId: string,
+  edges: { senderId: string; receiverId: string }[]
+): string[] {
+  const ids = new Set<string>();
+  for (const edge of edges) {
+    if (edge.senderId === userId) ids.add(edge.receiverId);
+    else if (edge.receiverId === userId) ids.add(edge.senderId);
+  }
+  return [...ids];
+}
 
 export async function GET(
   _req: NextRequest,
@@ -11,11 +24,10 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const session = await auth();
-    const currentUserId = session?.user?.id; // Optional: user might be logged out
+    const currentUserId = session?.user?.id;
 
     const { username } = await params;
 
-    // Fetch the target user by username
     const targetUser = await db.user.findUnique({
       where: { username },
       select: {
@@ -46,80 +58,91 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    let connectionStatus: "NONE" | "PENDING_SENT" | "PENDING_RECEIVED" | "ACCEPTED" | "SELF" = "NONE";
+    let connectionStatus:
+      | "NONE"
+      | "PENDING_SENT"
+      | "PENDING_RECEIVED"
+      | "ACCEPTED"
+      | "SELF" = "NONE";
     let connectionId: string | null = null;
     let mutualNeighboursCount = 0;
-    
-    // Get total accepted connections for target user
-    const targetConnections = await db.neighbourConnection.findMany({
-      where: {
-        status: "ACCEPTED",
-        OR: [{ senderId: targetUser.id }, { receiverId: targetUser.id }],
-      },
-      select: {
-        senderId: true,
-        receiverId: true,
-      },
-    });
+    let neighboursCount = 0;
 
-    const targetNeighbourIds = targetConnections.map(c => 
-      c.senderId === targetUser.id ? c.receiverId : c.senderId
-    );
-    const neighboursCount = targetNeighbourIds.length;
+    if (currentUserId === targetUser.id) {
+      connectionStatus = "SELF";
+    }
 
-    if (currentUserId) {
-      if (currentUserId === targetUser.id) {
-        connectionStatus = "SELF";
-      } else {
-        // Check connection status between current user and target user
-        const connection = await db.neighbourConnection.findFirst({
+    const viewingOther =
+      currentUserId && currentUserId !== targetUser.id;
+
+    if (viewingOther) {
+      const [pairConnection, acceptedEdges] = await Promise.all([
+        db.neighbourConnection.findFirst({
           where: {
             OR: [
               { senderId: currentUserId, receiverId: targetUser.id },
               { senderId: targetUser.id, receiverId: currentUserId },
             ],
           },
-        });
-
-        if (connection) {
-          connectionId = connection.id;
-          if (connection.status === "ACCEPTED") {
-            connectionStatus = "ACCEPTED";
-          } else if (connection.senderId === currentUserId) {
-            connectionStatus = "PENDING_SENT";
-          } else {
-            connectionStatus = "PENDING_RECEIVED";
-          }
-        }
-
-        // Get count of mutual neighbours
-        const currentUserConnections = await db.neighbourConnection.findMany({
+          select: { id: true, status: true, senderId: true },
+        }),
+        db.neighbourConnection.findMany({
           where: {
-            status: "ACCEPTED",
-            OR: [{ senderId: currentUserId }, { receiverId: currentUserId }],
+            status: ConnectionStatus.ACCEPTED,
+            OR: [
+              { senderId: targetUser.id },
+              { receiverId: targetUser.id },
+              { senderId: currentUserId },
+              { receiverId: currentUserId },
+            ],
           },
-          select: {
-            senderId: true,
-            receiverId: true,
-          },
-        });
+          select: { senderId: true, receiverId: true },
+        }),
+      ]);
 
-        const currentUserNeighbourIds = currentUserConnections.map(c =>
-          c.senderId === currentUserId ? c.receiverId : c.senderId
-        );
-
-        mutualNeighboursCount = targetNeighbourIds.filter(id => 
-          currentUserNeighbourIds.includes(id)
-        ).length;
+      if (pairConnection) {
+        connectionId = pairConnection.id;
+        if (pairConnection.status === ConnectionStatus.ACCEPTED) {
+          connectionStatus = "ACCEPTED";
+        } else if (pairConnection.senderId === currentUserId) {
+          connectionStatus = "PENDING_SENT";
+        } else {
+          connectionStatus = "PENDING_RECEIVED";
+        }
       }
+
+      const targetNeighbourIds = new Set(
+        neighbourIdsFromEdges(targetUser.id, acceptedEdges)
+      );
+      const currentNeighbourIds = new Set(
+        neighbourIdsFromEdges(currentUserId, acceptedEdges)
+      );
+      neighboursCount = targetNeighbourIds.size;
+      for (const id of targetNeighbourIds) {
+        if (currentNeighbourIds.has(id)) mutualNeighboursCount++;
+      }
+    } else {
+      const targetEdges = await db.neighbourConnection.findMany({
+        where: {
+          status: ConnectionStatus.ACCEPTED,
+          OR: [{ senderId: targetUser.id }, { receiverId: targetUser.id }],
+        },
+        select: { senderId: true, receiverId: true },
+      });
+      neighboursCount = neighbourIdsFromEdges(targetUser.id, targetEdges).length;
     }
 
-    // Filter fields based on target user's privacy settings
     const isNeighbour = connectionStatus === "ACCEPTED";
     const privacy = (targetUser.privacySettings as Record<string, string>) || {};
 
-    const showEmail = privacy.email === "Public" || (isNeighbour && privacy.email === "Neighbours") || connectionStatus === "SELF";
-    const showMobile = privacy.mobile === "Public" || (isNeighbour && privacy.mobile === "Neighbours") || connectionStatus === "SELF";
+    const showEmail =
+      privacy.email === "Public" ||
+      (isNeighbour && privacy.email === "Neighbours") ||
+      connectionStatus === "SELF";
+    const showMobile =
+      privacy.mobile === "Public" ||
+      (isNeighbour && privacy.mobile === "Neighbours") ||
+      connectionStatus === "SELF";
 
     return NextResponse.json({
       profile: {

@@ -146,6 +146,8 @@ model NeighbourConnection {
   updatedAt  DateTime         @updatedAt
 
   @@unique([senderId, receiverId])
+  @@index([senderId, status])
+  @@index([receiverId, status])
 }
 
 // ---------------------------------------------------------------------------
@@ -209,23 +211,23 @@ model Notification {
 }
 
 model Post {
-  id               String           @id @default(uuid())
+  id               String             @id @default(uuid())
   authorId         String
-  author           User             @relation(fields: [authorId], references: [id])
+  author           User               @relation(fields: [authorId], references: [id])
   content          String
   images           String[]
   checkInLocation  String?
-  visibility       PrivacyLevel     @default(PUBLIC)
-  helpfulCount     Int              @default(0)
-  notHelpfulCount  Int              @default(0)
-  flagged          Boolean          @default(false)
-  flagCount        Int              @default(0)
-  moderationStatus ModerationStatus @default(APPROVED)
+  visibility       PrivacyLevel       @default(PUBLIC)
+  helpfulCount     Int                @default(0)
+  notHelpfulCount  Int                @default(0)
+  flagged          Boolean            @default(false)
+  flagCount        Int                @default(0)
+  moderationStatus ModerationStatus   @default(APPROVED)
   deletedAt        DateTime?
   comments         Comment[]
   reactions        UserPostReaction[]
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   @@index([visibility])
   @@index([authorId])
@@ -268,24 +270,24 @@ model ActivityLog {
 }
 
 model Shop {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id])
+  id              String        @id @default(uuid())
+  userId          String        @unique
+  user            User          @relation(fields: [userId], references: [id])
   name            String
   description     String
   category        String
   location        String
-  trustScore      Int       @default(100)
-  rating          Float     @default(5.0)
-  isVerified      Boolean   @default(false)
+  trustScore      Int           @default(100)
+  rating          Float         @default(5.0)
+  isVerified      Boolean       @default(false)
   verifiedAt      DateTime?
   rejectedAt      DateTime?
   rejectionReason String?
   payoutMethod    PayoutMethod?
   products        Product[]
   orders          Order[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([userId])
   @@index([category])
@@ -309,23 +311,23 @@ model Product {
 }
 
 model ExpertService {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id])
+  id              String        @id @default(uuid())
+  userId          String        @unique
+  user            User          @relation(fields: [userId], references: [id])
   profession      String
   category        String
   location        String
-  experienceYears Int       @default(0)
+  experienceYears Int           @default(0)
   fee             String
   bio             String
   qualifications  String[]
-  rating          Float     @default(5.0)
-  isVerified      Boolean   @default(false)
+  rating          Float         @default(5.0)
+  isVerified      Boolean       @default(false)
   verifiedAt      DateTime?
   rejectedAt      DateTime?
   rejectionReason String?
   payoutMethod    PayoutMethod?
-  createdAt       DateTime  @default(now())
+  createdAt       DateTime      @default(now())
 
   // FIX(P1): Added missing indexes — category/location/isVerified are the
   // primary filter axes for expert discovery queries. Without these, every
@@ -390,28 +392,28 @@ enum ActivityType {
 // ---------------------------------------------------------------------------
 enum NotificationType {
   // --- Community ---
-  POST_REACTION    // Someone reacted to your post
-  NEW_COMMENT      // Someone commented on your post
-  COMMENT_REPLY    // Someone replied to your comment
-  POST_FLAGGED     // A moderator flagged your post
+  POST_REACTION // Someone reacted to your post
+  NEW_COMMENT // Someone commented on your post
+  COMMENT_REPLY // Someone replied to your comment
+  POST_FLAGGED // A moderator flagged your post
 
   // --- Connections ---
-  NEIGHBOR_REQUEST  // Someone sent you a neighbour request
+  NEIGHBOR_REQUEST // Someone sent you a neighbour request
   NEIGHBOR_ACCEPTED // Your neighbour request was accepted
 
   // --- E-commerce (Shop) ---
-  NEW_ORDER          // A buyer placed an order on your shop
-  ORDER_UPDATED      // The status of an order changed
-  SHOP_VERIFIED      // Your shop application was approved or rejected
+  NEW_ORDER // A buyer placed an order on your shop
+  ORDER_UPDATED // The status of an order changed
+  SHOP_VERIFIED // Your shop application was approved or rejected
   NEW_PRODUCT_REVIEW // A buyer left a review on your product
 
   // --- Service Directory ---
-  SERVICE_BOOKED   // Someone booked your expert service
-  SERVICE_UPDATED  // A service booking status changed
+  SERVICE_BOOKED // Someone booked your expert service
+  SERVICE_UPDATED // A service booking status changed
   SERVICE_VERIFIED // Your expert profile was approved or rejected
 
   // --- Admin / System ---
-  SYSTEM_ALERT      // Platform-wide or account-targeted system message
+  SYSTEM_ALERT // Platform-wide or account-targeted system message
   MODERATION_ACTION // An admin took action on your content or account
 }
 
@@ -462,6 +464,9 @@ model Conversation {
   messages Message[]
 
   @@unique([participantA, participantB])
+  @@index([participantA])
+  @@index([participantB])
+  @@index([participantA, updatedAt])
 }
 
 model Message {
@@ -472,8 +477,8 @@ model Message {
   isRead         Boolean  @default(false)
   createdAt      DateTime @default(now())
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
 }

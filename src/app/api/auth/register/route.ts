@@ -2,7 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
-import { rateLimiters } from "@/lib/rate-limit";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { Prisma } from "@prisma/client";
@@ -67,7 +67,7 @@ try {
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
     const rateLimitResponse = await enforceRateLimit(
-      () => rateLimiters.register.limit(ip),
+      () => runRateLimit(rateLimiters.register, ip),
       "Register"
     );
     if (rateLimitResponse) {

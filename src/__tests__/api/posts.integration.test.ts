@@ -12,6 +12,11 @@ import { prismaMock, resetPrismaMock } from "../helpers/prisma-mock";
 
 // Mock rate-limiter
 vi.mock("@/lib/rate-limit", () => ({
+  hasRedisConfigs: vi.fn(() => true),
+  runRateLimit: vi.fn(
+    (limiter: { limit: (key: string) => Promise<{ success: boolean }> }, key: string) =>
+      limiter.limit(key)
+  ),
   rateLimiters: {
     register: { limit: vi.fn().mockResolvedValue({ success: true }) },
     signin: { limit: vi.fn().mockResolvedValue({ success: true }) },

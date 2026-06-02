@@ -2,7 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendPasswordResetEmail } from "@/lib/mail";
-import { rateLimiters } from "@/lib/rate-limit";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import crypto from "crypto";
 import { headers } from "next/headers";
@@ -55,7 +55,7 @@ try {
     const email = parsed.data.email.toLowerCase().trim();
 
     const rateLimitResponse = await enforceRateLimit(
-      () => rateLimiters.forgotPassword.limit(`${ip}:${email}`),
+      () => runRateLimit(rateLimiters.forgotPassword, `${ip}:${email}`),
       "ForgotPassword"
     );
     if (rateLimitResponse) return rateLimitResponse;

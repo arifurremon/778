@@ -2,7 +2,7 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendVerificationEmail } from "@/lib/mail";
-import { rateLimiters } from "@/lib/rate-limit";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import crypto from "crypto";
 import { headers } from "next/headers";
@@ -47,7 +47,7 @@ try {
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
     const rateLimitResponse = await enforceRateLimit(
-      () => rateLimiters.resendVerification.limit(`${ip}:${email}`),
+      () => runRateLimit(rateLimiters.resendVerification, `${ip}:${email}`),
       "ResendVerification"
     );
     if (rateLimitResponse) return rateLimitResponse;

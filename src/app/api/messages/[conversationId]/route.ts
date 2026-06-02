@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { pusher } from "@/lib/pusher";
-import { rateLimiters } from "@/lib/rate-limit";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { requireActiveMutation } from "@/lib/session-guards";
@@ -90,7 +90,7 @@ export async function POST(
     const { session } = active;
 
     const rateLimitResponse = await enforceRateLimit(
-      () => rateLimiters.messages.limit(session.user.id),
+      () => runRateLimit(rateLimiters.messages, session.user.id),
       "Messages",
       { quotaExceededMessage: "Sending too fast. Please slow down." }
     );

@@ -1,7 +1,7 @@
 import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
-import { rateLimiters } from "@/lib/rate-limit";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { hash } from "bcryptjs";
 import crypto from "crypto";
@@ -28,7 +28,7 @@ try {
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
 
     const rateLimitResponse = await enforceRateLimit(
-      () => rateLimiters.resetPassword.limit(ip),
+      () => runRateLimit(rateLimiters.resetPassword, ip),
       "ResetPassword"
     );
     if (rateLimitResponse) return rateLimitResponse;

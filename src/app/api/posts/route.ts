@@ -4,7 +4,7 @@ import { requireActiveMutation } from "@/lib/session-guards";
 import { invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
-import { rateLimiters } from "@/lib/rate-limit";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizePostContent } from "@/lib/sanitize";
 import { ConnectionStatus, PrivacyLevel, Prisma } from "@prisma/client";
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const { session } = active;
 
     const rateLimitResponse = await enforceRateLimit(
-      () => rateLimiters.posts.limit(session.user.id),
+      () => runRateLimit(rateLimiters.posts, session.user.id),
       "Posts",
       { quotaExceededMessage: "Post limit reached. Please try again later." }
     );

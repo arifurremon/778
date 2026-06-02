@@ -23,12 +23,22 @@ describe("enforceRateLimit", () => {
     expect(result?.status).toBe(429);
   });
 
-  it("fails closed in production when the limiter throws", async () => {
+  it("returns 503 in production when Redis is not configured", async () => {
     vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+    const result = await enforceRateLimit(async () => ({ success: true }), "Test");
+    expect(result?.status).toBe(503);
+  });
+
+  it("returns 503 in production when the limiter throws", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "https://example.upstash.io");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "test-token");
     const result = await enforceRateLimit(async () => {
       throw new Error("Redis unavailable");
     }, "Test");
-    expect(result?.status).toBe(429);
+    expect(result?.status).toBe(503);
   });
 
   it("allows development to continue when the limiter throws", async () => {
