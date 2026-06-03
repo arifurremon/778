@@ -586,28 +586,12 @@ function SearchMenuContent({ onSelect, isMobile }: { onSelect: () => void, isMob
             <button 
               key={cat.label}
               onClick={onSelect}
-              className="flex items-center gap-3 p-3 rounded-xl hover:bg-primary/5 border border-transparent hover:border-border/50 transition-all text-left"
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-primary/5 border border-transparent hover:border-border/50 transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <div className={cn("p-2 rounded-lg bg-card/50 border border-border/30", cat.color)}>
                 {cat.icon}
               </div>
               <span className="text-xs font-bold">{cat.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="px-2 pb-2">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-3">Recent Searches</h3>
-        <div className="space-y-1">
-          {["Panchlaish Doctors", "Mezban in Chawkbazar", "GEC Circle Traffic"].map(item => (
-            <button 
-              key={item}
-              onClick={onSelect}
-              className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-primary/5 text-muted-foreground hover:text-foreground transition-colors group"
-            >
-              <History size={14} className="opacity-40 group-hover:opacity-100" />
-              <span className="text-xs font-medium">{item}</span>
             </button>
           ))}
         </div>

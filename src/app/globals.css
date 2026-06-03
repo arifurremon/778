@@ -115,6 +115,10 @@
   body {
     @apply bg-background text-foreground selection:bg-accent/30 selection:text-accent transition-colors duration-300;
   }
+  button:focus-visible,
+  a:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
 }
 
 @layer utilities {

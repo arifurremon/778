@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/ui/page-header";
 import { GlobalUserBadges } from "@/components/user/global-user-badges";
 
 export default function NeighboursPage() {
@@ -88,17 +89,17 @@ export default function NeighboursPage() {
 
   return (
       <div className="max-w-4xl mx-auto py-8 px-6 space-y-8">
-        <header className="space-y-2">
-          <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
-             <Home size={12} /> Social Trust Network
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            My <span className="text-accent">Neighbours</span>
-          </h1>
-          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
-            Manage your verified neighborhood connections
-          </p>
-        </header>
+        <PageHeader
+          eyebrow="Social Trust Network"
+          eyebrowIcon={Home}
+          title={
+            <>
+              My <span className="text-accent">Neighbours</span>
+            </>
+          }
+          subtitle="Manage your verified neighborhood connections"
+          subtitleClassName="text-[10px] font-bold uppercase tracking-widest opacity-60"
+        />
 
         <Tabs defaultValue="current" className="space-y-8">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">

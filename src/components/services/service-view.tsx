@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue
 } from "@/components/ui/select";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/hooks/use-toast";
@@ -198,17 +199,17 @@ export default function ServiceView() {
   return (
     <div className="max-w-6xl mx-auto py-8 px-6 space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
-            <MapPin size={12} /> Expert Directory
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Professional <span className="text-accent">Services</span>
-          </h1>
-          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
-            Book verified experts, tutors, and technical professionals instantly
-          </p>
-        </div>
+        <PageHeader
+          eyebrow="Expert Directory"
+          eyebrowIcon={MapPin}
+          title={
+            <>
+              Professional <span className="text-accent">Services</span>
+            </>
+          }
+          subtitle="Book verified experts, tutors, and technical professionals instantly"
+          subtitleClassName="text-[10px] font-bold uppercase tracking-widest opacity-60"
+        />
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-80">
