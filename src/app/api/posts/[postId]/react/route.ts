@@ -127,6 +127,20 @@ export async function POST(
         });
       }
 
+      if (userReaction !== null) {
+        await tx.activityLog.create({
+          data: {
+            userId,
+            type: type === "helpful" ? "LIKE" : "POST_DISLIKE",
+            description:
+              type === "helpful"
+                ? "You marked a post as helpful."
+                : "You marked a post as not helpful.",
+            contextUrl: `/community#post-${postId}`,
+          },
+        });
+      }
+
       return { updated, userReaction };
     });
 

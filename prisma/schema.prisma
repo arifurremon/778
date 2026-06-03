@@ -67,6 +67,8 @@ model User {
   expertService    ExpertService?
   postReactions    UserPostReaction[]
   commentReactions UserCommentReaction[]
+  savedPosts       SavedPost[]
+  followedPosts    FollowedPost[]
   orders           Order[]
   serviceBookings  ServiceBooking[] @relation("ClientBookings")
   productReviews   ProductReview[]
@@ -228,6 +230,11 @@ model Post {
   deletedAt        DateTime?
   comments         Comment[]
   reactions        UserPostReaction[]
+  savedBy          SavedPost[]
+  followedBy       FollowedPost[]
+  repostOfId       String?
+  repostOf         Post?              @relation("Reposts", fields: [repostOfId], references: [id], onDelete: SetNull)
+  reposts          Post[]             @relation("Reposts")
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
@@ -269,6 +276,7 @@ model ActivityLog {
   createdAt   DateTime     @default(now())
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model Shop {
@@ -613,6 +621,28 @@ model UserCommentReaction {
   @@id([userId, commentId])
 }
 
+model SavedPost {
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model FollowedPost {
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
 model EmergencyContact {
   id          String   @id @default(uuid())
   name        String
@@ -626,12 +656,17 @@ model EmergencyContact {
 
 model DirectoryEntry {
   id          String   @id @default(uuid())
+  type        String
   name        String
   category    String
   phone       String?
   address     String?
   website     String?
   description String?
+  metadata    Json     @default("{}")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([type])
+  @@index([category])
 }

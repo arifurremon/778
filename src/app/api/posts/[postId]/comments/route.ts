@@ -159,6 +159,15 @@ export async function POST(
       }
     }
 
+    await db.activityLog.create({
+      data: {
+        userId: commenterId,
+        type: "COMMENT",
+        description: "You commented on a post.",
+        contextUrl: `/community#post-${postId}`,
+      },
+    });
+
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {
     logErrorToSentry(error, { route: "[POST /api/posts/[postId]/comments]" });

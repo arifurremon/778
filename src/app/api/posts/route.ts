@@ -69,6 +69,59 @@ async function resolveBlockedIds(userId: string): Promise<string[]> {
   return blocks.map((b) => b.blockedId);
 }
 
+async function enrichPostsForUser<T extends { id: string }>(
+  posts: T[],
+  userId: string | null
+): Promise<Array<T & {
+  userReaction: "helpful" | "notHelpful" | null;
+  isSaved: boolean;
+  isFollowing: boolean;
+}>> {
+  if (!userId || posts.length === 0) {
+    return posts.map((post) => ({
+      ...post,
+      userReaction: null,
+      isSaved: false,
+      isFollowing: false,
+    }));
+  }
+
+  const postIds = posts.map((post) => post.id);
+  const [reactions, saves, follows] = await Promise.all([
+    db.userPostReaction.findMany({
+      where: { userId, postId: { in: postIds } },
+      select: { postId: true, type: true },
+    }),
+    db.savedPost.findMany({
+      where: { userId, postId: { in: postIds } },
+      select: { postId: true },
+    }),
+    db.followedPost.findMany({
+      where: { userId, postId: { in: postIds } },
+      select: { postId: true },
+    }),
+  ]);
+
+  const reactionMap = new Map(reactions.map((reaction) => [reaction.postId, reaction.type]));
+  const savedSet = new Set(saves.map((save) => save.postId));
+  const followedSet = new Set(follows.map((follow) => follow.postId));
+
+  return posts.map((post) => {
+    const reactionType = reactionMap.get(post.id);
+    return {
+      ...post,
+      userReaction:
+        reactionType === "helpful"
+          ? "helpful"
+          : reactionType === "notHelpful"
+            ? "notHelpful"
+            : null,
+      isSaved: savedSet.has(post.id),
+      isFollowing: followedSet.has(post.id),
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // buildFeedWhereClause
 //
@@ -162,6 +215,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           visibility: true,
           helpfulCount: true,
           notHelpfulCount: true,
+          repostOfId: true,
           createdAt: true,
           updatedAt: true,
           author: { select: authorSelect },
@@ -171,10 +225,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       db.post.count({ where }),
     ]);
 
+    const enrichedPosts = await enrichPostsForUser(posts, userId);
+
     const hasNextPage = skip + limit < total;
 
     return NextResponse.json(
-      { posts, nextPage: hasNextPage ? page + 1 : null, total },
+      { posts: enrichedPosts, nextPage: hasNextPage ? page + 1 : null, total },
       {
         headers: {
           // Prevent CDNs and browsers from caching the feed response.
@@ -203,6 +259,7 @@ const createPostSchema = z.object({
   images: z.array(z.string().url()).optional().default([]),
   checkInLocation: z.string().optional(),
   visibility: z.nativeEnum(PrivacyLevel).optional().default(PrivacyLevel.PUBLIC),
+  repostOfId: z.string().uuid().optional(),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -229,16 +286,41 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    let { content, images, checkInLocation, visibility } = parsed.data;
+    let { content, images, checkInLocation, visibility, repostOfId } = parsed.data;
     content = sanitizePostContent(content);
     const authorId = session.user.id;
+
+    if (repostOfId) {
+      const originalPost = await db.post.findUnique({
+        where: { id: repostOfId, deletedAt: null },
+        select: {
+          id: true,
+          content: true,
+          images: true,
+          author: { select: { username: true } },
+        },
+      });
+
+      if (!originalPost) {
+        return NextResponse.json({ error: "Original post not found." }, { status: 404 });
+      }
+
+      if (!images.length && originalPost.images.length > 0) {
+        images = originalPost.images;
+      }
+
+      const repostAttribution = `\n\n---\nReposted from @${originalPost.author.username ?? "user"}:\n"${originalPost.content}"`;
+      if (!content.includes(originalPost.content.slice(0, 20))) {
+        content = `${content}${repostAttribution}`.slice(0, 1000);
+      }
+    }
 
     // Wrap post creation + activity log in a Prisma interactive transaction.
     // Both writes succeed or both roll back atomically — no orphaned posts
     // without audit records, and no orphaned audit records without posts.
     const [post] = await db.$transaction([
       db.post.create({
-        data: { authorId, content, images, checkInLocation, visibility },
+        data: { authorId, content, images, checkInLocation, visibility, repostOfId },
         select: {
           id: true,
           content: true,
@@ -247,6 +329,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           visibility: true,
           helpfulCount: true,
           notHelpfulCount: true,
+          repostOfId: true,
           createdAt: true,
           updatedAt: true,
           author: { select: authorSelect },

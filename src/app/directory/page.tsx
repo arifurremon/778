@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { 
   MapPin, 
   Map, 
@@ -26,8 +26,14 @@ import {
   TOURISM_SPOTS, 
   HERITAGE_PEOPLE, 
   BUS_ROUTES, 
-  NEWS_OUTLETS 
+  NEWS_OUTLETS,
+  type TourismSpot,
+  type HeritagePerson,
+  type BusRoute,
+  type NewsOutlet,
 } from "@/lib/directory-data";
+import { api } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import { PageHeader } from "@/components/ui/page-header";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,23 +41,56 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function DirectoryPage() {
   const [activeTab, setActiveTab] = useState("tourism");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [tourismSpots, setTourismSpots] = useState<TourismSpot[]>(TOURISM_SPOTS);
+  const [heritagePeople, setHeritagePeople] = useState<HeritagePerson[]>(HERITAGE_PEOPLE);
+  const [busRoutes, setBusRoutes] = useState<BusRoute[]>(BUS_ROUTES);
+  const [newsOutlets, setNewsOutlets] = useState<NewsOutlet[]>(NEWS_OUTLETS);
 
-  const filteredTourism = TOURISM_SPOTS.filter(s => 
+  useEffect(() => {
+    setIsLoading(true);
+    const params = new URLSearchParams({ type: activeTab });
+    if (searchQuery.trim()) params.set("search", searchQuery.trim());
+
+    api.get<{ entries: unknown[] }>(`/api/directory?${params.toString()}`)
+      .then((response) => {
+        switch (activeTab) {
+          case "tourism":
+            setTourismSpots(response.entries as TourismSpot[]);
+            break;
+          case "heritage":
+            setHeritagePeople(response.entries as HeritagePerson[]);
+            break;
+          case "transport":
+            setBusRoutes(response.entries as BusRoute[]);
+            break;
+          case "news":
+            setNewsOutlets(response.entries as NewsOutlet[]);
+            break;
+        }
+      })
+      .catch(() => {
+        // Keep static fallback data if API is unavailable.
+      })
+      .finally(() => setIsLoading(false));
+  }, [activeTab, searchQuery]);
+
+  const filteredTourism = useMemo(() => tourismSpots.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     s.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ), [searchQuery, tourismSpots]);
 
-  const filteredHeritage = HERITAGE_PEOPLE.filter(p => 
+  const filteredHeritage = useMemo(() => heritagePeople.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     p.role.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ), [searchQuery, heritagePeople]);
 
-  const filteredBuses = BUS_ROUTES.filter(b => 
+  const filteredBuses = useMemo(() => busRoutes.filter(b => 
     b.number.toLowerCase().includes(searchQuery.toLowerCase()) || 
     b.origin.toLowerCase().includes(searchQuery.toLowerCase()) || 
     b.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
     b.route.some(r => r.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  ), [searchQuery, busRoutes]);
 
   return (
       <div className="max-w-6xl mx-auto py-8 px-6 space-y-8">
@@ -104,6 +143,13 @@ export default function DirectoryPage() {
               transition={{ duration: 0.3 }}
             >
               <TabsContent value="tourism" className="mt-0">
+                {isLoading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Skeleton key={index} className="h-72 w-full rounded-2xl" />
+                    ))}
+                  </div>
+                ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {filteredTourism.map((spot) => (
                     <Card key={spot.id} className="bg-card/20 border-border/50 rounded-2xl overflow-hidden group hover:border-accent/30 transition-smooth flex flex-col">
@@ -135,6 +181,7 @@ export default function DirectoryPage() {
                     </Card>
                   ))}
                 </div>
+                )}
               </TabsContent>
 
               <TabsContent value="heritage" className="mt-0">
@@ -232,7 +279,7 @@ export default function DirectoryPage() {
 
               <TabsContent value="news" className="mt-0">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {NEWS_OUTLETS.map((news) => (
+                  {newsOutlets.map((news) => (
                     <a key={news.id} href={news.url} target="_blank" rel="noopener noreferrer">
                       <Card className="bg-card/20 border border-border/50 rounded-3xl p-8 hover:border-accent/40 hover:bg-card/40 transition-smooth text-center group h-full flex flex-col justify-center items-center gap-6">
                         <div className="relative w-40 h-20 grayscale group-hover:grayscale-0 transition-all duration-700">
