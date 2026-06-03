@@ -102,6 +102,8 @@ const createServiceSchema = z.object({
   fee:             z.string().min(1, "Fee is required."),
   bio:             z.string().min(20, "Bio must be at least 20 characters."),
   qualifications:  z.array(z.string()).min(1, "At least one qualification is required."),
+  payoutMethod: z.enum(["BKASH", "NAGAD", "BANK"]).optional(),
+  registrationDetails: z.record(z.unknown()).optional(),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -132,8 +134,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
+    const { profession, category, location, experienceYears, fee, bio, qualifications, payoutMethod, registrationDetails } =
+      parsed.data;
+
     const service = await db.expertService.create({
-      data: { userId, ...parsed.data },
+      data: {
+        userId,
+        profession,
+        category,
+        location,
+        experienceYears,
+        fee,
+        bio,
+        qualifications,
+        ...(payoutMethod ? { payoutMethod } : {}),
+        ...(registrationDetails ? { registrationDetails } : {}),
+      },
       select: expertSelect,
     });
 

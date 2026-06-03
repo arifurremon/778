@@ -328,6 +328,7 @@ model ExpertService {
   rejectedAt      DateTime?
   rejectionReason String?
   payoutMethod    PayoutMethod?
+  registrationDetails Json?
   createdAt       DateTime      @default(now())
 
   // FIX(P1): Added missing indexes — category/location/isVerified are the
