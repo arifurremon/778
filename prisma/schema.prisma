@@ -72,6 +72,8 @@ model User {
   orders           Order[]
   serviceBookings  ServiceBooking[] @relation("ClientBookings")
   productReviews   ProductReview[]
+  featureSuggestions FeatureSuggestion[]
+  contactInquiries   ContactInquiry[]
 
   // Social Trust
   sentRequests     NeighbourConnection[] @relation("Sender")
@@ -641,6 +643,38 @@ model FollowedPost {
 
   @@id([userId, postId])
   @@index([postId])
+}
+
+model ContactInquiry {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  email     String
+  subject   String
+  message   String
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model FeatureSuggestion {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  details   String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model EmergencyContact {

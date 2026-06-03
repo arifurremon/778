@@ -101,6 +101,16 @@ export const rateLimiters = {
     limiter: Ratelimit.slidingWindow(30, "1 m"),
     analytics: true,
   })),
+  suggestions: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(5, "1 h"),
+    analytics: true,
+  })),
+  contact: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(3, "15 m"),
+    analytics: true,
+  })),
 };
 
 /**

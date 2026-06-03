@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { api } from "@/lib/api";
 import {
     Building2,
     Compass,
@@ -24,16 +26,51 @@ import {
     ShieldCheck
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 export default function VisionLegacyPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("genesis");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactSubject, setContactSubject] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (user) {
+      setContactName(user.name || "");
+      setContactEmail(user.email || "");
+    }
+  }, [user]);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message Sent",
-      description: "Our core team will get back to you shortly.",
-    });
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.post("/api/contact", {
+        name: contactName.trim(),
+        email: contactEmail.trim(),
+        subject: contactSubject.trim(),
+        message: contactMessage.trim(),
+      });
+
+      toast({
+        title: "Message Sent",
+        description: "Our core team will get back to you shortly.",
+      });
+      setContactSubject("");
+      setContactMessage("");
+    } catch (err) {
+      toast({
+        title: "Message Failed",
+        description: err instanceof Error ? err.message : "Could not send inquiry.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -184,22 +221,22 @@ export default function VisionLegacyPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="space-y-2 text-left">
                           <Label className="text-[10px] font-black uppercase tracking-widest">Your Name</Label>
-                          <Input className="bg-background/40 border-border/50 h-12 rounded-xl font-bold" required />
+                          <Input value={contactName} onChange={(e) => setContactName(e.target.value)} className="bg-background/40 border-border/50 h-12 rounded-xl font-bold" required />
                         </div>
                         <div className="space-y-2 text-left">
                           <Label className="text-[10px] font-black uppercase tracking-widest">Email Address</Label>
-                          <Input type="email" className="bg-background/40 border-border/50 h-12 rounded-xl font-bold" required />
+                          <Input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="bg-background/40 border-border/50 h-12 rounded-xl font-bold" required />
                         </div>
                       </div>
                       <div className="space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase tracking-widest">Inquiry Subject</Label>
-                        <Input className="bg-background/40 border-border/50 h-12 rounded-xl font-bold" required />
+                        <Input value={contactSubject} onChange={(e) => setContactSubject(e.target.value)} className="bg-background/40 border-border/50 h-12 rounded-xl font-bold" required />
                       </div>
                       <div className="space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase tracking-widest">Message</Label>
-                        <Textarea className="bg-background/40 border-border/50 min-h-[150px] rounded-2xl p-4 font-bold resize-none" required />
+                        <Textarea value={contactMessage} onChange={(e) => setContactMessage(e.target.value)} className="bg-background/40 border-border/50 min-h-[150px] rounded-2xl p-4 font-bold resize-none" required />
                       </div>
-                      <Button className="w-full bg-accent text-accent-foreground font-black uppercase tracking-widest text-[11px] h-14 rounded-2xl shadow-lg shadow-accent/20 transition-all hover:scale-[1.02]">
+                      <Button type="submit" disabled={isSubmitting} className="w-full bg-accent text-accent-foreground font-black uppercase tracking-widest text-[11px] h-14 rounded-2xl shadow-lg shadow-accent/20 transition-all hover:scale-[1.02]">
                         Send Inquiry <Send size={16} className="ml-2" />
                       </Button>
                    </form>

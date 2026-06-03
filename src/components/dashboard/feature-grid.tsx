@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
 
 const FEATURES = [
   {
@@ -97,18 +98,35 @@ export function FeatureGrid() {
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [suggestTitle, setSuggestTitle] = useState("");
   const [suggestDetails, setSuggestDetails] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSuggestSubmit = (e: React.FormEvent) => {
+  const handleSuggestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!suggestTitle.trim()) return;
-    
-    toast({
-      title: "Suggestion Received",
-      description: "Thank you for helping us shape the future of The Chattala.",
-    });
-    setSuggestTitle("");
-    setSuggestDetails("");
-    setIsSuggestModalOpen(false);
+    if (!suggestTitle.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await api.post("/api/suggestions", {
+        title: suggestTitle.trim(),
+        details: suggestDetails.trim() || undefined,
+      });
+
+      toast({
+        title: "Suggestion Received",
+        description: "Thank you for helping us shape the future of The Chattala.",
+      });
+      setSuggestTitle("");
+      setSuggestDetails("");
+      setIsSuggestModalOpen(false);
+    } catch (err) {
+      toast({
+        title: "Submission Failed",
+        description: err instanceof Error ? err.message : "Could not submit suggestion.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -197,7 +215,7 @@ export function FeatureGrid() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSuggestSubmit} className="py-4 space-y-4">
+          <form id="suggest-feature-form" onSubmit={(e) => void handleSuggestSubmit(e)} className="py-4 space-y-4">
              <div className="space-y-2">
                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Module or Feature Title</Label>
                <Input 
@@ -224,7 +242,7 @@ export function FeatureGrid() {
 
           <DialogFooter className="gap-3">
              <Button variant="ghost" onClick={() => setIsSuggestModalOpen(false)} className="rounded-xl font-bold uppercase text-[10px] tracking-widest">Cancel</Button>
-             <Button onClick={handleSuggestSubmit} className="bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest px-8 shadow-lg shadow-cyan-500/20 h-12">
+             <Button type="submit" form="suggest-feature-form" disabled={isSubmitting} className="bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-bold uppercase text-[10px] tracking-widest px-8 shadow-lg shadow-cyan-500/20 h-12">
                Submit Suggestion <Send size={14} className="ml-2" />
              </Button>
           </DialogFooter>

@@ -2,8 +2,15 @@
 
 import { BulkActionBar } from '@/components/admin/actions/BulkActionBar';
 import { ConfirmationDialog } from '@/components/admin/actions/ConfirmationDialog';
+import { NotificationComposer } from '@/components/admin/actions/NotificationComposer';
 import { UserFilterState, UserFilters } from '@/components/admin/users/UserFilters';
 import { UsersTable } from '@/components/admin/users/UsersTable';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { Mail, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -55,6 +62,8 @@ export default function AdminUsersPage() {
     open: false,
     id: null
   });
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -136,11 +145,45 @@ export default function AdminUsersPage() {
     setConfirmDelete({ open: false, id: null, bulk: false });
   };
 
+  const handleBulkMessage = async (data: { title: string; body: string; type: string }) => {
+    if (selectedIds.length === 0) return;
+
+    setIsSendingMessage(true);
+    try {
+      const { adminApi } = await import("@/lib/admin-api");
+      const response = await adminApi.post<{
+        delivered: number;
+        skipped: number;
+        failed: number;
+      }>("/api/admin/users/bulk-message", {
+        userIds: selectedIds,
+        channel: data.type,
+        title: data.title,
+        body: data.body,
+      });
+
+      toast({
+        title: "Messages Sent",
+        description: `Delivered ${response.delivered}, skipped ${response.skipped}, failed ${response.failed}.`,
+      });
+      setIsMessageDialogOpen(false);
+      setSelectedIds([]);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Delivery Failed",
+        description: error instanceof Error ? error.message : "Could not send bulk message.",
+      });
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
   const bulkActions = [
     { 
       label: "Message", 
       icon: <Mail className="h-4 w-4" />, 
-      onClick: () => toast({ title: "Feature coming soon", description: "Bulk messaging is in development." }) 
+      onClick: () => setIsMessageDialogOpen(true),
     },
     { 
       label: "Make Admin", 
@@ -216,6 +259,18 @@ export default function AdminUsersPage() {
         confirmText="Suspend Account"
         onConfirm={() => handleSuspend(confirmSuspend.id!)}
       />
+
+      <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Bulk Message ({selectedIds.length} selected)</DialogTitle>
+          </DialogHeader>
+          <NotificationComposer
+            onSend={(data) => void handleBulkMessage(data)}
+            isLoading={isSendingMessage}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
