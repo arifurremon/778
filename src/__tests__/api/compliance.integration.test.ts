@@ -56,7 +56,8 @@ describe("GET /api/user/export — Integration", () => {
   });
 
   it("returns 401 when unauthenticated", async () => {
-    const res = await exportGET();
+    const req = new NextRequest("http://localhost/api/user/export?sync=1");
+    const res = await exportGET(req);
     expect(res.status).toBe(401);
   });
 
@@ -90,7 +91,8 @@ describe("GET /api/user/export — Integration", () => {
     prismaMock.contactInquiry.findMany.mockResolvedValue([]);
     prismaMock.featureSuggestion.findMany.mockResolvedValue([]);
 
-    const res = await exportGET();
+    const req = new NextRequest("http://localhost/api/user/export?sync=1");
+    const res = await exportGET(req);
     const json = await res.json();
 
     expect(res.status).toBe(200);

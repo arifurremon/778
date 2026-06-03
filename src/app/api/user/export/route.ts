@@ -1,12 +1,16 @@
 import { requireActiveSession } from "@/lib/session-guards";
 import { buildUserDataExport } from "@/lib/legal/user-export";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { createExportJobRecord } from "@/lib/jobs/export-store";
+import { enqueueUserExport } from "@/lib/jobs/enqueue";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
-import { NextResponse } from "next/server";
+import crypto from "crypto";
+import { NextRequest, NextResponse } from "next/server";
 
-/** GET /api/user/export — GDPR data portability export (JSON) */
-export async function GET(): Promise<NextResponse> {
+/** GET /api/user/export — GDPR data portability export (JSON or async job) */
+export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const active = await requireActiveSession();
     if (active.error) return active.error;
@@ -18,6 +22,32 @@ export async function GET(): Promise<NextResponse> {
       { quotaExceededMessage: "Export limit reached. Try again later." }
     );
     if (rateLimitResponse) return rateLimitResponse;
+
+    const forceSync = req.nextUrl.searchParams.get("sync") === "1";
+    const forceAsync = req.nextUrl.searchParams.get("async") === "1";
+    const useAsync = !forceSync && (forceAsync || isFeatureEnabled("asyncExport"));
+
+    if (useAsync) {
+      try {
+        const jobId = crypto.randomUUID();
+        await createExportJobRecord(jobId, session.user.id);
+        const queued = await enqueueUserExport({ jobId, userId: session.user.id });
+
+        if (queued.queued) {
+          return NextResponse.json(
+            {
+              jobId,
+              status: "pending",
+              statusUrl: `/api/user/export/${jobId}`,
+              message: "Export queued. Poll statusUrl until completed.",
+            },
+            { status: 202 }
+          );
+        }
+      } catch (asyncError) {
+        logErrorToSentry(asyncError, { route: "[GET /api/user/export/async-fallback]" });
+      }
+    }
 
     const exportData = await buildUserDataExport(session.user.id);
     if (!exportData) {

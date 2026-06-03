@@ -189,17 +189,12 @@
 **Goal:** Heavy work off the request path; proven under load.
 
 ### Tasks
-- [ ] **7.1** Background job queue: Inngest or BullMQ + Redis for:
-  - Email sends
-  - Bulk admin messaging
-  - Notification fan-out (optional)
-  - Data export generation
-  - Retention purge jobs
-- [ ] **7.2** Extend Redis caching to: directory, emergency, user profile (already partial), services list.
-- [ ] **7.3** Load test with k6: 100 concurrent users, community feed + shop browse + booking flow.
-- [ ] **7.4** Document capacity: max RPS, DB connection pool sizing, Redis memory budget.
-- [ ] **7.5** Feature flags: `src/lib/feature-flags.ts` + env or LaunchDarkly for gradual rollouts.
-- [ ] **7.6** Message queue for `@/lib/mail` — never block API response on SMTP.
+- [x] **7.1** Background job queue: Inngest for email, bulk admin, export, retention.
+- [x] **7.2** Extend Redis caching to: directory, emergency, user profile (already partial), services list.
+- [x] **7.3** Load test with k6: 100 concurrent users, community feed + shop browse + booking flow.
+- [x] **7.4** Document capacity: max RPS, DB connection pool sizing, Redis memory budget.
+- [x] **7.5** Feature flags: `src/lib/feature-flags.ts` + env or LaunchDarkly for gradual rollouts.
+- [x] **7.6** Message queue for `@/lib/mail` — never block API response on SMTP.
 
 ### Exit Criteria
 - k6 load test: p95 < 2s at 100 VUs, error rate < 0.1%.

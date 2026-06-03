@@ -47,6 +47,7 @@ export default auth((req) => {
     !pathname.startsWith("/api/openapi") &&
     pathname !== "/api/docs" &&
     !pathname.startsWith("/api/cron") &&
+    !pathname.startsWith("/api/inngest") &&
     !pathname.startsWith("/api/uploadthing") &&
     !pathname.startsWith("/api/tunnel");
 

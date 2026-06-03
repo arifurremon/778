@@ -1,5 +1,7 @@
 import { runDataRetentionJobs } from "@/lib/legal/account-deletion";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { enqueueDataRetention } from "@/lib/jobs/enqueue";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { NextRequest, NextResponse } from "next/server";
 
 /** GET /api/cron/data-retention — purge old logs and hard-delete stale accounts */
@@ -12,8 +14,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
+    if (isFeatureEnabled("asyncRetention")) {
+      const queued = await enqueueDataRetention();
+      if (queued.queued) {
+        return NextResponse.json({ success: true, queued: true });
+      }
+    }
+
     const result = await runDataRetentionJobs();
-    return NextResponse.json({ success: true, ...result });
+    return NextResponse.json({ success: true, queued: false, ...result });
   } catch (error) {
     logErrorToSentry(error, { route: "[GET /api/cron/data-retention]" });
     return NextResponse.json({ error: "Retention job failed" }, { status: 500 });

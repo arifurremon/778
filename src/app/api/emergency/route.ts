@@ -1,3 +1,5 @@
+import { cachedQuery } from "@/lib/cache";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 import { mapEmergencyContact } from "@/lib/emergency-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
@@ -18,21 +20,32 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const category = req.nextUrl.searchParams.get("category");
     const search = req.nextUrl.searchParams.get("search")?.trim().toLowerCase() ?? "";
 
-    const contacts = await db.emergencyContact.findMany({
-      where: category && category !== "All" ? { category } : undefined,
-      orderBy: [{ category: "asc" }, { name: "asc" }],
-    });
-
-    const mapped = contacts
-      .map(mapEmergencyContact)
-      .filter((contact) => {
-        if (!search) return true;
-        return (
-          contact.name.toLowerCase().includes(search) ||
-          contact.phone.includes(search) ||
-          (contact.address?.toLowerCase().includes(search) ?? false)
-        );
+    const fetchContacts = async () => {
+      const contacts = await db.emergencyContact.findMany({
+        where: category && category !== "All" ? { category } : undefined,
+        orderBy: [{ category: "asc" }, { name: "asc" }],
       });
+
+      return contacts
+        .map(mapEmergencyContact)
+        .filter((contact) => {
+          if (!search) return true;
+          return (
+            contact.name.toLowerCase().includes(search) ||
+            contact.phone.includes(search) ||
+            (contact.address?.toLowerCase().includes(search) ?? false)
+          );
+        });
+    };
+
+    const mapped = isFeatureEnabled("redisCacheEmergency")
+      ? await cachedQuery(
+          `cat:${category ?? "all"}:search:${search}`,
+          fetchContacts,
+          600,
+          "emergency"
+        )
+      : await fetchContacts();
 
     return NextResponse.json({ contacts: mapped });
   } catch (error) {
