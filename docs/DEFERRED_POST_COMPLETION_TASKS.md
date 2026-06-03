@@ -15,12 +15,86 @@
 
 **পরবর্তী কাজ কী হওয়া উচিত?** → [Recommended execution order](#recommended-execution-order-new-vercel--go-live)
 
+> **June 2026 external audit cross-check:** [Section D — Audit backlog](#d--code-backlog-june-2026-audit-vs-current-main)
+
+---
+
+## D — Code backlog (June 2026 audit vs current `main`)
+
+> Cross-checked against the full codebase audit report (৩ জুন ২০২৬). Phases 0–9 closed many gaps; items below are **still open in code** or **ops-only**.
+
+### ✅ Audit findings already addressed (since audit / Phases 6–9)
+
+| Audit item | Current state |
+|------------|---------------|
+| Test suite too small | **218 Vitest tests** (58 files); **39+ Playwright tests** (11 spec files) |
+| No load testing config | `scripts/load-test/k6-smoke.js` + `npm run loadtest:k6` (run deferred) |
+| No pentest automation | `.github/workflows/security-zap.yml` + `docs/security/PENTEST_REPORT.md` |
+| No Lighthouse CI | `.github/workflows/lighthouse.yml` + `lighthouserc.cjs` |
+| API platform incomplete | OpenAPI, v1 routes, idempotency, webhooks, API keys (Phase 6) |
+| Admin E2E limited | `e2e/admin-moderation.spec.ts`, `e2e/booking-lifecycle.spec.ts` |
+| Fresh migrate risk | Migration order fixed (`2026061010*`); `build:ci` passes on empty Postgres |
+| Block on feed (partial) | `GET/POST /api/posts` filters `blockedUser` server-side |
+| Enterprise ops docs | Staging/promote workflows, ADRs, on-call, scorecard |
+
+### ❌ Critical — fix before public GO (code)
+
+| # | Issue | Evidence | Suggested fix |
+|---|-------|----------|---------------|
+| D-C1 | **Server-side block incomplete** | Block works on posts feed; **not** on `/api/messages`, neighbours, notifications | Shared `assertNotBlocked(viewerId, targetId)` in message start/send, neighbour requests, profile APIs |
+| D-C2 | **Password policy inconsistent** | Register API: min **8** + symbol; login/signup UI + OpenAPI: min **6**; reset page `minLength={6}` | Single `passwordSchema` in `src/lib/validation/password.ts`; use everywhere |
+| D-C3 | **`logo-icon.png` = 2.8 MB** | `public/logo-icon.png` | Replace with SVG/WebP; audit references in layout/metadata |
+
+### ⚠️ High — strongly recommended pre-launch
+
+| # | Issue | Evidence | Suggested fix |
+|---|-------|----------|---------------|
+| D-H1 | **Coverage gate still low** | Vitest thresholds **40% lines / 28% branches**; measured ~**45% lines** on scoped API routes | Raise thresholds gradually (50→60%); add tests for messages, orders, admin |
+| D-H2 | **Messages API — no integration tests** | No `src/__tests__/api/messages*.test.ts` | Add integration tests + block-enforcement cases |
+| D-H3 | **Cache invalidation unit test missing** | No dedicated test; only mocks in shop/posts tests | `src/__tests__/lib/cache.test.ts` for namespace version bump |
+| D-H4 | **`any` types widespread** | ~**110** occurrences in **43** files (audit cited 24 in narrower scan) | Replace with `unknown` + narrowing; priority: API routes + hooks |
+| D-H5 | **Google OAuth not wired** | `src/lib/auth.ts` = Credentials only; `DEPLOYMENT_ENV.md` says "not wired yet" | Add Google provider OR remove OAuth env/docs until implemented |
+| D-H6 | **CSP `style-src 'unsafe-inline'`** | `src/lib/csp.ts` | Nonce/hash for critical styles or document accepted risk in `SECURITY.md` |
+
+### 💡 Medium — next sprint / post-launch
+
+| # | Issue | Notes |
+|---|-------|-------|
+| D-M1 | `ExpertService.fee` stored as `String` | Consider `Decimal` migration |
+| D-M2 | Message index `(conversationId, createdAt)` | Add compound index for pagination at scale |
+| D-M3 | API key rotation UX | Admin revoke + rotate flow; document in API.md |
+| D-M4 | Advanced search | Postgres full-text or external search — not started |
+| D-M5 | Notification preference granularity | Settings UI backlog |
+| D-M6 | Visual regression testing | Not configured |
+| D-M7 | `PostCard.tsx` size / refactor | Maintainability |
+| D-M8 | N+1 / `resolveNeighborIds` perf | Profile with k6 + query optimization |
+
+### ⏸️ Ops-only (not code — see sections A–C above)
+
+- New Vercel account deploy + DNS
+- Staging environment live
+- k6 run **on staging URL** (script exists)
+- Manual pentest sign-off
+- Neon DR drill + uptime monitor
+- Inngest + CRON secrets on new host
+
+### Audit score vs today (approximate)
+
+| Audit category | Report (Jun) | Today | Comment |
+|----------------|-------------|-------|---------|
+| Testing | 5.5/10 | **~6.5/10** | More tests + CI workflows; coverage gate still low |
+| DevOps | 7.0/10 | **~8.0/10** | ZAP, Lighthouse, staging/promote, migrate split |
+| Security | 8.0/10 | **~8.0/10** | Block gap + password + CSP unchanged |
+| Performance | 6.5/10 | **~6.5/10** | k6 script added; asset + query issues remain |
+| **Overall** | 7.6/10 | **~7.8/10** | Code mature; **GO blocked by deploy + D-C1–C3** |
+
 ---
 
 ## Recommended execution order (new Vercel → GO-LIVE)
 
 | Step | When | Task block | Done |
 |------|------|------------|------|
+| **0** | Pre-deploy (optional) | [D-C1–C3 code fixes](#-critical--fix-before-public-go-code) — block enforcement, password unify, logo asset | [ ] |
 | **1** | Day 1 | [A — New Vercel account cutover](#a--new-vercel-account-cutover-primary-blocker) | [ ] |
 | **2** | Day 1 | [A.8 Post-deploy smoke on live URL](#a8--first-deploy-verification) | [ ] |
 | **3** | Day 2 | [B — Staging environment on new account](#b--staging-environment-new-vercel-account) | [ ] |
@@ -317,4 +391,4 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 | `docs/ENTERPRISE_SCORECARD.md` | Internal GO/NO-GO criteria |
 | `LAUNCH_READINESS_REPORT.md` | Executive launch decision |
 
-**Last updated:** 2026-03-13 — new Vercel account cutover plan added; Phases 0–9 code complete.
+**Last updated:** 2026-03-13 — audit cross-check (Jun 2026 report) + new Vercel cutover plan.
