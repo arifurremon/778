@@ -83,7 +83,7 @@
 | 3 | Session guards on ~14 routes still use legacy `auth()` | High | Abu Md. Selim | 2026-04-01 (Phase 2) | **Resolved** |
 | 4 | Rollback + DR drills not executed | High | Abu Md. Selim | Before launch | **Partial** — git revert + DB smoke validated; Neon PITR + hosting rollback need your Console/panel (~30 min) |
 | 5 | No public `/api/health` endpoint for uptime monitoring | High | Abu Md. Selim | 2026-05-01 (Phase 4) | **Resolved** |
-| 6 | Production Vercel account blocked — deploy on alternate host | High | Abu Md. Selim | 2026-03-20 | Open |
+| 6 | Production deploy — **migrate to new Vercel account** (old account retired) | High | Abu Md. Selim | Before launch | **Open** — see `docs/DEFERRED_POST_COMPLETION_TASKS.md` Section A |
 
 ---
 

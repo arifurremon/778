@@ -54,13 +54,14 @@
 
 ## Remaining before public GO
 
-See `docs/DEFERRED_POST_COMPLETION_TASKS.md`:
+See **`docs/DEFERRED_POST_COMPLETION_TASKS.md`** (primary: **new Vercel account cutover**, Section A):
 
-- Staging URL + promote workflow secrets
-- Manual pentest sign-off
-- Neon DR drill
-- k6 on staging
-- Secondary on-call name
+- New Vercel prod project + DNS + env vars
+- Staging on new account + `STAGING_URL` secret
+- GitHub `VERCEL_*` secrets refresh
+- CRON_SECRET + webhook cron + Inngest keys
+- Manual pentest sign-off + k6 on staging
+- Neon DR drill + secondary on-call name
 
 ---
 
