@@ -17,15 +17,16 @@ export default auth((req) => {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("x-request-id", requestId);
 
+  const isDev = process.env.NODE_ENV === "development";
+  const csp = buildContentSecurityPolicy(nonce, isDev);
+  // Next.js reads CSP from the request during SSR to inject matching script nonces.
+  requestHeaders.set("Content-Security-Policy", csp);
+
   const response = NextResponse.next({
     request: { headers: requestHeaders },
   });
 
-  const isDev = process.env.NODE_ENV === "development";
-  response.headers.set(
-    "Content-Security-Policy",
-    buildContentSecurityPolicy(nonce, isDev)
-  );
+  response.headers.set("Content-Security-Policy", csp);
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");

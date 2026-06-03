@@ -10,10 +10,14 @@ import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import "@uploadthing/react/styles.css";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+
+/** Required so middleware CSP nonces are injected into HTML (not static shell). */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "The Chattala | Your Neighbourhood, Connected",
@@ -24,11 +28,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Ensures per-request CSP nonce propagation in production (Next.js 15).
+  await headers();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
