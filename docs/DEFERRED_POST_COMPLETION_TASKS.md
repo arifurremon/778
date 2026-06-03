@@ -63,7 +63,18 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 
 ---
 
-## Phase 7 — Will add items here as needed
+## Phase 8 — Enterprise Operations (console setup)
+
+- [ ] Create `staging` git branch + Vercel staging project — `docs/STAGING_ENVIRONMENT.md`
+- [ ] GitHub secrets: `STAGING_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_STAGING_PROJECT_ID`, `VERCEL_PROJECT_ID`
+- [ ] GitHub `production` environment with required reviewers
+- [ ] Fill secondary on-call name in `docs/ON_CALL_ROTATION.md`
+- [ ] Two-person runbook training sign-off in `LAUNCH_READINESS_REPORT.md`
+- [ ] Optional: `terraform apply` when Neon/Upstash API keys ready — `infra/terraform/`
+
+---
+
+## Phase 7 — Async / Inngest (staging/production ops)
 
 - [ ] Set `INNGEST_EVENT_KEY` + `INNGEST_SIGNING_KEY` in Vercel (staging + prod)
 - [ ] Sync Inngest app with `https://YOUR-URL/api/inngest`
@@ -81,4 +92,4 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 - [ ] `docs/ENTERPRISE_ROADMAP.md` exit criteria verified
 - [ ] On-call contact filled in runbooks
 
-**Last updated:** Phase 7 start (deferred items from Phase 6 ops + prior phases)
+**Last updated:** Phase 8 (enterprise ops docs + CI workflows)

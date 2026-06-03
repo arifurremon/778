@@ -24,8 +24,9 @@ e2e/.runtime-config.json
 # production
 /build
 
-# misc
-.DS_Store
+# terraform local secrets
+infra/terraform/terraform.tfvars
+infra/terraform/.terraform/
 *.pem
 
 # debug

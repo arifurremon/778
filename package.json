@@ -27,6 +27,7 @@
     "migrate:verify-fresh": "bash scripts/verify-fresh-migrate.sh",
     "drill:smoke": "tsx scripts/dr-drill-smoke.ts",
     "loadtest:k6": "k6 run scripts/load-test/k6-smoke.js",
+    "smoke:staging": "bash scripts/staging-smoke.sh",
     "script:replace-logs": "node scripts/replace-logs.js",
     "script:test-csrf": "node scripts/test-csrf.js"
   },

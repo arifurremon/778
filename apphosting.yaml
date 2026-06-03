@@ -1,3 +1,6 @@
+# DEPRECATED — Firebase App Hosting is NOT used for production.
+# Primary hosting: Vercel. See docs/FIREBASE_APPHOSTING.md and docs/adr/005-vercel-primary-hosting.md
+#
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 

@@ -210,13 +210,13 @@
 **Goal:** Team can operate without single-person dependency.
 
 ### Tasks
-- [ ] **8.1** Staging environment: separate Neon branch + hosting project; auto-deploy on `staging` branch.
-- [ ] **8.2** Promotion workflow: staging smoke → manual approve → production deploy.
-- [ ] **8.3** IaC baseline: Terraform or Pulumi for Neon branch, Upstash Redis, DNS records.
-- [ ] **8.4** On-call rotation doc (minimum 2 people); escalation matrix filled.
-- [ ] **8.5** Incident response template: severity, comms, postmortem within 48h.
-- [ ] **8.6** ADRs in `docs/adr/` — document JWT strategy, CSRF approach, notification dual-path, queue choice.
-- [ ] **8.7** Remove `apphosting.yaml` or document why Firebase exists alongside primary host.
+- [x] **8.1** Staging environment: separate Neon branch + hosting project; auto-deploy on `staging` branch.
+- [x] **8.2** Promotion workflow: staging smoke → manual approve → production deploy.
+- [x] **8.3** IaC baseline: Terraform or Pulumi for Neon branch, Upstash Redis, DNS records.
+- [x] **8.4** On-call rotation doc (minimum 2 people); escalation matrix filled.
+- [x] **8.5** Incident response template: severity, comms, postmortem within 48h.
+- [x] **8.6** ADRs in `docs/adr/` — document JWT strategy, CSRF approach, notification dual-path, queue choice.
+- [x] **8.7** Remove `apphosting.yaml` or document why Firebase exists alongside primary host.
 
 ### Exit Criteria
 - Staging deploy automated; production requires explicit promotion.

@@ -1,0 +1,135 @@
+name: Staging Deploy
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+concurrency:
+  group: staging-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate staging branch
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: thechattala_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d thechattala_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/thechattala_ci
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/thechattala_ci
+      AUTH_SECRET: ci-auth-secret-must-be-at-least-32-chars-long
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      ADMIN_MFA_REQUIRED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run migrate:verify-fresh
+      - run: npm run validate
+
+  build:
+    name: Build staging artifact
+    runs-on: ubuntu-latest
+    needs: validate
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: thechattala_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d thechattala_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/thechattala_ci
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/thechattala_ci
+      AUTH_SECRET: ci-auth-secret-must-be-at-least-32-chars-long
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:3000
+      ADMIN_MFA_REQUIRED: "false"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run build
+
+  smoke-staging:
+    name: Post-deploy smoke (live staging)
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ secrets.STAGING_URL != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run staging smoke tests
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+        run: bash scripts/staging-smoke.sh
+
+  deploy-vercel-staging:
+    name: Deploy to Vercel (staging project)
+    runs-on: ubuntu-latest
+    needs: [build, smoke-staging]
+    if: |
+      always() &&
+      needs.build.result == 'success' &&
+      (needs.smoke-staging.result == 'success' || needs.smoke-staging.result == 'skipped') &&
+      secrets.VERCEL_TOKEN != '' &&
+      secrets.VERCEL_ORG_ID != '' &&
+      secrets.VERCEL_STAGING_PROJECT_ID != ''
+
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel staging settings
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build and deploy staging
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prod --token="$VERCEL_TOKEN"

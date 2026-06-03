@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and fill in — DO NOT COMMIT terraform.tfvars
+
+neon_project_name            = "thechattala"
+neon_staging_branch_name     = "staging"
+neon_region                  = "aws-ap-southeast-1"
+upstash_staging_database_name = "thechattala-staging"
+upstash_region               = "ap-southeast-1"
+root_domain                  = "thechattala.com"
+staging_subdomain            = "staging"
+vercel_staging_cname         = "cname.vercel-dns.com"

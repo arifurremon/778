@@ -167,7 +167,8 @@ Configure at **Settings → Branches → Branch protection rules**:
 - [ ] Require branches to be up to date before merging
 - [ ] Do not allow bypassing the above settings
 - [ ] Phase 1+: add `lint` and `build` required checks
-- [ ] Create `staging` branch + protection (Phase 8)
+- [ ] Create `staging` branch + protection (Phase 8) — see `docs/STAGING_ENVIRONMENT.md`
+- [ ] Configure GitHub `production` environment with required reviewers — see `docs/PROMOTION_WORKFLOW.md`
 
 ---
 

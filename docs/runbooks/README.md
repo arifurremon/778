@@ -14,7 +14,10 @@ Step-by-step incident response for The Chattala production dependencies.
 1. Acknowledge alert in Sentry / Better Stack within **15 minutes**
 2. Post in `#incidents` Slack channel with severity + owner
 3. Update public status page if user-facing impact > 5 minutes
-4. File post-incident note in `LAUNCH_READINESS_REPORT.md` within 24 hours
+4. Use [Incident Response template](../INCIDENT_RESPONSE.md) for P1/P2
+5. File post-incident note in `LAUNCH_READINESS_REPORT.md` within 24 hours
+
+**On-call rotation:** [ON_CALL_ROTATION.md](../ON_CALL_ROTATION.md)
 
 ## Useful links
 
