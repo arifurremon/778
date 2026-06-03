@@ -209,6 +209,69 @@ export function NeighboursPageLoading() {
   );
 }
 
+export function SettingsPageLoading() {
+  return (
+    <div className="max-w-3xl mx-auto py-10 px-6 space-y-8 animate-pulse">
+      <PageHeaderSkeleton />
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-40 rounded-3xl border border-border/50 bg-card/20"
+        />
+      ))}
+    </div>
+  );
+}
+
+export function DirectoryPageLoading() {
+  return (
+    <div className="max-w-6xl mx-auto py-8 px-6 space-y-8 animate-pulse">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <PageHeaderSkeleton />
+        <div className="h-11 w-full md:w-80 bg-muted/50 rounded-xl" />
+      </div>
+      <div className="h-10 w-96 bg-muted/40 rounded-full" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-40 rounded-2xl border border-border/50 bg-card/30" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function AboutPageLoading() {
+  return (
+    <div className="max-w-5xl mx-auto py-10 px-6 space-y-8 animate-pulse">
+      <PageHeaderSkeleton />
+      <div className="h-11 w-full max-w-lg bg-muted/50 rounded-full" />
+      <div className="h-64 rounded-3xl border border-border/50 bg-card/20" />
+    </div>
+  );
+}
+
+export function MessagesPageLoading() {
+  return (
+    <div className="h-[calc(100vh-80px)] flex animate-pulse">
+      <div className="w-full md:w-80 border-r border-border/30 p-4 space-y-3">
+        <PageHeaderSkeleton className="md:hidden" />
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex gap-3 items-center">
+            <div className="w-10 h-10 rounded-full bg-muted shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-24 bg-muted rounded-full" />
+              <div className="h-2.5 w-full bg-muted/60 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="hidden md:flex flex-1 items-center justify-center bg-muted/10">
+        <div className="h-4 w-32 bg-muted/40 rounded-full" />
+      </div>
+    </div>
+  );
+}
+
 export function EmergencyPageLoading() {
   return (
     <div className="max-w-5xl mx-auto py-8 px-6 space-y-8 animate-pulse">

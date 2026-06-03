@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { ShopDetails } from "@/hooks/use-auth";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/ui/page-header";
 import { CHITTAGONG_AREAS } from "@/lib/mock-data";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
@@ -139,14 +140,17 @@ export default function RegisterShopPage() {
       <div className="max-w-4xl mx-auto py-12 px-6">
         {/* Header */}
         <div className="mb-12 space-y-4">
-          <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
-             <Store size={12} /> Merchant Enrollment Wizard
-          </div>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Register Your <span className="text-accent">Shop</span>
-            </h2>
-            <div className="flex items-center gap-4 bg-card/20 border border-border/30 rounded-2xl px-4 py-2">
+          <PageHeader
+            eyebrow="Merchant Enrollment Wizard"
+            eyebrowIcon={Store}
+            title={
+              <>
+                Register Your <span className="text-accent">Shop</span>
+              </>
+            }
+          >
+            <div className="flex flex-col md:flex-row md:items-center justify-end gap-4 pt-2">
+            <div className="flex items-center gap-4 bg-card/20 border border-border/30 rounded-2xl px-4 py-2 w-full md:w-auto">
               {steps.map((s) => (
                 <div key={s.id} className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${step >= s.id ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'}`}>
@@ -159,7 +163,8 @@ export default function RegisterShopPage() {
                 </div>
               ))}
             </div>
-          </div>
+            </div>
+          </PageHeader>
           <div className="h-1.5 w-full bg-border/20 rounded-full overflow-hidden">
             <motion.div 
               className="h-full bg-accent"
