@@ -165,15 +165,15 @@
 **Goal:** B2B integrators can build on The Chattala API.
 
 ### Tasks
-- [ ] **6.1** Generate OpenAPI 3.1 spec from Zod schemas (`zod-to-openapi` or `@asteasolutions/zod-to-openapi`).
-- [ ] **6.2** Expose `/api/openapi.json` + `/api/docs` (Swagger UI or Scalar).
-- [ ] **6.3** API versioning: prefix new routes `/api/v1/*`; document deprecation policy.
-- [ ] **6.4** Idempotency-Key header on: `POST /api/orders`, bookings, shop/service registration.
-- [ ] **6.5** Rate limit response headers: `X-RateLimit-Limit`, `Remaining`, `Reset`.
-- [ ] **6.6** Outbound webhooks model: `WebhookSubscription(userId, url, events[], secret)`.
-- [ ] **6.7** Webhook delivery: signed payloads (HMAC), retry with exponential backoff, DLQ table.
-- [ ] **6.8** API keys for server-to-server: `ApiKey(userId, hashedKey, scopes[], expiresAt)`.
-- [ ] **6.9** Sync `API.md` with OpenAPI spec (single source of truth = OpenAPI).
+- [x] **6.1** Generate OpenAPI 3.1 spec from Zod schemas (`zod-to-openapi` or `@asteasolutions/zod-to-openapi`).
+- [x] **6.2** Expose `/api/openapi.json` + `/api/docs` (Swagger UI or Scalar).
+- [x] **6.3** API versioning: prefix new routes `/api/v1/*`; document deprecation policy.
+- [x] **6.4** Idempotency-Key header on: `POST /api/orders`, bookings, shop/service registration.
+- [x] **6.5** Rate limit response headers: `X-RateLimit-Limit`, `Remaining`, `Reset`.
+- [x] **6.6** Outbound webhooks model: `WebhookSubscription(userId, url, events[], secret)`.
+- [x] **6.7** Webhook delivery: signed payloads (HMAC), retry with exponential backoff, DLQ table.
+- [x] **6.8** API keys for server-to-server: `ApiKey(userId, hashedKey, scopes[], expiresAt)`.
+- [x] **6.9** Sync `API.md` with OpenAPI spec (single source of truth = OpenAPI).
 
 ### Exit Criteria
 - OpenAPI spec covers all public endpoints.

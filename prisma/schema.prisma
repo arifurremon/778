@@ -82,6 +82,9 @@ model User {
   productReviews   ProductReview[]
   featureSuggestions FeatureSuggestion[]
   contactInquiries   ContactInquiry[]
+  idempotencyRecords IdempotencyRecord[]
+  webhookSubscriptions WebhookSubscription[]
+  apiKeys            ApiKey[]
 
   // Social Trust
   sentRequests     NeighbourConnection[] @relation("Sender")
@@ -742,4 +745,92 @@ model DirectoryEntry {
 
   @@index([type])
   @@index([category])
+}
+
+// ---------------------------------------------------------------------------
+// Phase 6 — API Platform
+// ---------------------------------------------------------------------------
+
+model IdempotencyRecord {
+  id             String   @id @default(uuid())
+  userId         String
+  idempotencyKey String
+  route          String
+  requestHash    String
+  resourceId     String?
+  responseBody   Json
+  statusCode     Int
+  createdAt      DateTime @default(now())
+  expiresAt      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotencyKey, route])
+  @@index([expiresAt])
+}
+
+model WebhookSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  url       String
+  events    String[]
+  secret    String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  DLQ
+}
+
+model WebhookDelivery {
+  id             String                @id @default(uuid())
+  subscriptionId String
+  event          String
+  payload        Json
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int                   @default(0)
+  lastAttemptAt  DateTime?
+  nextRetryAt    DateTime?
+  responseStatus Int?
+  responseBody   String?
+  errorMessage   String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  subscription WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([subscriptionId])
+  @@index([status, nextRetryAt])
+  @@index([createdAt])
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  name       String
+  keyPrefix  String
+  hashedKey  String    @unique
+  scopes     String[]
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyPrefix])
+  @@index([revokedAt])
 }

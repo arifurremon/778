@@ -39,6 +39,23 @@ export default auth((req) => {
   );
   response.headers.set("x-request-id", requestId);
 
+  const pathname = req.nextUrl.pathname;
+  const isLegacyApi =
+    pathname.startsWith("/api/") &&
+    !pathname.startsWith("/api/v1/") &&
+    !pathname.startsWith("/api/auth") &&
+    !pathname.startsWith("/api/openapi") &&
+    pathname !== "/api/docs" &&
+    !pathname.startsWith("/api/cron") &&
+    !pathname.startsWith("/api/uploadthing") &&
+    !pathname.startsWith("/api/tunnel");
+
+  if (isLegacyApi) {
+    response.headers.set("Deprecation", "true");
+    response.headers.set("Sunset", new Date("2026-12-31T00:00:00.000Z").toUTCString());
+    response.headers.set("Link", '</api/v1>; rel="successor-version"');
+  }
+
   if (req.nextUrl.pathname.startsWith("/api/")) {
     logApiRequest({
       requestId,

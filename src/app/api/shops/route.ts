@@ -4,7 +4,9 @@ import { cachedQuery, invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
-import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { checkRateLimit, jsonWithRateLimitHeaders } from "@/lib/rate-limit-request";
+import { withIdempotency, idempotentError } from "@/lib/idempotency";
+import { emitWebhookEvent } from "@/lib/webhooks/delivery";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
@@ -112,67 +114,91 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (active.error) return active.error;
     const { session } = active;
 
-    const rateLimitResponse = await enforceRateLimit(
+    const rateLimit = await checkRateLimit(
       () => runRateLimit(rateLimiters.shopRegistration, session.user.id),
       "ShopRegistration",
       { quotaExceededMessage: "Shop registration limit reached (3/hour)." }
     );
-    if (rateLimitResponse) return rateLimitResponse;
+    if (rateLimit.blocked) return rateLimit.blocked;
 
     const body: unknown = await req.json();
     const parsed = createShopSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
+      return jsonWithRateLimitHeaders(
         { error: parsed.error.errors[0]?.message ?? "Validation failed." },
-        { status: 400 }
+        { status: 400 },
+        rateLimit.headers
       );
     }
 
-    const userId = session.user.id;
-
-    const existingShop = await db.shop.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
-    if (existingShop) {
-      return NextResponse.json(
-        { error: "You already have a registered shop." },
-        { status: 409 }
-      );
-    }
-
-    let { name, description, category, location } = parsed.data;
-    const { payoutMethod, registrationDetails } = parsed.data;
-    
-    name = sanitizeUserInput(name);
-    description = sanitizeUserInput(description);
-    category = sanitizeUserInput(category);
-    location = sanitizeUserInput(location);
-
-    const shop = await db.shop.create({
-      data: {
-        userId,
-        name,
-        description,
-        category,
-        location,
-        ...(payoutMethod ? { payoutMethod } : {}),
-        ...(registrationDetails ? { registrationDetails: registrationDetails as Prisma.InputJsonValue } : {}),
+    const idempotent = await withIdempotency(req, {
+      userId: session.user.id,
+      route: "POST /api/shops",
+      body: parsed.data,
+      handler: async () => {
+        const result = await registerShop(session.user.id, parsed.data);
+        if ("error" in result) {
+          return idempotentError(result.error ?? "Request failed", result.status ?? 400);
+        }
+        return { status: 201, body: result.shop, resourceId: result.shop.id };
       },
-      select: shopSelect,
     });
+    if (idempotent) {
+      for (const [key, value] of Object.entries(rateLimit.headers)) {
+        idempotent.headers.set(key, value);
+      }
+      return idempotent;
+    }
 
-    // Set user registrationStatus to PENDING
-    await db.user.update({
-      where: { id: userId },
-      data: { registrationStatus: "PENDING" },
-    });
+    const result = await registerShop(session.user.id, parsed.data);
+    if ("error" in result) {
+      return jsonWithRateLimitHeaders({ error: result.error }, { status: result.status }, rateLimit.headers);
+    }
 
-    await invalidateCache('shops');
-
-    return NextResponse.json(shop, { status: 201 });
+    return jsonWithRateLimitHeaders(result.shop, { status: 201 }, rateLimit.headers);
   } catch (error) {
     logErrorToSentry(error, { route: "[POST /api/shops]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+}
+
+async function registerShop(userId: string, data: z.infer<typeof createShopSchema>) {
+  const existingShop = await db.shop.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+  if (existingShop) {
+    return { error: "You already have a registered shop.", status: 409 };
+  }
+
+  let { name, description, category, location } = data;
+  const { payoutMethod, registrationDetails } = data;
+
+  name = sanitizeUserInput(name);
+  description = sanitizeUserInput(description);
+  category = sanitizeUserInput(category);
+  location = sanitizeUserInput(location);
+
+  const shop = await db.shop.create({
+    data: {
+      userId,
+      name,
+      description,
+      category,
+      location,
+      ...(payoutMethod ? { payoutMethod } : {}),
+      ...(registrationDetails ? { registrationDetails: registrationDetails as Prisma.InputJsonValue } : {}),
+    },
+    select: shopSelect,
+  });
+
+  await db.user.update({
+    where: { id: userId },
+    data: { registrationStatus: "PENDING" },
+  });
+
+  await invalidateCache("shops");
+  await emitWebhookEvent(userId, "shop.registered", { shopId: shop.id, name: shop.name });
+
+  return { shop };
 }

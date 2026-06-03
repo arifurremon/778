@@ -30,6 +30,7 @@
     "script:test-csrf": "node scripts/test-csrf.js"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
     "@auth/prisma-adapter": "^2.11.2",
     "@genkit-ai/google-genai": "^1.28.0",
     "@hookform/resolvers": "^4.1.3",

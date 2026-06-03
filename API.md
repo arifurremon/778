@@ -82,11 +82,22 @@ All errors return a JSON body:
 
 ## Rate Limiting
 
-Rate limits are enforced via **Upstash Redis** (`@upstash/ratelimit`). When exceeded, the response is:
+Rate limits are enforced via **Upstash Redis** (`@upstash/ratelimit`). Successful responses include:
+
+```http
+X-RateLimit-Limit: 5
+X-RateLimit-Remaining: 4
+X-RateLimit-Reset: 1710000000
+```
+
+When exceeded, the response is:
 
 ```http
 HTTP/1.1 429 Too Many Requests
 Retry-After: 900
+X-RateLimit-Limit: 5
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1710000000
 ```
 
 ```json
@@ -115,6 +126,89 @@ Retry-After: 900
 | `GET /api/directory`, `/emergency` | 60 | 1 min | IP |
 | `POST /api/admin/**` | 60 | 1 min | admin user ID |
 | `POST /api/pusher/auth` | 30 | 1 min | user ID |
+
+---
+
+## OpenAPI & Interactive Docs (Phase 6)
+
+> **Single source of truth:** OpenAPI 3.1 spec — do not duplicate endpoint tables manually.
+
+| Resource | URL |
+|----------|-----|
+| OpenAPI JSON | `GET /api/openapi.json` |
+| Interactive docs | `/api/docs` |
+| Versioned base path | `/api/v1/*` (preferred) |
+| Deprecation policy | `docs/API_DEPRECATION_POLICY.md` |
+
+Legacy unversioned routes (`/api/*`) remain available but return `Deprecation` + `Sunset` headers until **31 Dec 2026**.
+
+---
+
+## Idempotency (Phase 6)
+
+Send on resource-creating `POST` requests:
+
+```http
+Idempotency-Key: my-unique-key-12345678
+```
+
+Supported routes:
+
+- `POST /api/orders`
+- `POST /api/services/{expertId}/bookings`
+- `POST /api/shops`
+- `POST /api/services`
+
+Duplicate requests with the same key and body return the original response:
+
+```http
+Idempotent-Replayed: true
+```
+
+Keys expire after 24 hours.
+
+---
+
+## API Keys (Phase 6)
+
+Server-to-server keys for integrations (session required to manage):
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/user/api-keys` | List keys (prefix only) |
+| `POST` | `/api/user/api-keys` | Create key — raw value shown once |
+| `DELETE` | `/api/user/api-keys/{id}` | Revoke key |
+
+Authenticate with:
+
+```http
+Authorization: Bearer tc_live_...
+```
+
+Scopes: `read:shops`, `read:services`, `read:directory`, `read:orders`, `write:orders`, `read:webhooks`, `write:webhooks`, or `*`.
+
+---
+
+## Webhooks (Phase 6)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/webhooks` | List subscriptions |
+| `POST` | `/api/webhooks` | Create subscription (HTTPS URL + events) |
+| `DELETE` | `/api/webhooks/{id}` | Deactivate subscription |
+| `POST` | `/api/webhooks/test` | Queue `ping` event to your endpoints |
+
+Events: `order.created`, `order.updated`, `booking.created`, `booking.updated`, `shop.registered`, `service.registered`, `ping`.
+
+Deliveries are signed:
+
+```http
+X-Webhook-Signature: sha256=<hmac-hex>
+X-Webhook-Timestamp: 1710000000
+X-Webhook-Event: order.created
+```
+
+Failed deliveries retry with exponential backoff; exhausted attempts move to DLQ (`WebhookDelivery.status = DLQ`).
 
 ---
 

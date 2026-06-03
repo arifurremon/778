@@ -2,12 +2,14 @@ import { requireActiveMutation } from "@/lib/session-guards";
 import { bookingSelect, serializeServiceBooking } from "@/lib/booking-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { withIdempotency, idempotentError } from "@/lib/idempotency";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { SentryFlows } from "@/lib/observability/sentry-spans";
 import { withRouteObservability } from "@/lib/observability/with-route-observability";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
-import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { checkRateLimit, jsonWithRateLimitHeaders } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
+import { emitWebhookEvent } from "@/lib/webhooks/delivery";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -33,78 +35,125 @@ export const POST = withRouteObservability(async function POST(
     if (active.error) return active.error;
     const { session } = active;
 
-    const rateLimitResponse = await enforceRateLimit(
+    const rateLimit = await checkRateLimit(
       () => runRateLimit(rateLimiters.bookings, session.user.id),
       "Bookings",
       { quotaExceededMessage: "Booking limit reached (10/hour)." }
     );
-    if (rateLimitResponse) return rateLimitResponse;
+    if (rateLimit.blocked) return rateLimit.blocked;
 
     const { expertId } = await params;
-
     const body: unknown = await req.json();
     const parsed = createBookingSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
+      return jsonWithRateLimitHeaders(
         { error: parsed.error.errors[0]?.message ?? "Validation failed." },
-        { status: 400 }
+        { status: 400 },
+        rateLimit.headers
       );
     }
 
-    const service = await db.expertService.findUnique({
-      where: { id: expertId },
-      select: {
-        id: true,
-        userId: true,
-        profession: true,
-        fee: true,
-        isVerified: true,
+    const idempotent = await withIdempotency(req, {
+      userId: session.user.id,
+      route: `POST /api/services/${expertId}/bookings`,
+      body: parsed.data,
+      handler: async () => {
+        const result = await createBooking(session.user, expertId, parsed.data);
+        if ("error" in result) {
+          return idempotentError(result.error ?? "Request failed", result.status ?? 400);
+        }
+        return {
+          status: 201,
+          body: serializeServiceBooking(result.booking),
+          resourceId: result.booking.id,
+        };
       },
     });
-
-    if (!service) {
-      return NextResponse.json({ error: "Expert service not found." }, { status: 404 });
+    if (idempotent) {
+      for (const [key, value] of Object.entries(rateLimit.headers)) {
+        idempotent.headers.set(key, value);
+      }
+      return idempotent;
     }
 
-    if (service.userId === session.user.id) {
-      return NextResponse.json({ error: "You cannot book your own service." }, { status: 400 });
+    const result = await createBooking(session.user, expertId, parsed.data);
+    if ("error" in result) {
+      return jsonWithRateLimitHeaders({ error: result.error }, { status: result.status }, rateLimit.headers);
     }
 
-    const { scheduledDate, address, notes } = parsed.data;
-
-    const booking = await SentryFlows.bookingCreate(
-      () =>
-        db.serviceBooking.create({
-          data: {
-            expertServiceId: service.id,
-            clientId: session.user.id,
-            scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-            address: address ? sanitizeUserInput(address) : null,
-            notes: notes ? sanitizeUserInput(notes) : null,
-            fee: service.fee,
-          },
-          select: bookingSelect,
-        }),
-      expertId
+    return jsonWithRateLimitHeaders(
+      serializeServiceBooking(result.booking),
+      { status: 201 },
+      rateLimit.headers
     );
-
-    await sendNotification({
-      userId: service.userId,
-      actorId: session.user.id,
-      type: NotificationType.SERVICE_BOOKED,
-      entityType: "ServiceBooking",
-      entityId: booking.id,
-      metadata: {
-        bookingId: booking.id,
-        expertServiceId: service.id,
-        profession: service.profession,
-        clientName: session.user.name ?? "Client",
-      },
-    });
-
-    return NextResponse.json(serializeServiceBooking(booking), { status: 201 });
   } catch (error) {
     logErrorToSentry(error, { route: "[POST /api/services/[expertId]/bookings]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }, { route: "POST /api/services/[expertId]/bookings" });
+
+async function createBooking(
+  user: { id: string; name?: string | null },
+  expertId: string,
+  data: z.infer<typeof createBookingSchema>
+) {
+  const service = await db.expertService.findUnique({
+    where: { id: expertId },
+    select: {
+      id: true,
+      userId: true,
+      profession: true,
+      fee: true,
+      isVerified: true,
+    },
+  });
+
+  if (!service) {
+    return { error: "Expert service not found.", status: 404 };
+  }
+
+  if (service.userId === user.id) {
+    return { error: "You cannot book your own service.", status: 400 };
+  }
+
+  const { scheduledDate, address, notes } = data;
+
+  const booking = await SentryFlows.bookingCreate(
+    () =>
+      db.serviceBooking.create({
+        data: {
+          expertServiceId: service.id,
+          clientId: user.id,
+          scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+          address: address ? sanitizeUserInput(address) : null,
+          notes: notes ? sanitizeUserInput(notes) : null,
+          fee: service.fee,
+        },
+        select: bookingSelect,
+      }),
+    expertId
+  );
+
+  await sendNotification({
+    userId: service.userId,
+    actorId: user.id,
+    type: NotificationType.SERVICE_BOOKED,
+    entityType: "ServiceBooking",
+    entityId: booking.id,
+    metadata: {
+      bookingId: booking.id,
+      expertServiceId: service.id,
+      profession: service.profession,
+      clientName: user.name ?? "Client",
+    },
+  });
+
+  await emitWebhookEvent(service.userId, "booking.created", {
+    bookingId: booking.id,
+    expertServiceId: service.id,
+    clientId: user.id,
+    status: booking.status,
+  });
+
+  return { booking };
+}

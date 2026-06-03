@@ -4,7 +4,9 @@ import { cachedQuery, invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
-import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { checkRateLimit, jsonWithRateLimitHeaders } from "@/lib/rate-limit-request";
+import { withIdempotency, idempotentError } from "@/lib/idempotency";
+import { emitWebhookEvent } from "@/lib/webhooks/delivery";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -115,65 +117,92 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (active.error) return active.error;
     const { session } = active;
 
-    const rateLimitResponse = await enforceRateLimit(
+    const rateLimit = await checkRateLimit(
       () => runRateLimit(rateLimiters.serviceRegistration, session.user.id),
       "ServiceRegistration",
       { quotaExceededMessage: "Service registration limit reached (3/hour)." }
     );
-    if (rateLimitResponse) return rateLimitResponse;
+    if (rateLimit.blocked) return rateLimit.blocked;
 
     const body: unknown = await req.json();
     const parsed = createServiceSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json(
+      return jsonWithRateLimitHeaders(
         { error: parsed.error.errors[0]?.message ?? "Validation failed." },
-        { status: 400 }
+        { status: 400 },
+        rateLimit.headers
       );
     }
 
-    const userId = session.user.id;
-
-    const existing = await db.expertService.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
-    if (existing) {
-      return NextResponse.json(
-        { error: "You already have a registered expert service." },
-        { status: 409 }
-      );
-    }
-
-    const { profession, category, location, experienceYears, fee, bio, qualifications, payoutMethod, registrationDetails } =
-      parsed.data;
-
-    const service = await db.expertService.create({
-      data: {
-        userId,
-        profession,
-        category,
-        location,
-        experienceYears,
-        fee,
-        bio,
-        qualifications,
-        ...(payoutMethod ? { payoutMethod } : {}),
-        ...(registrationDetails ? { registrationDetails: registrationDetails as Prisma.InputJsonValue } : {}),
+    const idempotent = await withIdempotency(req, {
+      userId: session.user.id,
+      route: "POST /api/services",
+      body: parsed.data,
+      handler: async () => {
+        const result = await registerService(session.user.id, parsed.data);
+        if ("error" in result) {
+          return idempotentError(result.error ?? "Request failed", result.status ?? 400);
+        }
+        return { status: 201, body: result.service, resourceId: result.service.id };
       },
-      select: expertSelect,
     });
+    if (idempotent) {
+      for (const [key, value] of Object.entries(rateLimit.headers)) {
+        idempotent.headers.set(key, value);
+      }
+      return idempotent;
+    }
 
-    // Set user serviceRegistrationStatus to PENDING
-    await db.user.update({
-      where: { id: userId },
-      data: { serviceRegistrationStatus: "PENDING" },
-    });
+    const result = await registerService(session.user.id, parsed.data);
+    if ("error" in result) {
+      return jsonWithRateLimitHeaders({ error: result.error }, { status: result.status }, rateLimit.headers);
+    }
 
-    await invalidateCache('services');
-
-    return NextResponse.json(service, { status: 201 });
+    return jsonWithRateLimitHeaders(result.service, { status: 201 }, rateLimit.headers);
   } catch (error) {
     logErrorToSentry(error, { route: "[POST /api/services]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+}
+
+async function registerService(userId: string, data: z.infer<typeof createServiceSchema>) {
+  const existing = await db.expertService.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+  if (existing) {
+    return { error: "You already have a registered expert service.", status: 409 };
+  }
+
+  const { profession, category, location, experienceYears, fee, bio, qualifications, payoutMethod, registrationDetails } =
+    data;
+
+  const service = await db.expertService.create({
+    data: {
+      userId,
+      profession,
+      category,
+      location,
+      experienceYears,
+      fee,
+      bio,
+      qualifications,
+      ...(payoutMethod ? { payoutMethod } : {}),
+      ...(registrationDetails ? { registrationDetails: registrationDetails as Prisma.InputJsonValue } : {}),
+    },
+    select: expertSelect,
+  });
+
+  await db.user.update({
+    where: { id: userId },
+    data: { serviceRegistrationStatus: "PENDING" },
+  });
+
+  await invalidateCache("services");
+  await emitWebhookEvent(userId, "service.registered", {
+    serviceId: service.id,
+    profession: service.profession,
+  });
+
+  return { service };
 }
