@@ -29,6 +29,7 @@ import {
   NEWS_OUTLETS 
 } from "@/lib/directory-data";
 import Image from "next/image";
+import { PageHeader } from "@/components/ui/page-header";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function DirectoryPage() {
@@ -55,17 +56,17 @@ export default function DirectoryPage() {
   return (
       <div className="max-w-6xl mx-auto py-8 px-6 space-y-8">
         <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
-               <MapPin size={12} /> The Smart Guide
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Chattala <span className="text-accent">Directory</span>
-            </h1>
-            <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
-              Your gateway to Chittagong's history, spots, and life
-            </p>
-          </div>
+          <PageHeader
+            eyebrow="The Smart Guide"
+            eyebrowIcon={MapPin}
+            title={
+              <>
+                Chattala <span className="text-accent">Directory</span>
+              </>
+            }
+            subtitle="Your gateway to Chittagong's history, spots, and life"
+            subtitleClassName="text-[10px] font-bold uppercase tracking-widest opacity-60"
+          />
 
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />

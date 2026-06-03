@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { ChatList } from "@/components/messages/chat-list";
 import { ChatWindow } from "@/components/messages/chat-window";
 import { useMessages } from "@/hooks/use-messages";
+import { PageHeader } from "@/components/ui/page-header";
 import { MessageSquare } from "lucide-react";
 
 export default function MessagesPage() {
@@ -16,13 +17,16 @@ export default function MessagesPage() {
 
   return (
       <div className="h-[calc(100vh-80px)] flex flex-col overflow-hidden">
-        <div className={`p-6 pb-0 md:hidden ${activeChatId ? 'hidden' : 'block'}`}>
-          <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px] mb-2">
-             <MessageSquare size={12} /> Secure Channels
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Neighborhood <span className="text-accent">Inbox</span>
-          </h1>
+        <div className={`p-6 pb-0 md:hidden ${activeChatId ? "hidden" : "block"}`}>
+          <PageHeader
+            eyebrow="Secure Channels"
+            eyebrowIcon={MessageSquare}
+            title={
+              <>
+                Neighborhood <span className="text-accent">Inbox</span>
+              </>
+            }
+          />
         </div>
 
         <div className="flex-1 flex overflow-hidden">

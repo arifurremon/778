@@ -23,6 +23,7 @@ import {
     Send,
     ShieldCheck
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 import { useState } from "react";
 export default function VisionLegacyPage() {
   const [activeTab, setActiveTab] = useState("genesis");
@@ -38,17 +39,17 @@ export default function VisionLegacyPage() {
   return (
       <div className="max-w-5xl mx-auto py-10 px-6 space-y-12">
         {/* Page Header */}
-        <section className="space-y-2">
-          <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
-            <Compass size={12} /> The Legacy Framework
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Vision & <span className="text-accent">Legacy</span>
-          </h1>
-          <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest opacity-60">
-            Understanding the architecture of a Hyperlocal Digital Ecosystem
-          </p>
-        </section>
+        <PageHeader
+          eyebrow="The Legacy Framework"
+          eyebrowIcon={Compass}
+          title={
+            <>
+              Vision & <span className="text-accent">Legacy</span>
+            </>
+          }
+          subtitle="Understanding the architecture of a Hyperlocal Digital Ecosystem"
+          subtitleClassName="text-xs font-bold uppercase tracking-widest opacity-60"
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-10">
           <TabsList className="bg-card/20 border border-border/50 p-1 rounded-full w-full overflow-x-auto scrollbar-hide flex justify-start sm:justify-center">
