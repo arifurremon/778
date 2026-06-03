@@ -1,5 +1,9 @@
-import DOMPurify from "isomorphic-dompurify";
 import nodemailer from "nodemailer";
+
+async function sanitizePlainText(value: string): Promise<string> {
+  const DOMPurify = (await import("isomorphic-dompurify")).default;
+  return DOMPurify.sanitize(value, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+}
 
 function appLogoUrl(): string {
   const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "https://thechattala.com";
@@ -100,11 +104,9 @@ export async function sendNotificationEmailDirect(
   actionLink?: string,
   actionText?: string
 ) {
-  const cleanTitle = DOMPurify.sanitize(title, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
-  const cleanMessage = DOMPurify.sanitize(message, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
-  const cleanActionText = actionText
-    ? DOMPurify.sanitize(actionText, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
-    : "";
+  const cleanTitle = await sanitizePlainText(title);
+  const cleanMessage = await sanitizePlainText(message);
+  const cleanActionText = actionText ? await sanitizePlainText(actionText) : "";
 
   const transporter = createTransporter();
   await transporter.sendMail({

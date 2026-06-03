@@ -1,19 +1,18 @@
-import {
-  inngest,
-  INNGEST_EVENTS,
-  type AdminBulkMessageEventData,
-  type MailSendEventData,
-  type UserExportEventData,
+import type {
+  AdminBulkMessageEventData,
+  MailSendEventData,
+  UserExportEventData,
 } from "@/inngest/client";
 import { isFeatureEnabled } from "@/lib/feature-flags";
-import { deliverMailJob } from "@/lib/mail-direct";
 
 export async function enqueueMailJob(data: MailSendEventData): Promise<{ queued: boolean }> {
   if (!isFeatureEnabled("asyncMail")) {
+    const { deliverMailJob } = await import("@/lib/mail-direct");
     await deliverMailJob(data);
     return { queued: false };
   }
 
+  const { inngest, INNGEST_EVENTS } = await import("@/inngest/client");
   await inngest.send({ name: INNGEST_EVENTS.mailSend, data });
   return { queued: true };
 }
@@ -25,6 +24,7 @@ export async function enqueueAdminBulkMessage(
     return { queued: false };
   }
 
+  const { inngest, INNGEST_EVENTS } = await import("@/inngest/client");
   const { ids } = await inngest.send({ name: INNGEST_EVENTS.adminBulkMessage, data });
   return { queued: true, jobId: ids[0] };
 }
@@ -34,6 +34,7 @@ export async function enqueueUserExport(data: UserExportEventData): Promise<{ qu
     return { queued: false };
   }
 
+  const { inngest, INNGEST_EVENTS } = await import("@/inngest/client");
   await inngest.send({ name: INNGEST_EVENTS.userExport, data });
   return { queued: true };
 }
@@ -43,6 +44,7 @@ export async function enqueueDataRetention(): Promise<{ queued: boolean }> {
     return { queued: false };
   }
 
+  const { inngest, INNGEST_EVENTS } = await import("@/inngest/client");
   await inngest.send({ name: INNGEST_EVENTS.dataRetention, data: { triggeredBy: "api" } });
   return { queued: true };
 }

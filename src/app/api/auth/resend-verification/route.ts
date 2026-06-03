@@ -9,6 +9,9 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 
 const resendVerificationSchema = z.object({

@@ -32,7 +32,7 @@ const devOnlyImageDomains =
 /** CSP sources moved to src/lib/csp.ts (nonce-based via middleware). */
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["ws", "@neondatabase/serverless"],
+  serverExternalPackages: ["ws", "@neondatabase/serverless", "nodemailer"],
   images: {
     remotePatterns: [
       // --- Production-safe domains ---

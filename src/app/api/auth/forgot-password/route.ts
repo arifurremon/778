@@ -10,6 +10,9 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 const GENERIC_RESET_MESSAGE = "If that email exists, we sent a password reset link.";
 

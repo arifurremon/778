@@ -15,6 +15,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { passwordSchema } from "@/lib/validation/password";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
