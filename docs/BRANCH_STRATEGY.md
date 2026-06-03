@@ -163,7 +163,7 @@ feat(phase2): add Role enum and migrate isAdmin checks
 Configure at **Settings → Branches → Branch protection rules**:
 
 - [ ] Require pull request before merging (`main`)
-- [ ] Require status checks: `validate`, `Playwright E2E`, `Analyze (javascript)` (CodeQL)
+- [ ] Require status checks: `Lint, typecheck, tests & coverage`, `Production build`, `Playwright E2E`, `Analyze (javascript)` (CodeQL)
 - [ ] Require branches to be up to date before merging
 - [ ] Do not allow bypassing the above settings
 - [ ] Phase 1+: add `lint` and `build` required checks

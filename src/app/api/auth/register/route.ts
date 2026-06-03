@@ -88,8 +88,9 @@ try {
       );
     }
 
-    let { email, password, username, name, mobile, location, dob, profession } =
-      parsed.data;
+    const { password, ...registrationFields } = parsed.data;
+    let { email, username, name, mobile, location, dob, profession } =
+      registrationFields;
 
     email = email.toLowerCase().trim();
     username = sanitizeUserInput(username).trim();

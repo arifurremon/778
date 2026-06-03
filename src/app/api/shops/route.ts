@@ -141,7 +141,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    let { name, description, category, location, payoutMethod, registrationDetails } = parsed.data;
+    let { name, description, category, location } = parsed.data;
+    const { payoutMethod, registrationDetails } = parsed.data;
     
     name = sanitizeUserInput(name);
     description = sanitizeUserInput(description);

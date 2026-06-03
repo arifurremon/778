@@ -285,7 +285,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    let { content, images, checkInLocation, visibility, repostOfId } = parsed.data;
+    let { content, images } = parsed.data;
+    const { checkInLocation, visibility, repostOfId } = parsed.data;
     content = sanitizePostContent(content);
     const authorId = session.user.id;
 

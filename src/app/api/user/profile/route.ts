@@ -123,7 +123,8 @@ export const PATCH = auth(async (req) => {
       );
     }
 
-    let { name, preferredName, mobile, location, profession, bio, dob, profileImage, ...rest } = parsed.data;
+    let { name, preferredName, mobile, location, profession, bio, dob } = parsed.data;
+    const { profileImage, ...rest } = parsed.data;
 
     if (name) name = sanitizeUserInput(name);
     if (preferredName) preferredName = sanitizeUserInput(preferredName);

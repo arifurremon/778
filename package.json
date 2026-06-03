@@ -8,9 +8,11 @@
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "prisma migrate deploy && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --quiet",
+    "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
-    "validate": "npm run typecheck && npm run test",
+    "validate": "npm run typecheck && npm run lint && npm run test",
+    "prepare": "husky",
     "postinstall": "prisma generate",
     "test": "vitest run",
     "test:ui": "vitest --ui",
@@ -90,6 +92,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@playwright/test": "^1.60.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@testing-library/dom": "^10.4.1",
@@ -103,14 +106,22 @@
     "@types/sanitize-html": "^2.16.1",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.8",
     "@vitest/ui": "^4.1.6",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^15.5.18",
     "genkit-cli": "^1.28.0",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.7",
     "pg": "^8.21.0",
     "postcss": "^8",
     "prisma": "^7.0.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
     "vitest": "^4.1.6"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": "eslint --fix --quiet"
   }
 }

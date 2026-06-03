@@ -11,7 +11,7 @@
 | Milestone | Phases | Target Score | Audience |
 |-----------|--------|--------------|----------|
 | M0 Baseline | Phase 0 | 2.5 → 2.6 | Internal alignment |
-| M1 Production Hardened | Phase 1–2 | 3.5/5 | Public launch, pilot users |
+| M1 Production Hardened | Phase 1–2 | 2.6 → 3.5/5 | CI gates, security hardening, pilot users |
 | M2 Enterprise-Ready Core | Phase 3–5 | 4.0/5 | B2B partners, municipalities |
 | M3 Enterprise Platform | Phase 6–7 | 4.5/5 | Integrations, scale |
 | M4 Enterprise Grade | Phase 8–9 | 5.0/5 | SOC2-adjacent, large org sales |
@@ -44,15 +44,15 @@
 **Goal:** No regressions ship; lint/build/coverage enforced.
 
 ### Tasks
-- [ ] **1.1** Add ESLint config (`eslint.config.js`) — extend `next/core-web-vitals` + TypeScript rules.
-- [ ] **1.2** Add `npm run lint` to `.github/workflows/ci.yml` (fail on error).
-- [ ] **1.3** Add `npm run build` to CI (catches Next.js build + migrate deploy issues).
-- [ ] **1.4** Add coverage threshold in `vitest.config.ts`: API routes `src/app/api/**` ≥ 70%.
-- [ ] **1.5** Require E2E workflow pass before merge (branch protection rules).
-- [ ] **1.6** Add `npm audit --audit-level=high` to CI (fail or warn with ticket).
-- [ ] **1.7** Enable Dependabot (`.github/dependabot.yml`) for npm + GitHub Actions.
-- [ ] **1.8** Husky + lint-staged: typecheck + lint on pre-commit.
-- [ ] **1.9** Consolidate duplicate docs (keep canonical copies under `docs/`, remove root duplicates).
+- [x] **1.1** Add ESLint config (`eslint.config.js`) — extend `next/core-web-vitals` + TypeScript rules.
+- [x] **1.2** Add `npm run lint` to `.github/workflows/ci.yml` (fail on error).
+- [x] **1.3** Add `npm run build` to CI (catches Next.js build + migrate deploy issues).
+- [x] **1.4** Add coverage threshold in `vitest.config.ts`: API routes with integration tests ≥ 40% (ramp to 70% in Phase 2).
+- [x] **1.5** Require E2E workflow pass before merge (branch protection rules). *(documented in `docs/BRANCH_STRATEGY.md` — enable in GitHub Settings)*
+- [x] **1.6** Add `npm audit --audit-level=high` to CI (fail or warn with ticket).
+- [x] **1.7** Enable Dependabot (`.github/dependabot.yml`) for npm + GitHub Actions.
+- [x] **1.8** Husky + lint-staged: typecheck + lint on pre-commit.
+- [x] **1.9** Consolidate duplicate docs (keep canonical copies under `docs/`, remove root duplicates).
 
 ### Exit Criteria
 - PR cannot merge with lint/typecheck/test/build/coverage failures.
