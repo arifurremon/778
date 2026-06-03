@@ -25,6 +25,27 @@
     --input: 0 0% 90%;
     --ring: 225 16% 42%;
     --radius: 0.75rem;
+    /* Charts (admin analytics) */
+    --chart-1: 205 83% 45%;
+    --chart-2: 194 53% 59%;
+    --chart-3: 225 16% 42%;
+    --chart-4: 221 83% 53%;
+    --chart-5: 0 0% 45%;
+    /* Sidebar (shadcn sidebar primitive) */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 225 16% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 225 16% 42%;
+    /* Auth brand (login/register — matches legacy #137ece / blue-600) */
+    --auth-bg: 205 83% 45%;
+    --auth-brand: 221 83% 53%;
+    --auth-brand-deep: 221 83% 45%;
+    --auth-brand-darker: 221 84% 38%;
+    --auth-foreground: 222 47% 11%;
   }
 
   .dark {
@@ -47,6 +68,35 @@
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 225 16% 42%;
+    --chart-1: 205 83% 55%;
+    --chart-2: 194 53% 59%;
+    --chart-3: 225 16% 55%;
+    --chart-4: 221 83% 60%;
+    --chart-5: 0 0% 65%;
+    --sidebar-background: 0 0% 10%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 225 16% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 225 16% 55%;
+    --auth-bg: 205 83% 50%;
+    --auth-brand: 221 83% 58%;
+    --auth-brand-deep: 221 83% 50%;
+    --auth-brand-darker: 221 84% 42%;
+    --auth-foreground: 0 0% 95%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

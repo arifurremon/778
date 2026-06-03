@@ -4,7 +4,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCommunity } from "@/hooks/use-community";
 import { toast } from "@/hooks/use-toast";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, Loader2, RefreshCw, Users } from "lucide-react";
+import { AppEmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { AlertCircle, Loader2, MessageSquarePlus, RefreshCw, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import CreatePost from "./create-post";
 import PostCard from "./post-card";
@@ -121,15 +123,16 @@ export default function CommunityView() {
     <div className="min-h-full bg-muted/30 dark:bg-background/20">
       <div className="max-w-2xl mx-auto py-10 px-4 md:px-0">
 
-        {/* Header */}
-        <div className="mb-10 space-y-2">
-          <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
-            <Users size={12} /> Neighborhood Social
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Community <span className="text-accent">Hub</span>
-          </h1>
-
+        <PageHeader
+          className="mb-10"
+          eyebrow="Neighborhood Social"
+          eyebrowIcon={Users}
+          title={
+            <>
+              Community <span className="text-accent">Hub</span>
+            </>
+          }
+        >
           <AnimatePresence>
             {showSubtitle && (
               <motion.p
@@ -139,11 +142,11 @@ export default function CommunityView() {
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60"
               >
-                Stay updated with what's happening in Chittagong
+                Stay updated with what&apos;s happening in Chittagong
               </motion.p>
             )}
           </AnimatePresence>
-        </div>
+        </PageHeader>
 
         {/* Create Post */}
         <motion.div
@@ -183,6 +186,15 @@ export default function CommunityView() {
               <PostSkeleton />
               <PostSkeleton />
             </>
+          )}
+
+          {!loading && !error && posts.length === 0 && (
+            <AppEmptyState
+              icon={MessageSquarePlus}
+              title="No posts yet"
+              description="Be the first to share something with your neighbourhood in Chittagong."
+              className="mt-4"
+            />
           )}
 
           {/* Posts */}
