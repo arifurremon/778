@@ -232,14 +232,14 @@
 **Goal:** External proof; enterprise sales readiness.
 
 ### Tasks
-- [ ] **9.1** Third-party pentest (or OWASP ZAP automated + manual review); fix all Critical/High.
-- [ ] **9.2** SOC 2 Type I readiness checklist (Vanta/Drata or manual mapping).
-- [ ] **9.3** Contract tests: Pact or OpenAPI response validation for top 10 endpoints.
-- [ ] **9.4** Chaos test: Redis unavailable → app degrades gracefully (no 500 on read routes).
-- [ ] **9.5** Full E2E suite expansion: admin moderation, booking lifecycle, data export/delete.
-- [ ] **9.6** Performance budget: Lighthouse CI on `/`, `/dashboard`, `/shops` ≥ 90.
-- [ ] **9.7** Accessibility audit: WCAG 2.1 AA on auth + settings + checkout flows.
-- [ ] **9.8** Final enterprise scorecard review — target all pillars ≥ 4.5, weighted average ≥ 4.8.
+- [x] **9.1** Third-party pentest (or OWASP ZAP automated + manual review); fix all Critical/High.
+- [x] **9.2** SOC 2 Type I readiness checklist (Vanta/Drata or manual mapping).
+- [x] **9.3** Contract tests: Pact or OpenAPI response validation for top 10 endpoints.
+- [x] **9.4** Chaos test: Redis unavailable → app degrades gracefully (no 500 on read routes).
+- [x] **9.5** Full E2E suite expansion: admin moderation, booking lifecycle, data export/delete.
+- [x] **9.6** Performance budget: Lighthouse CI on `/`, `/dashboard`, `/shops` ≥ 90.
+- [x] **9.7** Accessibility audit: WCAG 2.1 AA on auth + settings + checkout flows.
+- [x] **9.8** Final enterprise scorecard review — target all pillars ≥ 4.5, weighted average ≥ 4.8.
 
 ### Exit Criteria
 - Pentest report: zero Critical, zero High open issues.

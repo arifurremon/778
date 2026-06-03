@@ -11,6 +11,11 @@ export const E2E_USER_EMAIL =
 export const E2E_USER_PASSWORD =
   process.env.E2E_USER_PASSWORD ?? "E2eSecure123!";
 export const E2E_USERNAME = process.env.E2E_USERNAME ?? "e2e_playwright_user";
+export const E2E_ADMIN_EMAIL =
+  process.env.E2E_ADMIN_EMAIL ?? "e2e-admin@chattala.test";
+export const E2E_ADMIN_PASSWORD =
+  process.env.E2E_ADMIN_PASSWORD ?? "E2eAdmin123!";
+export const E2E_ADMIN_USERNAME = process.env.E2E_ADMIN_USERNAME ?? "e2e_admin_user";
 
 export default async function globalSetup() {
   const config: { dbReady: boolean; message?: string } = { dbReady: false };
@@ -54,8 +59,45 @@ export default async function globalSetup() {
       },
     });
 
+    const adminHash = await bcrypt.hash(
+      process.env.E2E_ADMIN_PASSWORD ?? "E2eAdmin123!",
+      10
+    );
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? "e2e-admin@chattala.test";
+    const adminUsername = process.env.E2E_ADMIN_USERNAME ?? "e2e_admin_user";
+
+    await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: {
+        password: adminHash,
+        emailVerified: new Date(),
+        deletedAt: null,
+        suspendedAt: null,
+        isAdmin: true,
+        role: "ADMIN",
+        name: "E2E Admin User",
+        policyAcceptedAt: new Date(),
+        policyVersion: CURRENT_POLICY_VERSION,
+      },
+      create: {
+        email: adminEmail,
+        username: adminUsername,
+        password: adminHash,
+        name: "E2E Admin User",
+        emailVerified: new Date(),
+        isAdmin: true,
+        role: "ADMIN",
+        mobile: "01712345670",
+        location: "Panchlaish",
+        dob: new Date("1990-01-01"),
+        profession: "Not specified",
+        policyAcceptedAt: new Date(),
+        policyVersion: CURRENT_POLICY_VERSION,
+      },
+    });
+
     config.dbReady = true;
-    config.message = `Seeded E2E user ${E2E_USER_EMAIL}`;
+    config.message = `Seeded E2E users ${E2E_USER_EMAIL} + ${adminEmail}`;
     console.log(`[e2e] ${config.message}`);
   } catch (error) {
     config.message =

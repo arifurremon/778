@@ -25,3 +25,7 @@ export const E2E_USER_EMAIL =
   process.env.E2E_USER_EMAIL ?? "e2e@chattala.test";
 export const E2E_USER_PASSWORD =
   process.env.E2E_USER_PASSWORD ?? "E2eSecure123!";
+export const E2E_ADMIN_EMAIL =
+  process.env.E2E_ADMIN_EMAIL ?? "e2e-admin@chattala.test";
+export const E2E_ADMIN_PASSWORD =
+  process.env.E2E_ADMIN_PASSWORD ?? "E2eAdmin123!";

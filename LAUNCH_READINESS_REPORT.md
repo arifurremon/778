@@ -3,7 +3,7 @@
 > **Project:** The Chattala — Chittagong's Hyperlocal City Platform
 > **Version:** v1.0.0
 > **Prepared By:** Abu Md. Selim, Engineering Lead — Inievo Technologies
-> **Report Date:** 2026-03-13 (Phase 8 enterprise ops update)
+> **Report Date:** 2026-03-13 (Phase 9 validation & enterprise scorecard)
 > **Target Launch:** 2026-06-01 (estimated — pending Phases 1–4 completion)
 
 ---
