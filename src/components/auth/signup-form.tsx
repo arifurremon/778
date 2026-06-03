@@ -144,7 +144,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             id="name"
             type="text"
             placeholder="Your full name"
-            className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
+            className={authStyles.input}
             {...register("name")}
           />
           {errors.name && (
@@ -162,7 +162,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
               id="username"
               type="text"
               placeholder="username"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
+              className={authStyles.input}
               {...register("username")}
             />
             {errors.username && (
@@ -177,7 +177,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
               id="mobile"
               type="tel"
               placeholder="01XXXXXXXXX"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
+              className={authStyles.input}
               {...register("mobile")}
             />
             {errors.mobile && (
@@ -196,7 +196,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
               id="email"
               type="email"
               placeholder="you@example.com"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
+              className={authStyles.input}
               {...register("email")}
             />
             {errors.email && (
@@ -210,7 +210,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             <Input
               id="dob"
               type="date"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground block w-full font-medium shadow-sm hover:border-border"
+              className={authStyles.input}
               {...register("dob")}
             />
             {errors.dob && (
@@ -256,7 +256,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             id="profession"
             type="text"
             placeholder="e.g., Engineer, Doctor, Student, Business Owner"
-            className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
+            className={authStyles.input}
             {...register("profession")}
           />
         </div>
@@ -272,7 +272,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Min 6 characters"
-                className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border pr-12"
+                className={authStyles.inputWithToggle}
                 {...register("password")}
               />
               <button
@@ -297,7 +297,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                 id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Re-enter your password"
-                className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border pr-12"
+                className={authStyles.inputWithToggle}
                 {...register("confirmPassword")}
               />
               <button

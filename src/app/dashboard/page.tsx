@@ -4,32 +4,33 @@ import { motion } from "framer-motion";
 import { Search, ChevronRight, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FeatureGrid } from "@/components/dashboard/feature-grid";
-import { useAuth } from "@/hooks/use-auth";
+import { PageHeader } from "@/components/ui/page-header";
 import Link from "next/link";
 
 export default function OverviewPage() {
-  const { user } = useAuth();
-
   return (
     <div className="p-6 md:p-10 space-y-12">
-      {/* Premium Hero Section */}
-      <section className="mb-12 space-y-4">
+      <section className="mb-12">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="relative"
         >
-          <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.3em] text-[10px] mb-3">
-            <span className="w-8 h-[1px] bg-accent/40" /> THE ULTIMATE HUB
-          </div>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight text-foreground leading-[1.1]">
-            Your Digital Gateway to <span className="text-accent">Chittagong.</span>
-          </h1>
-          <p className="text-base md:text-lg font-bold text-muted-foreground max-w-2xl leading-relaxed mt-4">
-            The all-in-one hyper-local ecosystem connecting you to neighborhood services, 
-            verified shops, and community updates. Built for the residents of the Port City.
-          </p>
+          <PageHeader
+            size="hero"
+            eyebrowPrefix={
+              <span className="w-8 h-[1px] bg-accent/40 shrink-0" aria-hidden />
+            }
+            eyebrow="THE ULTIMATE HUB"
+            title={
+              <>
+                Your Digital Gateway to{" "}
+                <span className="text-accent">Chittagong.</span>
+              </>
+            }
+            subtitle="The all-in-one hyper-local ecosystem connecting you to neighborhood services, verified shops, and community updates. Built for the residents of the Port City."
+          />
         </motion.div>
       </section>
       
