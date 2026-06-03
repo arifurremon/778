@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { neonConfig } from "@neondatabase/serverless";
+import { recordDbQueryMetric } from "@/lib/observability/metrics";
 import ws from "ws";
 
 /**
@@ -64,10 +65,42 @@ const getPrismaClient = (): PrismaClient => {
  * the same invocation.
  */
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prisma: ReturnType<typeof createExtendedPrismaClient> | undefined;
 };
 
-export const db = globalForPrisma.prisma ?? getPrismaClient();
+function createExtendedPrismaClient() {
+  const client = getPrismaClient();
+
+  return client.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          const started = performance.now();
+          try {
+            const result = await query(args);
+            recordDbQueryMetric({
+              model,
+              operation,
+              durationMs: Math.round(performance.now() - started),
+              success: true,
+            });
+            return result;
+          } catch (error) {
+            recordDbQueryMetric({
+              model,
+              operation,
+              durationMs: Math.round(performance.now() - started),
+              success: false,
+            });
+            throw error;
+          }
+        },
+      },
+    },
+  });
+}
+
+export const db = globalForPrisma.prisma ?? createExtendedPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = db;

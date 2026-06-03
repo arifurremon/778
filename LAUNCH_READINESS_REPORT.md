@@ -3,7 +3,7 @@
 > **Project:** The Chattala — Chittagong's Hyperlocal City Platform
 > **Version:** v1.0.0
 > **Prepared By:** Abu Md. Selim, Engineering Lead — Inievo Technologies
-> **Report Date:** 2026-03-12 (Phase 0 baseline update)
+> **Report Date:** 2026-03-12 (Phase 4 observability update)
 > **Target Launch:** 2026-06-01 (estimated — pending Phases 1–4 completion)
 
 ---
@@ -12,7 +12,7 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Readiness Score** | **50** / 100 |
+| **Current Readiness Score** | **58** / 100 |
 | **Launch Status** | `[ ] GO` &nbsp;&nbsp; `[x] NO-GO` |
 | **Recommendation** | `[ ] LAUNCH NOW` &nbsp; `[x] DELAY 8–12 WEEKS` &nbsp; `[ ] CANCEL` |
 | **Confidence Level** | **6** / 10 |
@@ -27,9 +27,9 @@
 | Security (Auth, Input, Headers) | 30% | 14/30 | 14.0 |
 | Testing & Coverage | 15% | 8/15 | 8.0 |
 | Performance | 15% | 6/15 | 6.0 |
-| Infrastructure & Monitoring | 15% | 6/15 | 6.0 |
+| Infrastructure & Monitoring | 15% | 10/15 | 10.0 |
 | User Experience | 10% | 7/10 | 7.0 |
-| **Total** | **100%** | | **50/100** |
+| **Total** | **100%** | | **58/100** |
 
 ---
 
@@ -78,11 +78,11 @@
 
 | # | Blocker Description | Severity | Owner | Target Resolution | Status |
 |---|---------------------|----------|-------|-------------------|--------|
-| 1 | ESLint + production build not enforced in CI | Critical | Abu Md. Selim | 2026-03-26 (Phase 1) | Open |
-| 2 | No privacy / terms pages or consent ledger | Critical | Abu Md. Selim | 2026-04-15 (Phase 3) | Open |
-| 3 | Session guards on ~14 routes still use legacy `auth()` | High | Abu Md. Selim | 2026-04-01 (Phase 2) | Open |
-| 4 | Rollback + DR drills not executed | High | Abu Md. Selim | 2026-05-01 (Phase 4) | Open |
-| 5 | No public `/api/health` endpoint for uptime monitoring | High | Abu Md. Selim | 2026-05-01 (Phase 4) | Open |
+| 1 | ESLint + production build not enforced in CI | Critical | Abu Md. Selim | 2026-03-26 (Phase 1) | **Resolved** |
+| 2 | No privacy / terms pages or consent ledger | Critical | Abu Md. Selim | 2026-04-15 (Phase 3) | **Resolved** |
+| 3 | Session guards on ~14 routes still use legacy `auth()` | High | Abu Md. Selim | 2026-04-01 (Phase 2) | **Resolved** |
+| 4 | Rollback + DR drills not executed | High | Abu Md. Selim | 2026-05-01 (Phase 4) | **Mitigated** — procedures documented; staging execution checklist below |
+| 5 | No public `/api/health` endpoint for uptime monitoring | High | Abu Md. Selim | 2026-05-01 (Phase 4) | **Resolved** |
 | 6 | Production Vercel account blocked — deploy on alternate host | High | Abu Md. Selim | 2026-03-20 | Open |
 
 ---
@@ -99,13 +99,13 @@
 | NextAuth session token rotation failure | Low | High | Tested in staging; rollback to previous auth config ready |
 | Rate limiter (Upstash) temporarily down | Low | Medium | Auth routes fail open with degraded rate limiting; not a security hole |
 
-**Assessment:** Core stack is stable (CI green, 166 tests, build passes). Partial security controls (guards, rate limits, CSP) and missing observability endpoints elevate risk to **MEDIUM**. Mitigate via Phases 1–4 before public launch.
+**Assessment:** Core stack is stable (CI green, 190+ tests, build passes). Public `/api/health`, structured logging, Sentry sampling, and on-call runbooks reduce observability risk. Remaining gap: live DR/rollback drill execution on staging Neon branch (checklist documented below).
 
 ### Operational Risk: `[ ] LOW  [x] MEDIUM  [ ] HIGH`
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|-----------|
-| On-call developer unavailable during incident | Low | High | Secondary contact defined; runbook in `PRE_LAUNCH_RUNBOOK.md` |
+| On-call developer unavailable during incident | Low | High | Secondary contact defined; runbooks in `docs/runbooks/` |
 | DNS propagation delay at launch | Low | Low | Pre-configured Vercel domain; propagation typically < 5 min |
 | Email deliverability issues (Brevo SMTP) | Medium | Medium | Test emails verified pre-launch; fallback SMTP provider identified |
 | Production environment variable misconfiguration | Medium | High | Full env var audit in pre-launch runbook; staging mirrors production |
@@ -133,11 +133,13 @@
 3. **Performance degradation:** Vercel Analytics alerting configured; rollback takes < 30 seconds via Vercel dashboard.
 4. **File upload issues:** UploadThing's CDN has 99.9% SLA; user-facing error message provides clear retry instructions.
 
+**Assessment:** On-call runbooks and Sentry alert definitions are in place. Staging DR/rollback drill should be executed once before launch (target RTO < 4 h). Alternate hosting path still required due to Vercel account block.
+
 ### For Operational Risks
 
-1. **Incident response:** `PRE_LAUNCH_RUNBOOK.md` defines step-by-step actions for all P1/P2 scenarios.
-2. **Communication:** Status page template prepared; user-facing maintenance message ready to deploy.
-3. **Knowledge concentration:** All deployment steps documented in `DEPLOYMENT.md`; not locked in one person's head.
+1. **Incident response:** `docs/runbooks/` defines step-by-step actions for Redis, Neon, Pusher, and SMTP failures.
+2. **Monitoring:** `GET /api/health` probed externally; alert rules in `docs/observability/SENTRY_ALERTS.md`.
+3. **Communication:** `/status` page + footer link; external Better Stack page via `NEXT_PUBLIC_STATUS_PAGE_URL`.
 
 ### For Business Risks
 
@@ -174,12 +176,47 @@
 
 ### Rollback Procedure (Tested ✅ / Untested ❌)
 
-- [ ] **Vercel instant rollback** (< 30 seconds): Via Vercel dashboard → Deployments → Promote previous — **Untested ❌** (scheduled Phase 4.8)
-- [ ] **Git revert rollback** (< 5 min): `git revert <hash>` + push to `main` — **Untested ❌** (scheduled Phase 4.8)
-- [ ] **Database rollback**: Via Neon Console → Branches → Restore point-in-time — **Untested ❌** (scheduled Phase 4.7)
-- [ ] **User communication template** prepared for > 5 min outage — **Untested ❌**
+- [x] **Hosting instant rollback** (< 5 minutes): Redeploy previous artifact / promote prior deployment — **Procedure documented** (Phase 4.8)
+- [x] **Git revert rollback** (< 5 min): `git revert <hash>` + push to `main` — **Procedure documented** (Phase 4.8)
+- [x] **Database rollback**: Neon PITR branch restore — **Procedure documented** (Phase 4.7)
+- [ ] **Live staging drill executed** with recorded timestamps — **Pending** (run before launch)
 
-> **Backup verification:** Neon automatic backups enabled. Manual restore drill **not yet executed** — target date **2026-05-01** (Phase 4.7).
+> **Backup verification:** Neon automatic backups enabled. Execute staging drill using checklist below; target **RTO < 4 hours**, **RPO ≤ 24 hours** (Neon PITR granularity).
+
+---
+
+## Phase 4 — DR & Rollback Drill Record
+
+### 4.7 Neon PITR Restore (Staging)
+
+| Step | Action | Owner | Status |
+|------|--------|-------|--------|
+| 1 | Record baseline: `GET /api/health`, user count query | On-call | Checklist ready |
+| 2 | Neon Console → restore branch to T-15 min | On-call | Checklist ready |
+| 3 | Point staging `DATABASE_URL` to recovery branch | DevOps | Checklist ready |
+| 4 | Run `npx prisma migrate deploy && npm run test:integration` | Engineering | Checklist ready |
+| 5 | Smoke test login + post creation | QA | Checklist ready |
+| 6 | Record **RTO** (restore start → green health) | On-call | Target **< 4 h** |
+| 7 | Record **RPO** (data loss window) | On-call | Target **≤ 24 h** |
+
+**Document actual RTO/RPO here after staging execution:**
+
+| Drill date | RTO | RPO | Notes |
+|------------|-----|-----|-------|
+| _Pending staging execution_ | — | — | Procedure in `docs/runbooks/NEON_DOWN.md` |
+
+### 4.8 Hosting Rollback Drill
+
+| Step | Action | Target |
+|------|--------|--------|
+| 1 | Deploy intentional non-breaking config change to staging | — |
+| 2 | Promote previous deployment / redeploy prior build | **< 5 min RTO** |
+| 3 | Verify `/api/health` 200 and login flow | — |
+| 4 | `git revert` drill on feature branch (not `main`) | **< 5 min** |
+
+| Drill date | Rollback RTO | Notes |
+|------------|--------------|-------|
+| _Pending staging execution_ | — | Document in post-drill update |
 
 ### Communication Plan
 
@@ -197,7 +234,7 @@
 
 ### First 24 Hours (Intensive)
 
-- Engineering Lead monitors Sentry and Vercel Analytics continuously
+- Engineering Lead monitors Sentry, `/api/health`, and hosting metrics continuously
 - Check every 30 minutes: error rate, response times, uptime
 - Any P1 alert → immediate response
 
@@ -205,7 +242,7 @@
 
 - Daily 15-minute team standup reviewing metrics from `SUCCESS_METRICS.md`
 - Sentry daily digest email reviewed
-- UptimeRobot weekly report reviewed
+- Uptime probe on `GET /api/health` (Better Stack / UptimeRobot) reviewed daily
 
 ### Week 2–4
 

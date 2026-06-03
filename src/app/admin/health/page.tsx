@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
-import { hasRedisConfigs, pingRedis } from "@/lib/cache";
-import { db } from "@/lib/db";
+import { checkDatabaseHealth, checkRedisHealth } from "@/lib/health/checks";
 import { hasPusherConfigs } from "@/lib/pusher";
 import { redirect } from "next/navigation";
 
@@ -41,21 +40,12 @@ function statusLabel(status: CheckStatus) {
 // Checks
 // ---------------------------------------------------------------------------
 async function checkDatabase(): Promise<HealthCheck> {
-  try {
-    const count = await db.user.count();
-    return {
-      name: "Database Connection",
-      status: "pass",
-      details: `Connected — ${count.toLocaleString()} user${count !== 1 ? "s" : ""} in database`,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    return {
-      name: "Database Connection",
-      status: "fail",
-      details: `Connection failed: ${message}`,
-    };
-  }
+  const result = await checkDatabaseHealth(true);
+  return {
+    name: "Database Connection",
+    status: result.status,
+    details: result.message ?? `Latency ${result.latencyMs} ms`,
+  };
 }
 
 function checkEnvVars(): HealthCheck {
@@ -127,19 +117,11 @@ function checkEmailConfig(): HealthCheck {
 }
 
 async function checkRedis(): Promise<HealthCheck> {
-  if (!hasRedisConfigs()) {
-    return {
-      name: "Redis Cache",
-      status: "fail",
-      details: "UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN is missing",
-    };
-  }
-
-  const result = await pingRedis();
+  const result = await checkRedisHealth(true);
   return {
     name: "Redis Cache",
-    status: result.ok ? "pass" : "fail",
-    details: result.details,
+    status: result.status,
+    details: result.message ?? `Latency ${result.latencyMs} ms`,
   };
 }
 

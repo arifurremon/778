@@ -76,6 +76,7 @@
     "nodemailer": "^8.0.5",
     "otplib": "^13.4.1",
     "patch-package": "^8.0.0",
+    "pino": "^10.3.1",
     "pusher-js": "^8.5.0",
     "react": "^19.2.1",
     "react-day-picker": "^9.11.3",

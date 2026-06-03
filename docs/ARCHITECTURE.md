@@ -49,6 +49,7 @@ C4Context
   Rel(chattala, sentry, "Reports errors")
   Rel(chattala, vercel, "Hosted on")
   Rel(chattala, ga, "Page views (consent-gated — Phase 3)")
+  Rel(chattala, health, "GET /api/health uptime probe (Phase 4)")
 ```
 
 ### External Actors
@@ -239,7 +240,7 @@ GitHub (main) → GitHub Actions (CI + E2E + CodeQL)
 | Nonce-based CSP | Phase 2 |
 | Role enum + permissions | Phase 2 |
 | MFA for admins | Phase 2 |
-| `/api/health` | Phase 4 |
+| `/api/health` | ✅ Phase 4 — public DB + Redis probe |
 | OpenAPI spec | Phase 6 |
 | Job queue (email, retention) | Phase 7 |
 | Staging environment | Phase 8 |

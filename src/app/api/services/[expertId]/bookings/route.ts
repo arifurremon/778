@@ -3,6 +3,8 @@ import { bookingSelect, serializeServiceBooking } from "@/lib/booking-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { SentryFlows } from "@/lib/observability/sentry-spans";
+import { withRouteObservability } from "@/lib/observability/with-route-observability";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
@@ -22,7 +24,10 @@ const createBookingSchema = z
   });
 
 // POST /api/services/[expertId]/bookings — client books an expert service
-export async function POST(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+export const POST = withRouteObservability(async function POST(
+  req: NextRequest,
+  { params }: RouteContext
+): Promise<NextResponse> {
   try {
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
@@ -67,17 +72,21 @@ export async function POST(req: NextRequest, { params }: RouteContext): Promise<
 
     const { scheduledDate, address, notes } = parsed.data;
 
-    const booking = await db.serviceBooking.create({
-      data: {
-        expertServiceId: service.id,
-        clientId: session.user.id,
-        scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-        address: address ? sanitizeUserInput(address) : null,
-        notes: notes ? sanitizeUserInput(notes) : null,
-        fee: service.fee,
-      },
-      select: bookingSelect,
-    });
+    const booking = await SentryFlows.bookingCreate(
+      () =>
+        db.serviceBooking.create({
+          data: {
+            expertServiceId: service.id,
+            clientId: session.user.id,
+            scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+            address: address ? sanitizeUserInput(address) : null,
+            notes: notes ? sanitizeUserInput(notes) : null,
+            fee: service.fee,
+          },
+          select: bookingSelect,
+        }),
+      expertId
+    );
 
     await sendNotification({
       userId: service.userId,
@@ -98,4 +107,4 @@ export async function POST(req: NextRequest, { params }: RouteContext): Promise<
     logErrorToSentry(error, { route: "[POST /api/services/[expertId]/bookings]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
+}, { route: "POST /api/services/[expertId]/bookings" });

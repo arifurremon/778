@@ -3,6 +3,8 @@ import { requireActiveMutation, requireActiveUser } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { SentryFlows } from "@/lib/observability/sentry-spans";
+import { withRouteObservability } from "@/lib/observability/with-route-observability";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { z } from "zod";
@@ -16,7 +18,7 @@ const orderSchema = z.object({
   note: z.string().optional(),
 });
 
-export async function POST(req: NextRequest) {
+export const POST = withRouteObservability(async function POST(req: NextRequest) {
   try {
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
@@ -60,22 +62,26 @@ export async function POST(req: NextRequest) {
 
     const totalPrice = product.price.toNumber() * quantity;
 
-    const newOrder = await db.$transaction(async (tx) => {
-      return tx.order.create({
-        data: {
-          shopId,
-          productId,
-          buyerId: session.user!.id,
-          buyerName: session.user!.name || "Anonymous",
-          buyerPhone: phone,
-          address,
-          quantity,
-          totalPrice,
-          note,
-          status: "PENDING",
-        },
-      });
-    });
+    const newOrder = await SentryFlows.orderCreate(
+      () =>
+        db.$transaction(async (tx) => {
+          return tx.order.create({
+            data: {
+              shopId,
+              productId,
+              buyerId: session.user!.id,
+              buyerName: session.user!.name || "Anonymous",
+              buyerPhone: phone,
+              address,
+              quantity,
+              totalPrice,
+              note,
+              status: "PENDING",
+            },
+          });
+        }),
+      shopId
+    );
 
     await sendNotification({
       userId: shop.userId,
@@ -95,7 +101,7 @@ export async function POST(req: NextRequest) {
     logErrorToSentry(error, { route: "POST /api/orders" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-}
+}, { route: "POST /api/orders" });
 
 export async function GET(req: NextRequest) {
   try {

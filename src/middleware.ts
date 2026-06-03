@@ -2,13 +2,20 @@ import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "./auth.config";
 import { buildContentSecurityPolicy, generateCspNonce } from "@/lib/csp";
+import { logApiRequest } from "@/lib/observability/logger";
 
 const { auth } = NextAuth(authConfig);
 
+function resolveRequestId(req: Request): string {
+  return req.headers.get("x-request-id") ?? crypto.randomUUID();
+}
+
 export default auth((req) => {
+  const requestId = resolveRequestId(req);
   const nonce = generateCspNonce();
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("x-request-id", requestId);
 
   const response = NextResponse.next({
     request: { headers: requestHeaders },
@@ -30,6 +37,15 @@ export default auth((req) => {
     "Strict-Transport-Security",
     "max-age=63072000; includeSubDomains; preload"
   );
+  response.headers.set("x-request-id", requestId);
+
+  if (req.nextUrl.pathname.startsWith("/api/")) {
+    logApiRequest({
+      requestId,
+      method: req.method,
+      path: req.nextUrl.pathname,
+    }).debug("incoming api request");
+  }
 
   return response;
 });

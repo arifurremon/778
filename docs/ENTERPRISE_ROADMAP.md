@@ -120,15 +120,15 @@
 **Goal:** Operable at 3am; measurable SLOs.
 
 ### Tasks
-- [ ] **4.1** Public `GET /api/health` — DB ping, Redis ping, no auth required (for uptime monitors).
-- [ ] **4.2** Structured logging: `pino` or `@vercel/otel` — JSON logs with `requestId`, `userId`, `route`.
-- [ ] **4.3** OpenTelemetry metrics: request latency histogram, error rate counter, DB query duration.
-- [ ] **4.4** Sentry: environment-based sampling; custom spans on order/booking/admin flows.
-- [ ] **4.5** Alert rules (Sentry or Grafana): error rate > 1%, p95 latency > 2s, health check fail.
-- [ ] **4.6** Public status page (Better Stack / Instatus) linked from footer.
-- [ ] **4.7** Execute DR drill: Neon PITR restore → staging; document in `LAUNCH_READINESS_REPORT.md`.
-- [ ] **4.8** Execute Vercel/hosting rollback drill; record RTO/RPO numbers.
-- [ ] **4.9** On-call runbook: Redis down, Neon down, Pusher down, SMTP down — step-by-step in `docs/runbooks/`.
+- [x] **4.1** Public `GET /api/health` — DB ping, Redis ping, no auth required (for uptime monitors).
+- [x] **4.2** Structured logging: `pino` or `@vercel/otel` — JSON logs with `requestId`, `userId`, `route`.
+- [x] **4.3** OpenTelemetry metrics: request latency histogram, error rate counter, DB query duration.
+- [x] **4.4** Sentry: environment-based sampling; custom spans on order/booking/admin flows.
+- [x] **4.5** Alert rules (Sentry or Grafana): error rate > 1%, p95 latency > 2s, health check fail.
+- [x] **4.6** Public status page (Better Stack / Instatus) linked from footer.
+- [x] **4.7** Execute DR drill: Neon PITR restore → staging; document in `LAUNCH_READINESS_REPORT.md`.
+- [x] **4.8** Execute Vercel/hosting rollback drill; record RTO/RPO numbers.
+- [x] **4.9** On-call runbook: Redis down, Neon down, Pusher down, SMTP down — step-by-step in `docs/runbooks/`.
 
 ### Exit Criteria
 - `/api/health` monitored externally (UptimeRobot/Better Stack).

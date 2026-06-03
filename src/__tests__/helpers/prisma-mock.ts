@@ -58,6 +58,8 @@ export const prismaMock = {
     }
     return Promise.resolve(arg);
   }),
+  $queryRaw: vi.fn(),
+  $executeRaw: vi.fn(),
   $connect: vi.fn(),
   $disconnect: vi.fn(),
 };

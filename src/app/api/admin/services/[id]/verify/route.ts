@@ -4,13 +4,18 @@ import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { SentryFlows } from "@/lib/observability/sentry-spans";
+import { withRouteObservability } from "@/lib/observability/with-route-observability";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
  * POST /api/admin/services/[id]/verify
  * Approves a service provider application.
  */
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const POST = withRouteObservability(async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const admin = await requireAdminMutation(req);
     if (admin.error) return admin.error;
@@ -27,26 +32,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const serviceTitle = service.profession;
 
-    // Prisma transaction for atomic updates
-    await db.$transaction(async (tx) => {
-      // Update service status
-      await tx.expertService.update({
-        where: { id },
-        data: { 
-          isVerified: true,
-          verifiedAt: new Date()
-        }
-      });
+    await SentryFlows.adminMutation(
+      () =>
+        db.$transaction(async (tx) => {
+          await tx.expertService.update({
+            where: { id },
+            data: {
+              isVerified: true,
+              verifiedAt: new Date()
+            }
+          });
 
-      // Update user status
-      await tx.user.update({
-        where: { id: service.userId },
-        data: { 
-          isServiceProvider: true, 
-          serviceRegistrationStatus: 'APPROVED' 
-        }
-      });
-    });
+          await tx.user.update({
+            where: { id: service.userId },
+            data: {
+              isServiceProvider: true,
+              serviceRegistrationStatus: 'APPROVED'
+            }
+          });
+        }),
+      "verify",
+      "ExpertService"
+    );
 
     await sendNotification({
       userId: service.userId,
@@ -98,4 +105,4 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       { status: 500 }
     );
   }
-}
+}, { route: "POST /api/admin/services/[id]/verify" });
