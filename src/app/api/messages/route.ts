@@ -1,17 +1,17 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { requireActiveMutation } from "@/lib/session-guards";
+import { requireActiveMutation, requireActiveSession } from "@/lib/session-guards";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveSession();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const userId = session.user.id;
 
@@ -76,6 +76,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.messages, session.user.id),
+      "Messages"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const body: unknown = await req.json();
     const parsed = startConvSchema.safeParse(body);

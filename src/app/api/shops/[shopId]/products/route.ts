@@ -1,4 +1,6 @@
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -112,6 +114,12 @@ export async function POST(
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.shopRegistration, session.user.id),
+      "ShopRegistration"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { shopId } = await params;
     const ownership = await verifyOwner(shopId, session.user.id);

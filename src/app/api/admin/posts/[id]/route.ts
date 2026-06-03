@@ -1,9 +1,8 @@
-import { validateCsrfRequest } from "@/lib/csrf";
+import { requireAdmin, requireAdminMutation } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
-import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
-import type { Prisma } from "@prisma/client";
+import type { ModerationStatus, PrivacyLevel } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -11,14 +10,9 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 const updatePostSchema = z.object({
   visibility: z.enum(["PUBLIC", "NEIGHBOURS", "PRIVATE"]).optional(),
-  moderationStatus: z.enum(["ACTIVE", "FLAGGED", "HIDDEN", "DELETED"]).optional(),
-  adminNotes: z.string().optional(),
-  isPinned: z.boolean().optional(),
+  moderationStatus: z.enum(["ACTIVE", "APPROVED", "FLAGGED", "HIDDEN", "DELETED"]).optional(),
 });
 
-// ---------------------------------------------------------------------------
-// GET /api/admin/posts/[id]  — post detail
-// ---------------------------------------------------------------------------
 export async function GET(
   _req: NextRequest,
   { params }: RouteContext
@@ -37,6 +31,7 @@ export async function GET(
         images: true,
         checkInLocation: true,
         visibility: true,
+        moderationStatus: true,
         helpfulCount: true,
         notHelpfulCount: true,
         createdAt: true,
@@ -92,37 +87,30 @@ export async function GET(
   }
 }
 
-// ---------------------------------------------------------------------------
-// PATCH /api/admin/posts/[id]
-// ---------------------------------------------------------------------------
 export async function PATCH(
   req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { id } = await params;
     const body = await req.json();
     const validatedData = updatePostSchema.parse(body);
 
-    let updatedPost;
-    // SCHEMA-FALLBACK: 'moderationStatus', 'adminNotes', 'isPinned' may not exist
-    try {
-      updatedPost = await db.post.update({
-        where: { id },
-        data: validatedData as Prisma.PostUpdateInput,
-      });
-    } catch (e) {
-      // Fallback: update only existing fields (visibility)
-      updatedPost = await db.post.update({
-        where: { id },
-        data: { visibility: validatedData.visibility },
-      });
-    }
+    const updatedPost = await db.post.update({
+      where: { id },
+      data: {
+        ...(validatedData.visibility
+          ? { visibility: validatedData.visibility as PrivacyLevel }
+          : {}),
+        ...(validatedData.moderationStatus
+          ? { moderationStatus: validatedData.moderationStatus as ModerationStatus }
+          : {}),
+      },
+    });
 
     await logAdminAction(
       session.user.id,
@@ -147,38 +135,24 @@ export async function PATCH(
   }
 }
 
-// ---------------------------------------------------------------------------
-// DELETE /api/admin/posts/[id]  — soft delete
-// ---------------------------------------------------------------------------
 export async function DELETE(
   req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { id } = await params;
 
-    // Soft-delete: attempt moderationStatus first, fall back to visibility
-    try {
-      await db.post.update({
-        where: { id },
-        data: {
-          // @ts-ignore
-          deletedAt: new Date(),
-          // @ts-ignore
-          moderationStatus: "DELETED",
-        },
-      });
-    } catch (e) {
-      await db.post.update({
-        where: { id },
-        data: { visibility: "PRIVATE" },
-      });
-    }
+    await db.post.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        moderationStatus: "DELETED",
+      },
+    });
 
     await logAdminAction(
       session.user.id,

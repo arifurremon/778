@@ -1,5 +1,4 @@
 import { auth } from "@/lib/auth";
-import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendNotificationEmailIfAllowed } from "@/lib/notification-email";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
@@ -7,7 +6,7 @@ import { canUserViewPost } from "@/lib/post-visibility";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
-import { requireActiveSession } from "@/lib/session-guards";
+import { requireActiveMutation, requireActiveSession } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -34,7 +33,12 @@ export async function GET(
   try {
     const { postId } = await params;
     const session = await auth();
-    const viewerUserId = session?.user?.id ?? null;
+    let viewerUserId: string | null = null;
+    if (session?.user?.id) {
+      const active = await requireActiveSession();
+      if (active.error) return active.error;
+      viewerUserId = active.session.user.id;
+    }
 
     const post = await db.post.findUnique({
       where: { id: postId },
@@ -87,11 +91,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
 ): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
   try {
-    const active = await requireActiveSession();
+    const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
 

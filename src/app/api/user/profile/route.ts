@@ -3,6 +3,8 @@ import { cachedQuery, invalidateCache } from "@/lib/cache";
 import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -105,6 +107,12 @@ export const PATCH = auth(async (req) => {
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.profile, userId),
+      "Profile"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const dbUser = await db.user.findUnique({
       where: { id: userId },

@@ -1,3 +1,4 @@
+import { persistSecurityAuditEvent, getClientIp } from "@/lib/security-audit";
 import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
@@ -81,6 +82,14 @@ try {
     });
 
     await sendPasswordResetEmail(user.email, buildResetUrl(req, rawToken));
+
+    await persistSecurityAuditEvent({
+      action: "PASSWORD_RESET_REQUEST",
+      userId: user.id,
+      email: user.email,
+      ipAddress: ip,
+      userAgent: headersList.get("user-agent"),
+    });
 
     return NextResponse.json({ success: true, message: GENERIC_RESET_MESSAGE });
   } catch (error) {

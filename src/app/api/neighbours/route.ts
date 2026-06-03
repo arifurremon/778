@@ -1,17 +1,16 @@
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { requireActiveSession } from "@/lib/session-guards";
 
 // ---------------------------------------------------------------------------
 // GET /api/neighbours  — current user's accepted neighbours
 // ---------------------------------------------------------------------------
 export async function GET(_req: NextRequest): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveSession();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const userId = session.user.id;
 

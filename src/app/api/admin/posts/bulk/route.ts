@@ -1,6 +1,5 @@
-import { validateCsrfRequest } from "@/lib/csrf";
+import { requireAdminMutation } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
-import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
@@ -15,12 +14,10 @@ const bulkSchema = z.object({
  * POST /api/admin/posts/bulk — hide or soft-delete multiple posts.
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
   try {
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const body = await req.json();
     const { action, ids } = bulkSchema.parse(body);

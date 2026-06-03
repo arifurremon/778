@@ -1,28 +1,30 @@
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/rbac";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import type { Role } from "@prisma/client";
+
+const MFA_ENFORCED =
+  process.env.ADMIN_MFA_REQUIRED === "true" ||
+  (process.env.NODE_ENV === "production" && process.env.ADMIN_MFA_REQUIRED !== "false");
+
+type AdminDbUser = {
+  id: string;
+  isAdmin: boolean;
+  role: Role;
+  mfaEnabled: boolean;
+  deletedAt: Date | null;
+  suspendedAt: Date | null;
+};
 
 /**
  * Ensures the current request belongs to an active administrator.
- *
- * Security model:
- *   1. Verify a valid JWT session exists (authentication).
- *   2. Perform a live database lookup against the User record using the
- *      session user ID (authorization). The DB is the single source of
- *      truth for the isAdmin flag — the JWT claim is NOT trusted for
- *      privilege checks.
- *
- * This eliminates the privilege-escalation window where a revoked admin
- * could retain access until their JWT expired (up to 30 days).
- *
- * Returns { session, dbUser } on success, or { error: NextResponse } on failure.
- * Callers must check for `error` before proceeding:
- *
- *   const result = await requireAdmin();
- *   if (result.error) return result.error;
- *   const { session, dbUser } = result;
+ * DB is the source of truth for role/isAdmin — JWT claims are not trusted.
  */
-export async function requireAdmin() {
+export async function requireAdmin(options?: { skipMfaCheck?: boolean }) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -31,15 +33,19 @@ export async function requireAdmin() {
     };
   }
 
-  // Live DB verification — the JWT isAdmin claim is intentionally ignored here.
-  // We fetch only the two scalar fields we need; never over-fetch.
   const dbUser = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, isAdmin: true, deletedAt: true, suspendedAt: true },
-  });
+    select: {
+      id: true,
+      isAdmin: true,
+      role: true,
+      mfaEnabled: true,
+      deletedAt: true,
+      suspendedAt: true,
+    },
+  }) as AdminDbUser | null;
 
   if (!dbUser) {
-    // User was deleted from the DB but still holds a valid JWT.
     return {
       error: NextResponse.json(
         { error: "Forbidden: Account not found" },
@@ -57,8 +63,7 @@ export async function requireAdmin() {
     };
   }
 
-  if (!dbUser.isAdmin) {
-    // isAdmin was revoked in the DB since the JWT was issued.
+  if (!isAdminRole(dbUser.role, dbUser.isAdmin)) {
     return {
       error: NextResponse.json(
         { error: "Forbidden: Admin access required" },
@@ -67,5 +72,44 @@ export async function requireAdmin() {
     };
   }
 
+  if (
+    MFA_ENFORCED &&
+    !options?.skipMfaCheck &&
+    !dbUser.mfaEnabled &&
+    (dbUser.role === "ADMIN" || dbUser.role === "SUPERADMIN" || dbUser.isAdmin)
+  ) {
+    return {
+      error: NextResponse.json(
+        {
+          error: "Multi-factor authentication setup required for admin access.",
+          code: "MFA_REQUIRED",
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
   return { session, dbUser };
+}
+
+/** CSRF + admin check + rate limit for admin mutations. */
+export async function requireAdminMutation(req: NextRequest) {
+  const csrfError = validateCsrfRequest(req);
+  if (csrfError) {
+    return { error: csrfError };
+  }
+
+  const admin = await requireAdmin();
+  if (admin.error) return admin;
+
+  const rateLimitResponse = await enforceRateLimit(
+    () => runRateLimit(rateLimiters.admin, admin.session.user.id),
+    "AdminMutation",
+    { quotaExceededMessage: "Admin action rate limit reached (60/min)." }
+  );
+  if (rateLimitResponse) {
+    return { error: rateLimitResponse };
+  }
+
+  return admin;
 }

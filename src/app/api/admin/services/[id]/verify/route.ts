@@ -1,5 +1,4 @@
-import { validateCsrfRequest } from "@/lib/csrf";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdminMutation } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
@@ -12,12 +11,10 @@ import { NextRequest, NextResponse } from "next/server";
  * Approves a service provider application.
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
   try {
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { id } = await params;
 

@@ -21,9 +21,9 @@ vi.mock("@/lib/mail", () => ({
   sendNotificationEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockRequireAdmin = vi.fn();
+const mockRequireAdminMutation = vi.fn();
 vi.mock("@/lib/admin-auth", () => ({
-  requireAdmin: () => mockRequireAdmin(),
+  requireAdminMutation: () => mockRequireAdminMutation(),
 }));
 
 import { POST as bulkMessage } from "@/app/api/admin/users/bulk-message/route";
@@ -44,9 +44,8 @@ function makePostRequest(body: Record<string, unknown>): NextRequest {
 describe("Admin bulk messaging API — Integration", () => {
   beforeEach(() => {
     resetPrismaMock();
-    mockRequireAdmin.mockResolvedValue({
+    mockRequireAdminMutation.mockResolvedValue({
       session: { user: { id: "admin-1" } },
-      error: null,
     });
   });
 

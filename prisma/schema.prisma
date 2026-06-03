@@ -30,6 +30,9 @@ model User {
   // FIX(P1): Changed from String? to DateTime? for correct temporal queries.
   joinDate        DateTime?
   isAdmin         Boolean   @default(false)
+  role            Role      @default(USER)
+  mfaSecret       String?
+  mfaEnabled      Boolean   @default(false)
 
   // Security & Lifecycle
   resetToken       String?
@@ -377,6 +380,15 @@ model ExpertService {
   @@index([location])
   @@index([isVerified])
   @@index([category, isVerified])
+}
+
+enum Role {
+  USER
+  SELLER
+  EXPERT
+  MODERATOR
+  ADMIN
+  SUPERADMIN
 }
 
 enum RegistrationStatus {

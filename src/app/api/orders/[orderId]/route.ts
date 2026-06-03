@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -25,6 +27,12 @@ export async function PATCH(
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.orders, session.user.id),
+      "Orders"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { orderId } = await params;
 

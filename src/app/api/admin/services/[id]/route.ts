@@ -1,6 +1,5 @@
-import { validateCsrfRequest } from "@/lib/csrf";
+import { requireAdmin, requireAdminMutation } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
-import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
@@ -90,10 +89,9 @@ export async function PATCH(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { id } = await params;
     const body = await req.json();
@@ -127,34 +125,34 @@ export async function DELETE(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { id } = await params;
 
-    // SCHEMA-FALLBACK: 'deletedAt' or 'isVerified' may not exist — verify schema
-    try {
-      await db.expertService.update({
-        where: { id },
-        data: {
-          // @ts-ignore
-          deletedAt: new Date(),
-          // @ts-ignore
-          isVerified: false,
-        },
-      });
-    } catch (e) {
-      // Fallback: update user's registration status
-      const service = await db.expertService.findUnique({ where: { id } });
-      if (service) {
-        await db.user.update({
-          where: { id: service.userId },
-          data: { isServiceProvider: false, serviceRegistrationStatus: "NONE" },
-        });
-      }
+    const service = await db.expertService.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+
+    if (!service) {
+      return NextResponse.json({ error: "Service not found." }, { status: 404 });
     }
+
+    await db.expertService.update({
+      where: { id },
+      data: {
+        isVerified: false,
+        rejectedAt: new Date(),
+        rejectionReason: "Removed by administrator",
+      },
+    });
+
+    await db.user.update({
+      where: { id: service.userId },
+      data: { isServiceProvider: false, serviceRegistrationStatus: "NONE" },
+    });
 
     await logAdminAction(
       session.user.id,

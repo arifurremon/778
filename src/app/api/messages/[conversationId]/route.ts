@@ -1,11 +1,10 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { pusher } from "@/lib/pusher";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
-import { requireActiveMutation } from "@/lib/session-guards";
+import { requireActiveMutation, requireActiveSession } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -16,10 +15,9 @@ export async function GET(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveSession();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const { conversationId } = await params;
     const { searchParams } = req.nextUrl;

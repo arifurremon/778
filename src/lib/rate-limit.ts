@@ -161,6 +161,41 @@ export const rateLimiters = {
     limiter: Ratelimit.slidingWindow(30, "1 m"),
     analytics: true,
   })),
+  admin: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(60, "1 m"),
+    analytics: true,
+  })),
+  profile: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(10, "15 m"),
+    analytics: true,
+  })),
+  notifications: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(60, "15 m"),
+    analytics: true,
+  })),
+  activity: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(60, "15 m"),
+    analytics: true,
+  })),
+  blocks: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(20, "1 h"),
+    analytics: true,
+  })),
+  account: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(3, "1 h"),
+    analytics: true,
+  })),
+  savedPosts: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(30, "15 m"),
+    analytics: true,
+  })),
 };
 
 /**

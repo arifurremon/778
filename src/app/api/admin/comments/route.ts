@@ -1,7 +1,6 @@
-import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdmin, requireAdminMutation } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import type { Prisma } from "@prisma/client";
 
@@ -73,12 +72,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 // DELETE /api/admin/comments  — bulk delete comments by IDs
 // ---------------------------------------------------------------------------
 export async function DELETE(req: NextRequest): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
-try {
-    const { error } = await requireAdmin();
-    if (error) return error;
+  try {
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
 
     const body = await req.json() as { commentIds: string[] };
     if (!Array.isArray(body.commentIds) || body.commentIds.length === 0) {

@@ -1,5 +1,4 @@
-import { validateCsrfRequest } from "@/lib/csrf";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdminMutation } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { appSettingsFromPrivacy } from "@/lib/app-settings";
 import { db } from "@/lib/db";
@@ -20,12 +19,10 @@ const bulkMessageSchema = z.object({
 
 // POST /api/admin/users/bulk-message — send system alerts or emails to selected users
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
   try {
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const body: unknown = await req.json();
     const parsed = bulkMessageSchema.safeParse(body);

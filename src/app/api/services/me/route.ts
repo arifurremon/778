@@ -1,6 +1,6 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { requireActiveSession } from "@/lib/session-guards";
 import { NextResponse } from "next/server";
 
 const expertServiceSelect = {
@@ -18,10 +18,9 @@ const expertServiceSelect = {
 // GET /api/services/me — current user's expert service profile
 export async function GET(): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveSession();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const service = await db.expertService.findUnique({
       where: { userId: session.user.id },

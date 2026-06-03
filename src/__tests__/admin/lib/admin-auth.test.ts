@@ -15,6 +15,15 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
+const adminSelect = {
+  id: true,
+  isAdmin: true,
+  role: true,
+  mfaEnabled: true,
+  deletedAt: true,
+  suspendedAt: true,
+};
+
 describe("requireAdmin() Library Utility", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -43,7 +52,7 @@ describe("requireAdmin() Library Utility", () => {
     expect(result.error?.status).toBe(403);
     expect(db.user.findUnique).toHaveBeenCalledWith({
       where: { id: "missing-user" },
-      select: { id: true, isAdmin: true, deletedAt: true, suspendedAt: true },
+      select: adminSelect,
     });
 
     const body = await result.error?.json();
@@ -57,6 +66,8 @@ describe("requireAdmin() Library Utility", () => {
     vi.mocked(db.user.findUnique).mockResolvedValue({
       id: "user-1",
       isAdmin: false,
+      role: "USER",
+      mfaEnabled: false,
       deletedAt: null,
       suspendedAt: null,
     } as any);
@@ -75,6 +86,8 @@ describe("requireAdmin() Library Utility", () => {
     const mockDbUser = {
       id: "admin-1",
       isAdmin: true,
+      role: "ADMIN",
+      mfaEnabled: true,
       deletedAt: null,
       suspendedAt: null,
     };

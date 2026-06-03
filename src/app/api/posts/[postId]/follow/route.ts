@@ -1,6 +1,8 @@
 import { requireActiveMutation } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = { params: Promise<{ postId: string }> };
@@ -18,6 +20,13 @@ export async function POST(req: NextRequest, { params }: RouteContext): Promise<
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.savedPosts, session.user.id),
+      "SavedPosts"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { postId } = await params;
 
     const post = await assertPostExists(postId);
@@ -52,6 +61,13 @@ export async function DELETE(req: NextRequest, { params }: RouteContext): Promis
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.savedPosts, session.user.id),
+      "SavedPosts"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { postId } = await params;
 
     await db.followedPost.deleteMany({

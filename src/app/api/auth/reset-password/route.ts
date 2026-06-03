@@ -1,3 +1,4 @@
+import { persistSecurityAuditEvent } from "@/lib/security-audit";
 import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
@@ -79,6 +80,13 @@ try {
     if (updateResult.count !== 1) {
       return NextResponse.json({ error: "Invalid or expired token" }, { status: 400 });
     }
+
+    await persistSecurityAuditEvent({
+      action: "PASSWORD_RESET_SUCCESS",
+      userId: user.id,
+      ipAddress: ip,
+      userAgent: headersList.get("user-agent"),
+    });
 
     return NextResponse.json({ success: true, message: "Password updated successfully" });
   } catch (error) {

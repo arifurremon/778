@@ -3,6 +3,8 @@ import { bookingSelect, serializeServiceBooking } from "@/lib/booking-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -27,6 +29,13 @@ export async function PATCH(req: NextRequest, { params }: RouteContext): Promise
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.bookings, session.user.id),
+      "Bookings"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { bookingId } = await params;
 
     const body: unknown = await req.json();

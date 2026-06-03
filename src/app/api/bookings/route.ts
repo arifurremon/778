@@ -1,16 +1,15 @@
-import { auth } from "@/lib/auth";
 import { bookingSelect, serializeServiceBooking } from "@/lib/booking-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { requireActiveSession } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/bookings — authenticated client's bookings
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveSession();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const page = Math.max(1, parseInt(req.nextUrl.searchParams.get("page") ?? "1", 10));
     const limit = Math.min(

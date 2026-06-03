@@ -1,7 +1,6 @@
-import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdmin, requireAdminMutation } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { logAdminAction } from "@/lib/audit-log";
 
@@ -96,10 +95,9 @@ export async function PATCH(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { id } = await params;
     const body = await req.json() as { isVerified?: boolean; trustScore?: number; [key: string]: unknown };
@@ -137,29 +135,20 @@ export async function DELETE(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { id } = await params;
 
-    // SCHEMA-FALLBACK: 'deletedAt' may not exist — verify schema
-    try {
-      await db.shop.update({
-        where: { id },
-        data: {
-          // @ts-ignore
-          deletedAt: new Date(),
-        },
-      });
-    } catch (e) {
-      // Fallback: hide the shop
-      await db.shop.update({
-        where: { id },
-        data: { isVerified: false },
-      });
-    }
+    await db.shop.update({
+      where: { id },
+      data: {
+        isVerified: false,
+        rejectedAt: new Date(),
+        rejectionReason: "Removed by administrator",
+      },
+    });
 
     await logAdminAction(
       session.user.id,

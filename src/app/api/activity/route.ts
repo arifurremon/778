@@ -7,6 +7,8 @@ import {
 } from "@/lib/activity-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { NextRequest, NextResponse } from "next/server";
 
 const VALID_TABS = new Set<ActivityTab>(["all", "likes", "comments", "saved", "system"]);
@@ -67,6 +69,12 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.activity, session.user.id),
+      "Activity"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     await db.activityLog.updateMany({
       where: { userId: session.user.id, isRead: false },

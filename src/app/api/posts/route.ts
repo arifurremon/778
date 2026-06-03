@@ -1,6 +1,6 @@
 import { validateCsrfRequest } from "@/lib/csrf";
 import { auth } from "@/lib/auth";
-import { requireActiveMutation } from "@/lib/session-guards";
+import { requireActiveMutation, requireActiveSession } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
@@ -191,7 +191,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     // For unauthenticated requests both values remain null / empty, and the
     // where clause degrades gracefully to PUBLIC-only.
     const session = await auth();
-    const userId = session?.user?.id ?? null;
+    let userId: string | null = null;
+    if (session?.user?.id) {
+      const active = await requireActiveSession();
+      if (active.error) return active.error;
+      userId = active.session.user.id;
+    }
     const neighborIds = userId ? await resolveNeighborIds(userId) : [];
     const blockedIds = userId ? await resolveBlockedIds(userId) : [];
 

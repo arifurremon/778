@@ -2,6 +2,8 @@ import { requireActiveMutation } from "@/lib/session-guards";
 import { activitySelect, serializeActivityLog } from "@/lib/activity-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = { params: Promise<{ activityId: string }> };
@@ -12,6 +14,13 @@ export async function PATCH(req: NextRequest, { params }: RouteContext): Promise
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.activity, session.user.id),
+      "Activity"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { activityId } = await params;
 
     const existing = await db.activityLog.findUnique({

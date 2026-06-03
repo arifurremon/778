@@ -1,5 +1,4 @@
-import { validateCsrfRequest } from "@/lib/csrf";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdminMutation } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
@@ -16,17 +15,14 @@ const bulkActionSchema = z.object({
  * Performs bulk operations on users within a transaction.
  */
 export async function POST(req: NextRequest) {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
-try {
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+  try {
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const body = await req.json();
     const { userIds, action, reason } = bulkActionSchema.parse(body);
 
-    // Prevent self-action in bulk
     const filteredIds = userIds.filter(id => id !== session.user.id);
 
     if (action === 'export') {
@@ -36,11 +32,9 @@ try {
       return NextResponse.json({ data: usersToExport });
     }
 
-    let result;
     if (action === 'delete') {
-      // [cite_start]Handle in a single Prisma transaction. [cite: 71]
-      result = await db.$transaction(
-        filteredIds.map(id => 
+      await db.$transaction(
+        filteredIds.map(id =>
           db.user.update({
             where: { id },
             data: { deletedAt: new Date() }
@@ -48,30 +42,19 @@ try {
         )
       );
     } else if (action === 'suspend') {
-      // SCHEMA-FALLBACK: 'suspendedAt' may not exist — verify schema
-      try {
-        result = await db.$transaction(
-          filteredIds.map(id => 
-            db.user.update({
-              where: { id },
-              data: { 
-                // @ts-ignore
-                suspendedAt: new Date(),
-                // @ts-ignore
-                suspensionReason: reason || "Bulk suspension"
-              }
-            })
-          )
-        );
-      } catch (err) {
-        return NextResponse.json({ 
-          error: "Schema fields for suspension are missing. Operation aborted.",
-          fallback: true 
-        }, { status: 400 });
-      }
+      await db.$transaction(
+        filteredIds.map(id =>
+          db.user.update({
+            where: { id },
+            data: {
+              suspendedAt: new Date(),
+              suspensionReason: reason || "Bulk suspension"
+            }
+          })
+        )
+      );
     }
 
-    // [cite_start]Every mutation: logAdminAction() [cite: 71]
     await logAdminAction(
       session.user.id,
       `BULK_${action.toUpperCase()}`,
@@ -81,8 +64,8 @@ try {
       req.headers.get("x-forwarded-for") || "unknown"
     );
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       count: filteredIds.length,
       ignoredSelf: userIds.length !== filteredIds.length
     });

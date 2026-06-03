@@ -78,7 +78,6 @@ export const authConfig: NextAuthConfig = {
         // --- Previously missing routes (FIX) ---
         "/register-service",
         "/register-shop",
-        "/employee",
       ].some((path) => nextUrl.pathname.startsWith(path));
 
       const isAdminRoute = nextUrl.pathname.startsWith("/admin");

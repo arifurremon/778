@@ -1,8 +1,9 @@
-import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireActiveUser } from "@/lib/session-guards";
+import { requireActiveMutation } from "@/lib/session-guards";
 
 // ---------------------------------------------------------------------------
 // DELETE /api/posts/[postId]
@@ -11,13 +12,16 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
 ): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
   try {
-    const active = await requireActiveUser();
+    const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session, dbUser } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.posts, session.user.id),
+      "Posts"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { postId } = await params;
 

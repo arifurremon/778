@@ -67,23 +67,23 @@
 **Goal:** Consistent auth guards, RBAC foundation, security questionnaire pass.
 
 ### Tasks
-- [ ] **2.1** Audit all API routes — migrate remaining `auth()` calls to `requireActiveSession` / `requireActiveMutation`.
+- [x] **2.1** Audit all API routes — migrate remaining `auth()` calls to `requireActiveSession` / `requireActiveMutation`.
   - Priority files: `bookings/route.ts`, `messages/**`, `user/saved-posts/route.ts`, any route missing guard.
-- [ ] **2.2** Extend rate limits to all mutation routes (~90 routes audit against `src/lib/rate-limit.ts`).
-- [ ] **2.3** Align `API.md` rate limit docs with actual `rateLimiters` config.
-- [ ] **2.4** Remove all `SCHEMA-FALLBACK` / `@ts-ignore` blocks in admin routes — use typed Prisma fields.
-- [ ] **2.5** Implement nonce-based CSP via middleware (`next.config.ts` TODO).
-- [ ] **2.6** Replace root `SECURITY.md` with real vuln disclosure process + supported versions.
-- [ ] **2.7** Add `Role` enum + `permissions` JSON or join table; migrate `isAdmin` → role-based checks.
-- [ ] **2.8** MFA for admin accounts (TOTP via `@auth/core` or dedicated library).
-- [ ] **2.9** Persist audit events: login, logout, failed login, password reset, admin actions → `AuditLog`.
-- [ ] **2.10** Delete dead code: `/employee`, unused Genkit scripts/deps (or implement properly).
+- [x] **2.2** Extend rate limits to all mutation routes (~90 routes audit against `src/lib/rate-limit.ts`).
+- [x] **2.3** Align `API.md` rate limit docs with actual `rateLimiters` config.
+- [x] **2.4** Remove all `SCHEMA-FALLBACK` / `@ts-ignore` blocks in admin routes — use typed Prisma fields.
+- [x] **2.5** Implement nonce-based CSP via middleware (`next.config.ts` TODO).
+- [x] **2.6** Replace root `SECURITY.md` with real vuln disclosure process + supported versions.
+- [x] **2.7** Add `Role` enum + `permissions` JSON or join table; migrate `isAdmin` → role-based checks.
+- [x] **2.8** MFA for admin accounts (TOTP via `otplib`).
+- [x] **2.9** Persist audit events: login, logout, failed login, password reset, admin actions → `AuditLog`.
+- [x] **2.10** Delete dead code: `/employee`, unused Genkit scripts/deps (or implement properly).
 
 ### Exit Criteria
-- Zero `@ts-ignore` in `src/app/api/admin/**`.
-- 100% mutation routes have session guard + rate limit.
-- MFA enforced for all admin users.
-- Security self-assessment checklist in `PRODUCTION_CHECKLIST.md` 100% checked.
+- [x] Zero `@ts-ignore` in `src/app/api/admin/**`.
+- [x] 100% mutation routes have session guard + rate limit.
+- [x] MFA enforced for all admin users. *(production via `ADMIN_MFA_REQUIRED`; setup at `/api/auth/mfa/*`)*
+- [ ] Security self-assessment checklist in `PRODUCTION_CHECKLIST.md` 100% checked. *(partial — tracked in SECURITY.md)*
 
 ### Score impact: Security 3.0 → 4.5
 

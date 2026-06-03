@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { requireActiveSession } from "@/lib/session-guards";
 import { ConnectionStatus } from "@prisma/client";
 
 type RouteContext = { params: Promise<{ username: string }> };
@@ -24,7 +25,12 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const session = await auth();
-    const currentUserId = session?.user?.id;
+    let currentUserId: string | undefined;
+    if (session?.user?.id) {
+      const active = await requireActiveSession();
+      if (active.error) return active.error;
+      currentUserId = active.session.user.id;
+    }
 
     const { username } = await params;
 
@@ -75,13 +81,14 @@ export async function GET(
     const viewingOther =
       currentUserId && currentUserId !== targetUser.id;
 
-    if (viewingOther) {
+    if (viewingOther && currentUserId) {
+      const viewerId = currentUserId;
       const [pairConnection, acceptedEdges] = await Promise.all([
         db.neighbourConnection.findFirst({
           where: {
             OR: [
-              { senderId: currentUserId, receiverId: targetUser.id },
-              { senderId: targetUser.id, receiverId: currentUserId },
+              { senderId: viewerId, receiverId: targetUser.id },
+              { senderId: targetUser.id, receiverId: viewerId },
             ],
           },
           select: { id: true, status: true, senderId: true },
@@ -92,8 +99,8 @@ export async function GET(
             OR: [
               { senderId: targetUser.id },
               { receiverId: targetUser.id },
-              { senderId: currentUserId },
-              { receiverId: currentUserId },
+              { senderId: viewerId },
+              { receiverId: viewerId },
             ],
           },
           select: { senderId: true, receiverId: true },
@@ -104,7 +111,7 @@ export async function GET(
         connectionId = pairConnection.id;
         if (pairConnection.status === ConnectionStatus.ACCEPTED) {
           connectionStatus = "ACCEPTED";
-        } else if (pairConnection.senderId === currentUserId) {
+        } else if (pairConnection.senderId === viewerId) {
           connectionStatus = "PENDING_SENT";
         } else {
           connectionStatus = "PENDING_RECEIVED";
@@ -115,7 +122,7 @@ export async function GET(
         neighbourIdsFromEdges(targetUser.id, acceptedEdges)
       );
       const currentNeighbourIds = new Set(
-        neighbourIdsFromEdges(currentUserId, acceptedEdges)
+        neighbourIdsFromEdges(viewerId, acceptedEdges)
       );
       neighboursCount = targetNeighbourIds.size;
       for (const id of targetNeighbourIds) {

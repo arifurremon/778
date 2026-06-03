@@ -1,8 +1,9 @@
-import { validateCsrfRequest } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
-import { requireActiveUser } from "@/lib/session-guards";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { requireActiveMutation } from "@/lib/session-guards";
 
 type RouteContext = { params: Promise<{ postId: string; commentId: string }> };
 
@@ -19,13 +20,16 @@ export async function POST(
   req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
   try {
-    const active = await requireActiveUser();
+    const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.reactions, session.user.id),
+      "Reactions"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { postId, commentId } = await params;
     const userId = session.user.id;

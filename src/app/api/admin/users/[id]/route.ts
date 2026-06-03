@@ -1,8 +1,7 @@
-import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdmin, requireAdminMutation } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { logAdminAction } from "@/lib/audit-log";
 import type { Prisma } from "@prisma/client";
@@ -119,10 +118,9 @@ export async function PATCH(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { id } = await params;
 
@@ -185,10 +183,9 @@ export async function DELETE(
   { params }: RouteContext
 ): Promise<NextResponse> {
   try {
-    const csrfError = validateCsrfRequest(req);
-    if (csrfError) return csrfError;
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { id } = await params;
 

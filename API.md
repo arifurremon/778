@@ -95,12 +95,26 @@ Retry-After: 900
 }
 ```
 
-| Endpoint Group | Limit | Window |
-|---------------|-------|--------|
-| `POST /api/auth/register` | 5 requests | 15 minutes (per IP) |
-| `POST /api/auth/forgot-password` | 5 requests | 15 minutes (per IP) |
-| `POST /api/posts` | 10 requests | 1 hour (per user) |
-| All other endpoints | 100 requests | 1 minute (per IP) |
+| Endpoint Group | Limit | Window | Key |
+|---------------|-------|--------|-----|
+| `POST /api/auth/register` | 5 | 15 min | IP |
+| `POST /api/auth/signin` (credentials) | 10 | 15 min | IP + email |
+| `POST /api/auth/forgot-password` | 3 | 15 min | IP + email |
+| `POST /api/auth/reset-password` | 5 | 15 min | IP |
+| `POST /api/auth/resend-verification` | 3 | 1 hour | IP |
+| `POST /api/posts` | 10 | 1 hour | user ID |
+| `POST /api/orders` | 5 | 1 hour | user ID |
+| `POST /api/messages/**` | 30 | 1 min | user ID |
+| `POST /api/posts/*/comments` | 30 | 15 min | user ID |
+| `POST /api/posts/*/react` | 60 | 15 min | user ID |
+| `POST /api/neighbours/**` | 10–20 | 1 hour | user ID |
+| `POST /api/bookings/**` | 10 | 1 hour | user ID |
+| `POST /api/shops` (register) | 3 | 1 hour | user ID |
+| `POST /api/services` (register) | 3 | 1 hour | user ID |
+| `POST /api/contact`, `/suggestions` | 3–5 | 15 min–1 hr | user ID |
+| `GET /api/directory`, `/emergency` | 60 | 1 min | IP |
+| `POST /api/admin/**` | 60 | 1 min | admin user ID |
+| `POST /api/pusher/auth` | 30 | 1 min | user ID |
 
 ---
 

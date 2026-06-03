@@ -2,6 +2,8 @@ import { requireActiveMutation } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { reviewSelect, serializeProductReview } from "@/lib/review-utils";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
@@ -19,6 +21,13 @@ export async function PATCH(req: NextRequest, { params }: RouteContext): Promise
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.reviews, session.user.id),
+      "Reviews"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { reviewId } = await params;
 
     const body: unknown = await req.json();

@@ -1,16 +1,15 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { reviewSelect, serializeProductReview } from "@/lib/review-utils";
+import { requireActiveSession } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/reviews/seller — authenticated seller's product reviews
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const active = await requireActiveSession();
+    if (active.error) return active.error;
+    const { session } = active;
 
     const shop = await db.shop.findUnique({
       where: { userId: session.user.id },

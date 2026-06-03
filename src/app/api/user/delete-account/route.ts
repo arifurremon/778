@@ -1,17 +1,23 @@
 import { db } from "@/lib/db";
-import { requireActiveUser } from "@/lib/session-guards";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
-import { validateCsrfRequest } from "@/lib/csrf";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(req: NextRequest) {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
-try {
-    const active = await requireActiveUser();
+  try {
+    const active = await requireActiveMutation(req);
     if (active.error) return active.error;
-    const userId = active.session.user.id;
+    const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.account, session.user.id),
+      "Account"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const userId = session.user.id;
 
     await db.session.deleteMany({ where: { userId } });
 

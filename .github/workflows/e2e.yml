@@ -39,6 +39,7 @@ jobs:
       NEXT_PUBLIC_APP_URL: http://localhost:9002
       E2E_USER_EMAIL: e2e@chattala.test
       E2E_USER_PASSWORD: E2eSecure123!
+      ADMIN_MFA_REQUIRED: "false"
       CI: true
 
     steps:

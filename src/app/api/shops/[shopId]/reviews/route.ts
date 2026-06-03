@@ -10,7 +10,7 @@ import {
   reviewSelect,
   serializeProductReview,
 } from "@/lib/review-utils";
-import { requireActiveMutation } from "@/lib/session-guards";
+import { requireActiveMutation, requireActiveSession } from "@/lib/session-guards";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -93,13 +93,19 @@ export async function GET(req: NextRequest, { params }: RouteContext): Promise<N
     }
 
     const session = await auth();
+    let viewerUserId: string | undefined;
+    if (session?.user?.id) {
+      const active = await requireActiveSession();
+      if (active.error) return active.error;
+      viewerUserId = active.session.user.id;
+    }
     const [reviews, eligibility] = await Promise.all([
       db.productReview.findMany({
         where: { shopId, scope },
         orderBy: { createdAt: "desc" },
         select: reviewSelect,
       }),
-      getReviewEligibility(shopId, scope, session?.user?.id, shop.userId),
+      getReviewEligibility(shopId, scope, viewerUserId, shop.userId),
     ]);
 
     const serialized = reviews.map(serializeProductReview);

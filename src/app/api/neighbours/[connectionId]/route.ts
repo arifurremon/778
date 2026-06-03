@@ -1,4 +1,6 @@
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
@@ -16,6 +18,12 @@ export async function DELETE(
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.neighbourActions, session.user.id),
+      "NeighbourActions"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { connectionId } = await params;
 

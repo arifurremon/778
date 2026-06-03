@@ -1,5 +1,4 @@
-import { requireAdmin } from "@/lib/admin-auth";
-import { validateCsrfRequest } from "@/lib/csrf";
+import { requireAdminMutation } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
@@ -18,12 +17,10 @@ export async function POST(
   req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
   try {
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const { userId } = await params;
 

@@ -1,4 +1,6 @@
 import { authConfig } from "@/auth.config";
+import { persistSecurityAuditEvent, getClientIp } from "@/lib/security-audit";
+import { isAdminRole } from "@/lib/rbac";
 import { db } from "@/lib/db";
 import { rateLimiters } from "@/lib/rate-limit";
 import { PrismaAdapter } from "@auth/prisma-adapter";
@@ -72,11 +74,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        totpCode: { label: "TOTP Code", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
         const headersList = await headers();
+        const userAgent = headersList.get("user-agent");
+        const clientIp = getClientIp(headersList);
 
         // Extract the real client IP from the x-forwarded-for chain.
         //
@@ -137,9 +142,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email },
         });
 
-        if (!user || !user.password) return null;
+        if (!user || !user.password) {
+          await persistSecurityAuditEvent({
+            action: "USER_LOGIN_FAILED",
+            email,
+            ipAddress: clientIp,
+            userAgent,
+            details: { reason: "unknown_account" },
+          });
+          return null;
+        }
 
         if (user.suspendedAt !== null) {
+          await persistSecurityAuditEvent({
+            action: "USER_LOGIN_FAILED",
+            userId: user.id,
+            email,
+            ipAddress: clientIp,
+            userAgent,
+            details: { reason: "suspended" },
+          });
           throw new Error("AccountSuspended");
         }
 
@@ -147,11 +169,64 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           credentials.password as string,
           user.password
         );
-        if (!passwordsMatch) return null;
+        if (!passwordsMatch) {
+          await persistSecurityAuditEvent({
+            action: "USER_LOGIN_FAILED",
+            userId: user.id,
+            email,
+            ipAddress: clientIp,
+            userAgent,
+            details: { reason: "invalid_password" },
+          });
+          return null;
+        }
 
         if (!user.emailVerified) {
+          await persistSecurityAuditEvent({
+            action: "USER_LOGIN_FAILED",
+            userId: user.id,
+            email,
+            ipAddress: clientIp,
+            userAgent,
+            details: { reason: "email_not_verified" },
+          });
           throw new Error("EmailNotVerified");
         }
+
+        if (
+          user.mfaEnabled &&
+          user.mfaSecret &&
+          isAdminRole(user.role, user.isAdmin)
+        ) {
+          const totpCode = (credentials.totpCode as string | undefined)?.trim();
+          if (!totpCode) {
+            throw new Error("MfaRequired");
+          }
+          const { verify } = await import("otplib");
+          const result = await verify({
+            token: totpCode,
+            secret: user.mfaSecret,
+          });
+          if (!result.valid) {
+            await persistSecurityAuditEvent({
+              action: "USER_LOGIN_FAILED",
+              userId: user.id,
+              email,
+              ipAddress: clientIp,
+              userAgent,
+              details: { reason: "invalid_mfa" },
+            });
+            throw new Error("InvalidMfaCode");
+          }
+        }
+
+        await persistSecurityAuditEvent({
+          action: "USER_LOGIN_SUCCESS",
+          userId: user.id,
+          email,
+          ipAddress: clientIp,
+          userAgent,
+        });
 
         return {
           id: user.id,

@@ -1,6 +1,8 @@
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
+process.env.ADMIN_MFA_REQUIRED = "false";
+
 // Mock matchMedia for jsdom
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

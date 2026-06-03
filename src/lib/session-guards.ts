@@ -18,12 +18,13 @@ export async function requireActiveSession() {
 
   const dbUser = await db.user.findUnique({
     where: { id: session.user.id },
-    select: {
-      id: true,
-      isAdmin: true,
-      deletedAt: true,
-      suspendedAt: true,
-    },
+        select: {
+          id: true,
+          isAdmin: true,
+          role: true,
+          deletedAt: true,
+          suspendedAt: true,
+        },
   });
 
   if (!dbUser || dbUser.deletedAt !== null) {

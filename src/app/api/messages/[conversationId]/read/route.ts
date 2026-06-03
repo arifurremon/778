@@ -1,7 +1,8 @@
-import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
-import { requireActiveUser } from "@/lib/session-guards";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = { params: Promise<{ conversationId: string }> };
@@ -10,13 +11,16 @@ export async function PATCH(
   req: NextRequest,
   { params }: RouteContext
 ): Promise<NextResponse> {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
   try {
-    const active = await requireActiveUser();
+    const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.messages, session.user.id),
+      "Messages"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { conversationId } = await params;
 

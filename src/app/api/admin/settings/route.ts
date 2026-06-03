@@ -1,5 +1,4 @@
-import { validateCsrfRequest } from "@/lib/csrf";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdmin, requireAdminMutation } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
@@ -18,49 +17,26 @@ const settingsSchema = z.object({
   featuresEnabled: z.record(z.boolean()).optional(),
 });
 
-/**
- * GET /api/admin/settings
- * Retrieves global platform settings, creating defaults if missing.
- */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const { error } = await requireAdmin();
     if (error) return error;
 
-    let settings = null;
-
-    try {
-      // SCHEMA-FALLBACK: 'settings' may not exist — verify schema
-      // @ts-ignore
-      settings = await db.settings.upsert({
-        where: { id: "global" },
-        update: {},
-        create: {
-          id: "global",
-          siteName: "The Chattala",
-          siteDescription: "A hyper-local community platform",
-          contactEmail: "support@thechattala.com",
-          maintenanceMode: false,
-          registrationOpen: true,
-          emailVerificationReq: true,
-          featuresEnabled: { posts: true, marketplace: true, services: true, messaging: false },
-          defaultPostVisibility: "PUBLIC"
-        }
-      });
-    } catch (e) {
-      // Provide a safe default memory object
-      settings = {
+    const settings = await db.settings.upsert({
+      where: { id: "global" },
+      update: {},
+      create: {
+        id: "global",
         siteName: "The Chattala",
-        siteDescription: "",
-        contactEmail: "",
-        supportPhone: "",
+        siteDescription: "A hyper-local community platform",
+        contactEmail: "support@thechattala.com",
         maintenanceMode: false,
         registrationOpen: true,
         emailVerificationReq: true,
         featuresEnabled: { posts: true, marketplace: true, services: true, messaging: false },
         defaultPostVisibility: "PUBLIC"
-      };
-    }
+      }
+    });
 
     return NextResponse.json({ success: true, data: settings });
   } catch (err) {
@@ -75,38 +51,23 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/**
- * PATCH /api/admin/settings
- * Updates global platform settings.
- */
 export async function PATCH(req: NextRequest) {
-  const csrfError = validateCsrfRequest(req);
-  if (csrfError) return csrfError;
-
-try {
-    const { session, error } = await requireAdmin();
-    if (error || !session) return error;
+  try {
+    const admin = await requireAdminMutation(req);
+    if (admin.error) return admin.error;
+    const { session } = admin;
 
     const body = await req.json();
     const validatedData = settingsSchema.parse(body);
 
-    let updatedSettings = null;
+    const updatedSettings = await db.settings.update({
+      where: { id: "global" },
+      data: {
+        ...validatedData,
+        updatedBy: session.user.id
+      }
+    });
 
-    try {
-      // SCHEMA-FALLBACK: 'settings' may not exist — verify schema
-      // @ts-ignore
-      updatedSettings = await db.settings.update({
-        where: { id: "global" },
-        data: {
-          ...validatedData,
-          updatedBy: session.user.id
-        }
-      });
-    } catch (e) {
-      updatedSettings = validatedData;
-    }
-
-    // Determine what action to log
     let actionType = "UPDATE_SETTINGS";
     if (validatedData.maintenanceMode !== undefined) {
       actionType = "TOGGLE_MAINTENANCE";
