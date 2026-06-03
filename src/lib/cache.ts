@@ -146,3 +146,31 @@ export async function invalidateCache(...namespaces: string[]): Promise<void> {
     })
   );
 }
+
+export function hasRedisConfigs(): boolean {
+  return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+}
+
+export async function pingRedis(): Promise<{ ok: boolean; details: string }> {
+  if (!redis) {
+    return {
+      ok: false,
+      details: hasRedisConfigs()
+        ? "Redis client failed to initialize"
+        : "UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN is missing",
+    };
+  }
+
+  try {
+    const pong = await redis.ping();
+    return {
+      ok: pong === "PONG",
+      details: pong === "PONG" ? "Redis responded to PING" : `Unexpected response: ${String(pong)}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      details: error instanceof Error ? error.message : "Redis ping failed",
+    };
+  }
+}

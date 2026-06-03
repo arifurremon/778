@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { api } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/page-header";
-import { CHITTAGONG_AREAS } from "@/lib/mock-data";
+import { CHITTAGONG_AREAS } from "@/lib/constants/chittagong-areas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
 import {

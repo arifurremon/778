@@ -98,3 +98,7 @@ if (missingVars.length > 0) {
 }
 
 export { pusher };
+
+export function hasPusherConfigs(): boolean {
+  return missingVars.length === 0;
+}

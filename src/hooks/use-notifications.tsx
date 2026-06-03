@@ -228,14 +228,18 @@ export function useNotifications(pollingIntervalMs = 60_000) {
       setUnreadCount((prev) => prev + 1);
     });
 
-    channel.bind("notification-read", (data: { id: string }) => {
+    channel.bind("notification-read", (data: { id?: string; all?: boolean }) => {
+      if (data.all) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+        return;
+      }
+
+      if (!data.id) return;
+
       setNotifications((prev) =>
         prev.map((n) => (n.id === data.id && !n.isRead ? { ...n, isRead: true } : n))
       );
-      // We only decrement unreadCount if we actually marked it read, but since
-      // we don't have the previous state cleanly here without a ref, we'll
-      // rely on the server truth or re-fetch if things get out of sync. For now,
-      // just re-fetch to make sure count is accurate, or optimistically decrement:
       setUnreadCount((prev) => Math.max(0, prev - 1));
     });
 

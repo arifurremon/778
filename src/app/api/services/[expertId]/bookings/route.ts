@@ -2,6 +2,7 @@ import { requireActiveMutation } from "@/lib/session-guards";
 import { bookingSelect, serializeServiceBooking } from "@/lib/booking-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -56,36 +57,30 @@ export async function POST(req: NextRequest, { params }: RouteContext): Promise<
 
     const { scheduledDate, address, notes } = parsed.data;
 
-    const booking = await db.$transaction(async (tx) => {
-      const created = await tx.serviceBooking.create({
-        data: {
-          expertServiceId: service.id,
-          clientId: session.user.id,
-          scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
-          address: address ? sanitizeUserInput(address) : null,
-          notes: notes ? sanitizeUserInput(notes) : null,
-          fee: service.fee,
-        },
-        select: bookingSelect,
-      });
+    const booking = await db.serviceBooking.create({
+      data: {
+        expertServiceId: service.id,
+        clientId: session.user.id,
+        scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+        address: address ? sanitizeUserInput(address) : null,
+        notes: notes ? sanitizeUserInput(notes) : null,
+        fee: service.fee,
+      },
+      select: bookingSelect,
+    });
 
-      await tx.notification.create({
-        data: {
-          userId: service.userId,
-          actorId: session.user.id,
-          type: "SERVICE_BOOKED",
-          entityType: "ServiceBooking",
-          entityId: created.id,
-          metadata: {
-            bookingId: created.id,
-            expertServiceId: service.id,
-            profession: service.profession,
-            clientName: session.user.name ?? "Client",
-          },
-        },
-      });
-
-      return created;
+    await sendNotification({
+      userId: service.userId,
+      actorId: session.user.id,
+      type: NotificationType.SERVICE_BOOKED,
+      entityType: "ServiceBooking",
+      entityId: booking.id,
+      metadata: {
+        bookingId: booking.id,
+        expertServiceId: service.id,
+        profession: service.profession,
+        clientName: session.user.name ?? "Client",
+      },
     });
 
     return NextResponse.json(serializeServiceBooking(booking), { status: 201 });

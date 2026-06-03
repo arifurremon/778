@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { requireActiveMutation } from "@/lib/session-guards";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const patchSchema = z.object({
@@ -73,32 +74,25 @@ export async function PATCH(
       }
     }
 
-    const updatedOrder = await db.$transaction(async (tx) => {
-      const updated = await tx.order.update({
-        where: { id: orderId },
-        data: { status: newStatus },
-      });
+    const updatedOrder = await db.order.update({
+      where: { id: orderId },
+      data: { status: newStatus },
+    });
 
-      // Notify the other party
-      const recipientId = isBuyer ? order.shop.userId : order.buyerId;
-      
-      await tx.notification.create({
-        data: {
-          userId: recipientId,
-          actorId: session.user!.id,
-          type: "ORDER_UPDATED",
-          entityType: "Order",
-          entityId: order.id,
-          metadata: {
-            orderId: order.id,
-            oldStatus: order.status,
-            newStatus,
-            productName: order.product.name,
-          },
-        },
-      });
+    const recipientId = isBuyer ? order.shop.userId : order.buyerId;
 
-      return updated;
+    await sendNotification({
+      userId: recipientId,
+      actorId: session.user!.id,
+      type: NotificationType.ORDER_UPDATED,
+      entityType: "Order",
+      entityId: order.id,
+      metadata: {
+        orderId: order.id,
+        oldStatus: order.status,
+        newStatus,
+        productName: order.product.name,
+      },
     });
 
     return NextResponse.json({ order: updatedOrder }, { status: 200 });

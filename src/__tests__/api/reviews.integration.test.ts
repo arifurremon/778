@@ -10,6 +10,13 @@ vi.mock("@/lib/error-handler", () => ({
   logErrorToSentry: vi.fn(),
 }));
 
+vi.mock("@/lib/notification-service", () => ({
+  sendNotification: vi.fn().mockResolvedValue(undefined),
+  NotificationType: {
+    NEW_PRODUCT_REVIEW: "NEW_PRODUCT_REVIEW",
+  },
+}));
+
 const mockAuth = vi.fn().mockResolvedValue(null);
 vi.mock("@/lib/auth", () => ({
   auth: () => mockAuth(),
@@ -17,6 +24,7 @@ vi.mock("@/lib/auth", () => ({
 
 import { GET as getReviews, POST as createReview } from "@/app/api/shops/[shopId]/reviews/route";
 import { PATCH as patchReview } from "@/app/api/reviews/[reviewId]/route";
+import { sendNotification } from "@/lib/notification-service";
 
 function makeGetRequest(shopId: string, productId = "general"): NextRequest {
   return new NextRequest(
@@ -90,7 +98,7 @@ describe("Product reviews API — Integration", () => {
   beforeEach(() => {
     resetPrismaMock();
     mockAuth.mockResolvedValue(null);
-    prismaMock.notification.create.mockResolvedValue({});
+    vi.mocked(sendNotification).mockClear();
     prismaMock.productReview.aggregate.mockResolvedValue({ _avg: { rating: 5 } });
     prismaMock.shop.update.mockResolvedValue({});
   });
@@ -127,7 +135,7 @@ describe("Product reviews API — Integration", () => {
 
     expect(res.status).toBe(201);
     expect(prismaMock.$transaction).toHaveBeenCalled();
-    expect(prismaMock.notification.create).toHaveBeenCalled();
+    expect(sendNotification).toHaveBeenCalled();
   });
 
   it("prevents reviewing your own shop", async () => {
@@ -167,6 +175,6 @@ describe("Product reviews API — Integration", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(prismaMock.notification.create).toHaveBeenCalled();
+    expect(sendNotification).toHaveBeenCalled();
   });
 });

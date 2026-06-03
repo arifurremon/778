@@ -1,6 +1,7 @@
 import { requireActiveMutation } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { reviewSelect, serializeProductReview } from "@/lib/review-utils";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
@@ -51,31 +52,25 @@ export async function PATCH(req: NextRequest, { params }: RouteContext): Promise
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const updated = await db.$transaction(async (tx) => {
-      const saved = await tx.productReview.update({
-        where: { id: reviewId },
-        data: {
-          reply: sanitizeUserInput(parsed.data.reply),
-        },
-        select: reviewSelect,
-      });
+    const updated = await db.productReview.update({
+      where: { id: reviewId },
+      data: {
+        reply: sanitizeUserInput(parsed.data.reply),
+      },
+      select: reviewSelect,
+    });
 
-      await tx.notification.create({
-        data: {
-          userId: review.buyerId,
-          actorId: session.user.id,
-          type: "NEW_PRODUCT_REVIEW",
-          entityType: "ProductReview",
-          entityId: review.id,
-          metadata: {
-            reviewId: review.id,
-            shopName: review.shop.name,
-            replyPreview: parsed.data.reply.slice(0, 120),
-          },
-        },
-      });
-
-      return saved;
+    await sendNotification({
+      userId: review.buyerId,
+      actorId: session.user.id,
+      type: NotificationType.NEW_PRODUCT_REVIEW,
+      entityType: "ProductReview",
+      entityId: review.id,
+      metadata: {
+        reviewId: review.id,
+        shopName: review.shop.name,
+        replyPreview: parsed.data.reply.slice(0, 120),
+      },
     });
 
     return NextResponse.json({ review: serializeProductReview(updated) });

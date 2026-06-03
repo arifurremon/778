@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import {
   normalizeReviewScope,
   recalculateShopRating,
@@ -199,25 +200,23 @@ export async function POST(req: NextRequest, { params }: RouteContext): Promise<
 
       await recalculateShopRating(tx, shopId);
 
-      await tx.notification.create({
-        data: {
-          userId: shop.userId,
-          actorId: session.user.id,
-          type: "NEW_PRODUCT_REVIEW",
-          entityType: "ProductReview",
-          entityId: created.id,
-          metadata: {
-            reviewId: created.id,
-            shopId,
-            shopName: shop.name,
-            scope,
-            rating,
-            reviewerName: session.user.name ?? "Customer",
-          },
-        },
-      });
-
       return created;
+    });
+
+    await sendNotification({
+      userId: shop.userId,
+      actorId: session.user.id,
+      type: NotificationType.NEW_PRODUCT_REVIEW,
+      entityType: "ProductReview",
+      entityId: review.id,
+      metadata: {
+        reviewId: review.id,
+        shopId,
+        shopName: shop.name,
+        scope,
+        rating,
+        reviewerName: session.user.name ?? "Customer",
+      },
     });
 
     return NextResponse.json(serializeProductReview(review), { status: 201 });

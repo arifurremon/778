@@ -2,6 +2,7 @@ import { requireActiveMutation } from "@/lib/session-guards";
 import { bookingSelect, serializeServiceBooking } from "@/lib/booking-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -109,36 +110,30 @@ export async function PATCH(req: NextRequest, { params }: RouteContext): Promise
       }
     }
 
-    const updated = await db.$transaction(async (tx) => {
-      const saved = await tx.serviceBooking.update({
-        where: { id: bookingId },
-        data: {
-          status: nextStatus as never,
-          subStatus: nextSubStatus as never,
-        },
-        select: bookingSelect,
-      });
+    const updated = await db.serviceBooking.update({
+      where: { id: bookingId },
+      data: {
+        status: nextStatus as never,
+        subStatus: nextSubStatus as never,
+      },
+      select: bookingSelect,
+    });
 
-      const recipientId = isExpert ? booking.clientId : booking.expertService.userId;
+    const recipientId = isExpert ? booking.clientId : booking.expertService.userId;
 
-      await tx.notification.create({
-        data: {
-          userId: recipientId,
-          actorId: session.user.id,
-          type: "SERVICE_UPDATED",
-          entityType: "ServiceBooking",
-          entityId: booking.id,
-          metadata: {
-            bookingId: booking.id,
-            oldStatus: booking.status,
-            newStatus: nextStatus,
-            subStatus: nextSubStatus,
-            profession: booking.expertService.profession,
-          },
-        },
-      });
-
-      return saved;
+    await sendNotification({
+      userId: recipientId,
+      actorId: session.user.id,
+      type: NotificationType.SERVICE_UPDATED,
+      entityType: "ServiceBooking",
+      entityId: booking.id,
+      metadata: {
+        bookingId: booking.id,
+        oldStatus: booking.status,
+        newStatus: nextStatus,
+        subStatus: nextSubStatus,
+        profession: booking.expertService.profession,
+      },
     });
 
     return NextResponse.json({ booking: serializeServiceBooking(updated) });

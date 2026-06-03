@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireActiveMutation, requireActiveUser } from "@/lib/session-guards";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { z } from "zod";
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
     const totalPrice = product.price.toNumber() * quantity;
 
     const newOrder = await db.$transaction(async (tx) => {
-      const order = await tx.order.create({
+      return tx.order.create({
         data: {
           shopId,
           productId,
@@ -74,23 +75,19 @@ export async function POST(req: NextRequest) {
           status: "PENDING",
         },
       });
+    });
 
-      await tx.notification.create({
-        data: {
-          userId: shop.userId,
-          actorId: session.user!.id,
-          type: "NEW_ORDER",
-          entityType: "Order",
-          entityId: order.id,
-          metadata: {
-            orderId: order.id,
-            productName: product.name,
-            buyerName: session.user!.name || "Anonymous"
-          },
-        },
-      });
-
-      return order;
+    await sendNotification({
+      userId: shop.userId,
+      actorId: session.user!.id,
+      type: NotificationType.NEW_ORDER,
+      entityType: "Order",
+      entityId: newOrder.id,
+      metadata: {
+        orderId: newOrder.id,
+        productName: product.name,
+        buyerName: session.user!.name || "Anonymous",
+      },
     });
 
     return NextResponse.json({ order: newOrder }, { status: 201 });

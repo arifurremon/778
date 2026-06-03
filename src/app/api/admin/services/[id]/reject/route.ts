@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -52,34 +53,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         where: { id: service.userId },
         data: { 
           serviceRegistrationStatus: 'REJECTED',
-          verificationReason: validatedData.reason // Fallback for reason
+          verificationReason: validatedData.reason
         }
       });
+    });
 
-      // Notification on reject
-      // SCHEMA-FALLBACK: 'notification' may not exist — verify schema
-      try {
-        await tx.notification.create({
-          data: {
-            userId: service.userId,
-            type: "SERVICE_VERIFIED",
-            entityType: "ExpertService",
-            entityId: service.id,
-            metadata: {
-              approved: false,
-              message: `Your service application was not approved. Reason: ${validatedData.reason}`,
-            },
-          }
-        });
-      } catch (e) {
-        await tx.activityLog.create({
-          data: {
-            userId: service.userId,
-            type: "SYSTEM",
-            description: `Service application rejected: ${validatedData.reason}`,
-          }
-        });
-      }
+    await sendNotification({
+      userId: service.userId,
+      actorId: session.user.id,
+      type: NotificationType.SERVICE_VERIFIED,
+      entityType: "ExpertService",
+      entityId: service.id,
+      metadata: {
+        approved: "false",
+        reason: validatedData.reason,
+        message: `Your service application was not approved. Reason: ${validatedData.reason}`,
+      },
     });
 
     // Email notification

@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -48,32 +49,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           serviceRegistrationStatus: 'APPROVED' 
         }
       });
+    });
 
-      // [cite_start]Notification on verify: "Your service '[title]' has been verified and is now live!" [cite: 117]
-      // SCHEMA-FALLBACK: 'notification' may not exist — verify schema
-      try {
-        await tx.notification.create({
-          data: {
-            userId: service.userId,
-            type: "SERVICE_VERIFIED",
-            entityType: "ExpertService",
-            entityId: service.id,
-            metadata: {
-              approved: true,
-              message: `Your service '${serviceTitle}' has been verified and is now live!`,
-            },
-          }
-        });
-      } catch (e) {
-        // Fallback: Activity log
-        await tx.activityLog.create({
-          data: {
-            userId: service.userId,
-            type: "SYSTEM",
-            description: `Your service '${serviceTitle}' has been verified successfully.`,
-          }
-        });
-      }
+    await sendNotification({
+      userId: service.userId,
+      actorId: session.user.id,
+      type: NotificationType.SERVICE_VERIFIED,
+      entityType: "ExpertService",
+      entityId: service.id,
+      metadata: {
+        approved: "true",
+        message: `Your service '${serviceTitle}' has been verified and is now live!`,
+      },
     });
 
     // [cite_start]Email subject on verify: "Your Service Listing Has Been Verified!" [cite: 110]

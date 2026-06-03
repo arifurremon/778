@@ -10,6 +10,14 @@ vi.mock("@/lib/error-handler", () => ({
   logErrorToSentry: vi.fn(),
 }));
 
+vi.mock("@/lib/notification-service", () => ({
+  sendNotification: vi.fn().mockResolvedValue(undefined),
+  NotificationType: {
+    SERVICE_BOOKED: "SERVICE_BOOKED",
+    SERVICE_UPDATED: "SERVICE_UPDATED",
+  },
+}));
+
 const mockAuth = vi.fn().mockResolvedValue(null);
 vi.mock("@/lib/auth", () => ({
   auth: () => mockAuth(),
@@ -17,6 +25,7 @@ vi.mock("@/lib/auth", () => ({
 
 import { POST as createBooking } from "@/app/api/services/[expertId]/bookings/route";
 import { PATCH as patchBooking } from "@/app/api/bookings/[bookingId]/route";
+import { sendNotification } from "@/lib/notification-service";
 
 function makePostRequest(expertId: string, body: Record<string, unknown>): NextRequest {
   return new NextRequest(`http://localhost:3000/api/services/${expertId}/bookings`, {
@@ -91,7 +100,7 @@ describe("Service booking API — Integration", () => {
   beforeEach(() => {
     resetPrismaMock();
     mockAuth.mockResolvedValue(null);
-    prismaMock.notification.create.mockResolvedValue({});
+    vi.mocked(sendNotification).mockClear();
   });
 
   it("creates a booking and notifies the expert", async () => {
@@ -108,8 +117,8 @@ describe("Service booking API — Integration", () => {
     );
 
     expect(res.status).toBe(201);
-    expect(prismaMock.$transaction).toHaveBeenCalled();
-    expect(prismaMock.notification.create).toHaveBeenCalled();
+    expect(prismaMock.serviceBooking.create).toHaveBeenCalled();
+    expect(sendNotification).toHaveBeenCalled();
   });
 
   it("prevents booking your own service", async () => {

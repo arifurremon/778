@@ -136,8 +136,7 @@ export async function sendNotification(
   try {
     // Channel naming convention: private-user-{userId}
     // The "private-" prefix activates Pusher's server-side channel
-    // authentication, ensuring users can only subscribe to their own channel.
-    // Phase 3 will implement the /api/pusher/auth endpoint for this handshake.
+    // authentication via /api/pusher/auth.
     const channel = `private-user-${userId}`;
     const event = "new-notification";
 
@@ -149,6 +148,21 @@ export async function sendNotification(
       notificationId: notification.id,
       userId,
       type,
+    });
+  }
+}
+
+export async function triggerNotificationReadEvent(
+  userId: string,
+  payload: { id: string } | { all: true }
+): Promise<void> {
+  try {
+    await pusher?.trigger(`private-user-${userId}`, "notification-read", payload);
+  } catch (error) {
+    logErrorToSentry(error, {
+      context: "triggerNotificationReadEvent",
+      userId,
+      payload,
     });
   }
 }

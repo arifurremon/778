@@ -1,7 +1,6 @@
 import { validateCsrfRequest } from "@/lib/csrf";
 import { auth } from "@/lib/auth";
 import { requireActiveMutation } from "@/lib/session-guards";
-import { invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
@@ -345,12 +344,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         },
       }),
     ]);
-
-    // Advance the 'posts' cache epoch. This is a cheap O(1) Redis INCR
-    // (~0.5 ms) that future-proofs this route: any route that later adds
-    // cachedQuery() over post data will automatically receive invalidation
-    // on every new post without further changes here.
-    await invalidateCache("posts");
 
     return NextResponse.json(post, { status: 201 });
   } catch (error) {
