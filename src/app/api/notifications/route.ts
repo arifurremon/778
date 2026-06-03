@@ -16,6 +16,7 @@ import { requireActiveMutation, requireActiveUser } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { triggerNotificationReadEvent } from "@/lib/notification-service";
 
 // Shared select shape — matches what the client needs to render a notification
 // row without a follow-up fetch.
@@ -73,6 +74,8 @@ export async function PATCH(req: NextRequest): Promise<NextResponse> {
       where: { userId: session.user.id, isRead: false },
       data: { isRead: true },
     });
+
+    await triggerNotificationReadEvent(session.user.id, { all: true });
 
     return NextResponse.json({ success: true });
   } catch (error) {

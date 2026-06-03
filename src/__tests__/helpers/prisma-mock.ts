@@ -17,6 +17,7 @@ const createMockModel = () => ({
   deleteMany: vi.fn(),
   count: vi.fn(),
   upsert: vi.fn(),
+  aggregate: vi.fn(),
 });
 
 export const prismaMock = {
@@ -30,7 +31,18 @@ export const prismaMock = {
   verificationToken: createMockModel(),
   neighbourConnection: createMockModel(),
   product: createMockModel(),
+  savedPost: createMockModel(),
+  followedPost: createMockModel(),
+  emergencyContact: createMockModel(),
+  directoryEntry: createMockModel(),
+  featureSuggestion: createMockModel(),
+  contactInquiry: createMockModel(),
+  settings: createMockModel(),
+  order: createMockModel(),
+  productReview: createMockModel(),
   expertService: createMockModel(),
+  serviceBooking: createMockModel(),
+  notification: createMockModel(),
   auditLog: createMockModel(),
   $transaction: vi.fn((arg: unknown) => {
     if (typeof arg === "function") {

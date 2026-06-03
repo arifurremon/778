@@ -1,4 +1,8 @@
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotificationEmailIfAllowed } from "@/lib/notification-email";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { requireActiveMutation, requireActiveUser } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -53,6 +57,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (active.error) return active.error;
     const senderId = active.session.user.id;
 
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.neighbours, senderId),
+      "NeighbourRequests",
+      { quotaExceededMessage: "Neighbour request limit reached (10/hour)." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body: unknown = await req.json();
     const parsed = sendRequestSchema.safeParse(body);
     if (!parsed.success) {
@@ -105,32 +116,45 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       },
     });
 
-    const sender = await db.user.findUnique({ where: { id: senderId } });
-    const receiver = await db.user.findUnique({ where: { id: receiverId } });
+    const sender = await db.user.findUnique({
+      where: { id: senderId },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+      },
+    });
+    const receiver = await db.user.findUnique({
+      where: { id: receiverId },
+      select: {
+        id: true,
+        email: true,
+        privacySettings: true,
+        username: true,
+      },
+    });
 
     if (receiver && sender) {
-      await db.activityLog.create({
-        data: {
-          userId: receiver.id,
-          type: "CONNECTION_REQUEST",
-          description: `@${sender.username || sender.name} wants to connect with you.`,
-          contextUrl: `/profile/${sender.username}`,
-        }
+      await sendNotification({
+        userId: receiver.id,
+        actorId: sender.id,
+        type: NotificationType.NEIGHBOR_REQUEST,
+        entityType: "NeighbourConnection",
+        entityId: connection.id,
+        metadata: {
+          senderUsername: sender.username,
+          senderName: sender.name,
+        },
       });
 
-      // Send email if possible
-      if (receiver.email) {
-        // dynamic import or imported at top
-        const { sendNotificationEmail } = await import("@/lib/mail");
-        await sendNotificationEmail(
-          receiver.email,
-          "New Trust Request on The Chattala",
-          "You have a new Neighbour Request!",
-          `${sender.name || '@'+sender.username} wants to add you to their trust network on The Chattala. Accept their request to unlock private contact information.`,
-          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${sender.username}`,
-          "View Request"
-        );
-      }
+      await sendNotificationEmailIfAllowed(
+        receiver,
+        "New Trust Request on The Chattala",
+        "You have a new Neighbour Request!",
+        `${sender.name || `@${sender.username}`} wants to add you to their trust network on The Chattala. Accept their request to unlock private contact information.`,
+        `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/profile/${sender.username}`,
+        "View Request"
+      );
     }
 
     return NextResponse.json(connection, { status: 201 });

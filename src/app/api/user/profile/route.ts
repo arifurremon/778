@@ -55,7 +55,8 @@ export const GET = auth(async (req) => {
           updatedAt: true,
         },
       }),
-      900
+      900,
+      "users"
     );
 
     if (!user) {
@@ -186,7 +187,7 @@ export const PATCH = auth(async (req) => {
       },
     });
 
-    await invalidateCache(`user:${userId}:profile`);
+    await invalidateCache("users");
 
     return NextResponse.json(updated);
   } catch (error) {

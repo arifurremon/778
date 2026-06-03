@@ -1,0 +1,101 @@
+import { requireActiveMutation } from "@/lib/session-guards";
+import { bookingSelect, serializeServiceBooking } from "@/lib/booking-utils";
+import { db } from "@/lib/db";
+import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { sanitizeUserInput } from "@/lib/sanitize";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+type RouteContext = { params: Promise<{ expertId: string }> };
+
+const createBookingSchema = z
+  .object({
+    scheduledDate: z.string().datetime().optional(),
+    address: z.string().min(5, "Address must be at least 5 characters.").optional(),
+    notes: z.string().max(1000).optional(),
+  })
+  .refine((data) => Boolean(data.scheduledDate || data.address?.trim()), {
+    message: "Provide either a preferred date or a service address.",
+  });
+
+// POST /api/services/[expertId]/bookings — client books an expert service
+export async function POST(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+  try {
+    const active = await requireActiveMutation(req);
+    if (active.error) return active.error;
+    const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.bookings, session.user.id),
+      "Bookings",
+      { quotaExceededMessage: "Booking limit reached (10/hour)." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const { expertId } = await params;
+
+    const body: unknown = await req.json();
+    const parsed = createBookingSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors[0]?.message ?? "Validation failed." },
+        { status: 400 }
+      );
+    }
+
+    const service = await db.expertService.findUnique({
+      where: { id: expertId },
+      select: {
+        id: true,
+        userId: true,
+        profession: true,
+        fee: true,
+        isVerified: true,
+      },
+    });
+
+    if (!service) {
+      return NextResponse.json({ error: "Expert service not found." }, { status: 404 });
+    }
+
+    if (service.userId === session.user.id) {
+      return NextResponse.json({ error: "You cannot book your own service." }, { status: 400 });
+    }
+
+    const { scheduledDate, address, notes } = parsed.data;
+
+    const booking = await db.serviceBooking.create({
+      data: {
+        expertServiceId: service.id,
+        clientId: session.user.id,
+        scheduledDate: scheduledDate ? new Date(scheduledDate) : null,
+        address: address ? sanitizeUserInput(address) : null,
+        notes: notes ? sanitizeUserInput(notes) : null,
+        fee: service.fee,
+      },
+      select: bookingSelect,
+    });
+
+    await sendNotification({
+      userId: service.userId,
+      actorId: session.user.id,
+      type: NotificationType.SERVICE_BOOKED,
+      entityType: "ServiceBooking",
+      entityId: booking.id,
+      metadata: {
+        bookingId: booking.id,
+        expertServiceId: service.id,
+        profession: service.profession,
+        clientName: session.user.name ?? "Client",
+      },
+    });
+
+    return NextResponse.json(serializeServiceBooking(booking), { status: 201 });
+  } catch (error) {
+    logErrorToSentry(error, { route: "[POST /api/services/[expertId]/bookings]" });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

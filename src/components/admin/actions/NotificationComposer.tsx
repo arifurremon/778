@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Send, Mail, Bell, Smartphone } from 'lucide-react';
+import { Send, Mail, Bell } from 'lucide-react';
 
 interface NotificationComposerProps {
   recipientName?: string;
@@ -66,11 +66,6 @@ export const NotificationComposer = ({
               <SelectItem value="email">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4" /> Email
-                </div>
-              </SelectItem>
-              <SelectItem value="push">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="h-4 w-4" /> Push Notification
                 </div>
               </SelectItem>
             </SelectContent>

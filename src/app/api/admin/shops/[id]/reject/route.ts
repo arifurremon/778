@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -52,35 +53,22 @@ export async function POST(
         where: { id: shop.userId },
         data: { 
           registrationStatus: 'REJECTED',
-          // [cite_start]Update shop: set rejectedAt and rejectionReason. [cite: 110]
-          // SCHEMA-FALLBACK: 'verificationReason' exists on User, using it as fallback
           verificationReason: validatedData.reason
         }
       });
+    });
 
-      // [cite_start]Notify owner via in-app notification. [cite: 110]
-      try {
-        await tx.notification.create({
-          data: {
-            userId: shop.userId,
-            type: "SHOP_VERIFIED",
-            entityType: "Shop",
-            entityId: shop.id,
-            metadata: {
-              approved: false,
-              message: `Your shop registration was not approved. Reason: ${validatedData.reason}`,
-            },
-          }
-        });
-      } catch (e) {
-        await tx.activityLog.create({
-          data: {
-            userId: shop.userId,
-            type: "SYSTEM",
-            description: `Shop registration rejected: ${validatedData.reason}`,
-          }
-        });
-      }
+    await sendNotification({
+      userId: shop.userId,
+      actorId: session.user.id,
+      type: NotificationType.SHOP_VERIFIED,
+      entityType: "Shop",
+      entityId: shop.id,
+      metadata: {
+        approved: "false",
+        reason: validatedData.reason,
+        message: `Your shop registration was not approved. Reason: ${validatedData.reason}`,
+      },
     });
 
     // [cite_start]Notify owner via email with the reason. [cite: 110]

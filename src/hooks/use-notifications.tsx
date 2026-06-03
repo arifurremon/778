@@ -20,6 +20,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "@/lib/api";
+import { appSettingsFromPrivacy } from "@/lib/app-settings";
 import { getPusherClient } from "@/lib/pusher-client";
 import { NotificationType } from "@prisma/client";
 
@@ -80,17 +81,17 @@ function deriveDisplayFields(
     case NotificationType.POST_REACTION:
       return {
         description: `${actorName} reacted ${meta.emoji ?? ""} to your post${meta.postPreview ? `: "${meta.postPreview}"` : ""}`,
-        contextUrl: n.entityId ? `/community` : null,
+        contextUrl: n.entityId ? `/community#post-${n.entityId}` : "/community",
       };
     case NotificationType.NEW_COMMENT:
       return {
         description: `${actorName} commented on your post${meta.commentPreview ? `: "${meta.commentPreview}"` : ""}`,
-        contextUrl: n.entityId ? `/community` : null,
+        contextUrl: n.entityId ? `/community#post-${n.entityId}` : "/community",
       };
     case NotificationType.COMMENT_REPLY:
       return {
         description: `${actorName} replied to your comment`,
-        contextUrl: n.entityId ? `/community` : null,
+        contextUrl: n.entityId ? `/community#post-${n.entityId}` : "/community",
       };
     case NotificationType.POST_FLAGGED:
       return {
@@ -100,22 +101,22 @@ function deriveDisplayFields(
     case NotificationType.NEIGHBOR_REQUEST:
       return {
         description: `${actorName} sent you a neighbour request`,
-        contextUrl: `/neighbours`,
+        contextUrl: "/neighbours",
       };
     case NotificationType.NEIGHBOR_ACCEPTED:
       return {
         description: `${actorName} accepted your neighbour request`,
-        contextUrl: `/neighbours`,
+        contextUrl: "/neighbours",
       };
     case NotificationType.NEW_ORDER:
       return {
         description: `New order received${meta.itemCount ? ` (${meta.itemCount} item${Number(meta.itemCount) !== 1 ? "s" : ""})` : ""}`,
-        contextUrl: `/seller`,
+        contextUrl: "/seller",
       };
     case NotificationType.ORDER_UPDATED:
       return {
         description: `Order status updated: ${meta.oldStatus ?? ""} → ${meta.newStatus ?? ""}`,
-        contextUrl: `/shops`,
+        contextUrl: "/shops",
       };
     case NotificationType.SHOP_VERIFIED:
       return {
@@ -123,22 +124,22 @@ function deriveDisplayFields(
           meta.approved === "true"
             ? `Your shop has been approved! ✓`
             : `Your shop application was not approved${meta.reason ? `: ${meta.reason}` : ""}.`,
-        contextUrl: `/seller`,
+        contextUrl: "/seller",
       };
     case NotificationType.NEW_PRODUCT_REVIEW:
       return {
         description: `${actorName} left a review on your product`,
-        contextUrl: `/seller`,
+        contextUrl: "/seller",
       };
     case NotificationType.SERVICE_BOOKED:
       return {
         description: `${actorName} booked your expert service`,
-        contextUrl: `/expert`,
+        contextUrl: "/expert",
       };
     case NotificationType.SERVICE_UPDATED:
       return {
         description: `Your service booking status changed: ${meta.newStatus ?? ""}`,
-        contextUrl: `/expert`,
+        contextUrl: "/services",
       };
     case NotificationType.SERVICE_VERIFIED:
       return {
@@ -146,7 +147,12 @@ function deriveDisplayFields(
           meta.approved === "true"
             ? `Your expert profile has been approved! ✓`
             : `Your expert profile was not approved${meta.reason ? `: ${meta.reason}` : ""}.`,
-        contextUrl: `/expert`,
+        contextUrl: "/expert",
+      };
+    case NotificationType.MODERATION_ACTION:
+      return {
+        description: (meta.message as string) ?? "A moderator took action on your account",
+        contextUrl: null,
       };
     case NotificationType.SYSTEM_ALERT:
     case NotificationType.MODERATION_ACTION:
@@ -181,6 +187,21 @@ export function useNotifications(pollingIntervalMs = 60_000) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [pushEnabled, setPushEnabled] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    api
+      .get<{ privacySettings?: Record<string, string> }>("/api/user/profile")
+      .then((profile) => {
+        const settings = appSettingsFromPrivacy(profile.privacySettings);
+        setPushEnabled(settings.pushNotifications);
+      })
+      .catch(() => {
+        setPushEnabled(true);
+      });
+  }, [userId]);
 
   // -------------------------------------------------------------------------
   // fetchNotifications — initial load + polling fallback
@@ -210,10 +231,10 @@ export function useNotifications(pollingIntervalMs = 60_000) {
   // Realtime subscription (Pusher)
   // -------------------------------------------------------------------------
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !pushEnabled) return;
 
     const pusher = getPusherClient();
-    if (!pusher) return; // Fallback to polling handled by the other useEffect
+    if (!pusher) return;
 
     const channelName = `private-user-${userId}`;
     const channel = pusher.subscribe(channelName);
@@ -228,14 +249,18 @@ export function useNotifications(pollingIntervalMs = 60_000) {
       setUnreadCount((prev) => prev + 1);
     });
 
-    channel.bind("notification-read", (data: { id: string }) => {
+    channel.bind("notification-read", (data: { id?: string; all?: boolean }) => {
+      if (data.all) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+        setUnreadCount(0);
+        return;
+      }
+
+      if (!data.id) return;
+
       setNotifications((prev) =>
         prev.map((n) => (n.id === data.id && !n.isRead ? { ...n, isRead: true } : n))
       );
-      // We only decrement unreadCount if we actually marked it read, but since
-      // we don't have the previous state cleanly here without a ref, we'll
-      // rely on the server truth or re-fetch if things get out of sync. For now,
-      // just re-fetch to make sure count is accurate, or optimistically decrement:
       setUnreadCount((prev) => Math.max(0, prev - 1));
     });
 
@@ -243,7 +268,7 @@ export function useNotifications(pollingIntervalMs = 60_000) {
       channel.unbind_all();
       pusher.unsubscribe(channelName);
     };
-  }, [userId]);
+  }, [userId, pushEnabled]);
 
   // -------------------------------------------------------------------------
   // markAllAsRead — optimistic, reverts on failure

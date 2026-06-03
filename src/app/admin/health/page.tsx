@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
+import { hasRedisConfigs, pingRedis } from "@/lib/cache";
 import { db } from "@/lib/db";
+import { hasPusherConfigs } from "@/lib/pusher";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -124,6 +126,50 @@ function checkEmailConfig(): HealthCheck {
   };
 }
 
+async function checkRedis(): Promise<HealthCheck> {
+  if (!hasRedisConfigs()) {
+    return {
+      name: "Redis Cache",
+      status: "fail",
+      details: "UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN is missing",
+    };
+  }
+
+  const result = await pingRedis();
+  return {
+    name: "Redis Cache",
+    status: result.ok ? "pass" : "fail",
+    details: result.details,
+  };
+}
+
+function checkPusherConfig(): HealthCheck {
+  const required = [
+    "PUSHER_APP_ID",
+    "NEXT_PUBLIC_PUSHER_KEY",
+    "PUSHER_SECRET",
+    "NEXT_PUBLIC_PUSHER_CLUSTER",
+  ];
+  const missing = required.filter((k) => !envSet(k));
+
+  if (missing.length === 0 && hasPusherConfigs()) {
+    return {
+      name: "Pusher Realtime",
+      status: "pass",
+      details: "All Pusher environment variables are set",
+    };
+  }
+
+  return {
+    name: "Pusher Realtime",
+    status: missing.length > 0 ? "fail" : "warn",
+    details:
+      missing.length > 0
+        ? `Missing Pusher vars: ${missing.join(", ")}`
+        : "Pusher client is not initialised despite env vars being present",
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -133,14 +179,24 @@ export default async function HealthCheckPage() {
   if (!session?.user) redirect("/login");
   if (!session.user.isAdmin) redirect("/dashboard?error=unauthorized");
 
-  const [dbCheck, envCheck, authCheck, emailCheck] = await Promise.all([
-    checkDatabase(),
-    Promise.resolve(checkEnvVars()),
-    Promise.resolve(checkAuthConfig()),
-    Promise.resolve(checkEmailConfig()),
-  ]);
+  const [dbCheck, envCheck, authCheck, emailCheck, redisCheck, pusherCheck] =
+    await Promise.all([
+      checkDatabase(),
+      Promise.resolve(checkEnvVars()),
+      Promise.resolve(checkAuthConfig()),
+      Promise.resolve(checkEmailConfig()),
+      checkRedis(),
+      Promise.resolve(checkPusherConfig()),
+    ]);
 
-  const checks: HealthCheck[] = [dbCheck, envCheck, authCheck, emailCheck];
+  const checks: HealthCheck[] = [
+    dbCheck,
+    envCheck,
+    authCheck,
+    emailCheck,
+    redisCheck,
+    pusherCheck,
+  ];
   const allPassed = checks.every((c) => c.status === "pass");
   const hasFails = checks.some((c) => c.status === "fail");
 

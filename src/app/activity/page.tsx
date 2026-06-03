@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   History, 
@@ -11,41 +10,28 @@ import {
   Zap, 
   ArrowRight,
   Search,
-  Bell
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { AppEmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
+import { useActivity } from "@/hooks/use-activity";
+import type { ActivityItem, ActivityTab } from "@/lib/activity-utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
-type ActivityType = 'all' | 'likes' | 'comments' | 'saved' | 'system';
-
-interface ActivityItem {
-  id: string;
-  type: ActivityType;
-  description: string;
-  timestamp: string;
-  href: string;
-  context: string;
-}
-
-const MOCK_ACTIVITIES: ActivityItem[] = [
-  { id: '1', type: 'likes', description: "You marked Ahmed Kabir's post as Helpful.", timestamp: 'Today, 2:45 PM', href: '/community', context: "Ahmed Kabir's Post" },
-  { id: '2', type: 'comments', description: 'You commented on a shop in Chawkbazar.', timestamp: 'Today, 11:20 AM', href: '/shops/s1', context: 'Mezban Haile Ayun' },
-  { id: '3', type: 'saved', description: 'You saved "Traffic alert: Major construction near Laldighi".', timestamp: 'Yesterday, 6:30 PM', href: '/community', context: 'Traffic Alert' },
-  { id: '4', type: 'system', description: 'Your profile reached "Community Contributor" status.', timestamp: 'Oct 22, 2024', href: '/profile', context: 'Level Up' },
-  { id: '5', type: 'likes', description: 'You liked a comment by Zoya Rahman.', timestamp: 'Oct 21, 2024', href: '/community', context: 'Community Discussion' },
-];
+const TABS: ActivityTab[] = ["all", "likes", "comments", "saved", "system"];
 
 export default function ActivityPage() {
-  const [activeTab, setActiveTab] = useState<ActivityType>('all');
-
-  const filteredActivities = MOCK_ACTIVITIES.filter(act => 
-    activeTab === 'all' || act.type === activeTab
-  );
+  const {
+    activities,
+    activeTab,
+    setActiveTab,
+    isLoading,
+    error,
+    markAsRead,
+  } = useActivity("all");
 
   return (
       <div className="max-w-4xl mx-auto py-8 px-6 space-y-8">
@@ -61,9 +47,9 @@ export default function ActivityPage() {
           subtitleClassName="text-[10px] font-bold uppercase tracking-widest opacity-60"
         />
 
-        <Tabs defaultValue="all" onValueChange={(v) => setActiveTab(v as ActivityType)} className="space-y-8">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ActivityTab)} className="space-y-8">
           <TabsList className="bg-card/20 border border-border/50 p-1 rounded-full w-full max-w-2xl overflow-x-auto scrollbar-hide flex">
-            {['all', 'likes', 'comments', 'saved', 'system'].map((tab) => (
+            {TABS.map((tab) => (
               <TabsTrigger 
                 key={tab} 
                 value={tab} 
@@ -83,7 +69,21 @@ export default function ActivityPage() {
               transition={{ duration: 0.3 }}
             >
               <TabsContent value={activeTab} className="mt-0 space-y-4">
-                {filteredActivities.length === 0 ? (
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Skeleton key={index} className="h-24 w-full rounded-2xl" />
+                    ))}
+                  </div>
+                ) : error ? (
+                  <AppEmptyState
+                    icon={Search}
+                    title="Could not load activity"
+                    description={error}
+                    action={{ label: "Explore Community", href: "/community" }}
+                    className="py-16"
+                  />
+                ) : activities.length === 0 ? (
                   <AppEmptyState
                     icon={Search}
                     title="No activities found"
@@ -92,8 +92,8 @@ export default function ActivityPage() {
                     className="py-16"
                   />
                 ) : (
-                  filteredActivities.map((act) => (
-                    <ActivityCard key={act.id} item={act} />
+                  activities.map((act) => (
+                    <ActivityCard key={act.id} item={act} onOpen={() => void markAsRead(act.id)} />
                   ))
                 )}
               </TabsContent>
@@ -104,8 +104,8 @@ export default function ActivityPage() {
   );
 }
 
-function ActivityCard({ item }: { item: ActivityItem }) {
-  const getIcon = (type: ActivityType) => {
+function ActivityCard({ item, onOpen }: { item: ActivityItem; onOpen: () => void }) {
+  const getIcon = (type: ActivityTab) => {
     switch (type) {
       case 'likes': return <Heart size={16} className="text-rose-500 fill-current" />;
       case 'comments': return <MessageCircle size={16} className="text-emerald-500 fill-current" />;
@@ -115,7 +115,7 @@ function ActivityCard({ item }: { item: ActivityItem }) {
     }
   };
 
-  const getBadgeColor = (type: ActivityType) => {
+  const getBadgeColor = (type: ActivityTab) => {
     switch (type) {
       case 'likes': return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
       case 'comments': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
@@ -126,7 +126,10 @@ function ActivityCard({ item }: { item: ActivityItem }) {
   };
 
   return (
-    <div className="bg-card/30 border border-border/50 rounded-2xl p-5 hover:bg-card/40 hover:border-accent/30 transition-all duration-300 group flex items-center justify-between gap-6">
+    <div className={cn(
+      "bg-card/30 border border-border/50 rounded-2xl p-5 hover:bg-card/40 hover:border-accent/30 transition-all duration-300 group flex items-center justify-between gap-6",
+      !item.isRead && "border-accent/40 bg-accent/5"
+    )}>
       <div className="flex items-center gap-5 flex-1 min-w-0">
         <div className={cn(
           "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border",
@@ -146,7 +149,7 @@ function ActivityCard({ item }: { item: ActivityItem }) {
         </div>
       </div>
       
-      <Link href={item.href}>
+      <Link href={item.href} onClick={onOpen}>
         <Button 
           variant="outline" 
           size="sm" 

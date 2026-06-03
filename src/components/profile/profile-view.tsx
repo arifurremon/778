@@ -20,7 +20,8 @@ import type { User } from "@/hooks/use-auth";
 import { PrivacyLevel, useAuth } from "@/hooks/use-auth";
 
 type UserBooleanKeys = 'showShopBadge' | 'showExpertBadge' | 'showFullAge' | 'showBirthdayOnly';
-import { useCommunity } from "@/hooks/use-community";
+import { useCommunity, mapApiPost, type Post } from "@/hooks/use-community";
+import { api } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { validateFileUpload } from "@/lib/sanitize";
 import { UploadButton } from "@/lib/uploadthing";
@@ -35,11 +36,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-const CHITTAGONG_AREAS = [
-  'Akbar Shah','Bakalia','Bandar','Bayezid Bostami','Chandgaon',
-  'Chawkbazar','Double Mooring','EPZ','Halishahar','Karnaphuli',
-  'Khulshi','Kotwali','Pahartali','Panchlaish','Patenga','Sadarghat',
-];
+import { CHITTAGONG_AREAS } from "@/lib/constants/chittagong-areas";
 
 function PrivacySelector({ field, current, onChange }: {
   field: string; current: PrivacyLevel;
@@ -62,10 +59,17 @@ function PrivacySelector({ field, current, onChange }: {
 export default function ProfileView() {
   const { user, updateUser } = useAuth();
   const { posts, fetchPosts } = useCommunity();
+  const [savedPosts, setSavedPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  useEffect(() => {
+    api.get<{ posts: unknown[] }>("/api/user/saved-posts?limit=50")
+      .then((response) => setSavedPosts(response.posts.map(mapApiPost)))
+      .catch(() => setSavedPosts([]));
+  }, []);
   const [activeTab, setActiveTab] = useState("posts");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -93,7 +97,6 @@ export default function ProfileView() {
   }, [user]);
 
   const myPosts   = useMemo(() => posts.filter(p => p.author.username === user?.username), [posts, user?.username]);
-  const savedPosts = useMemo(() => posts.filter(p => p.isSaved), [posts]);
 
   const handleSave = async () => {
     setIsSaving(true);

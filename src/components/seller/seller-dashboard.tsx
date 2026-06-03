@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderStatus, useBusiness } from "@/hooks/use-business";
+import { formatOrderAmount } from "@/lib/business-utils";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
     BarChart3,
@@ -38,22 +40,60 @@ import {
     Truck
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function SellerDashboard() {
-  const { orders, products, updateOrderStatus, initializeBusiness } = useBusiness();
+  const {
+    shop,
+    orders,
+    products,
+    updateOrderStatus,
+    initializeBusiness,
+    isLoading,
+    error,
+  } = useBusiness();
 
   useEffect(() => {
-    initializeBusiness();
+    void initializeBusiness();
   }, [initializeBusiness]);
-  const [activeTab, setActiveTab] = useState("overview");
 
-  const stats = useMemo(() => ({
-    totalSales: orders.filter(o => o.status === 'Delivered').reduce((acc, curr) => acc + curr.price, 0),
-    activeOrders: orders.filter(o => ['Pending', 'Processing', 'Sent'].includes(o.status)).length,
-    activeProducts: products.length,
-    rating: "4.8"
-  }), [orders, products]);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+  const handleStatusUpdate = async (orderId: string, status: OrderStatus) => {
+    setUpdatingOrderId(orderId);
+    try {
+      await updateOrderStatus(orderId, status);
+      toast({
+        title: "Order Updated",
+        description: `Order marked as ${status}.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Update Failed",
+        description: err instanceof Error ? err.message : "Could not update order status.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const stats = useMemo(
+    () => ({
+      totalSales: orders
+        .filter((order) => order.status === "Delivered")
+        .reduce((acc, order) => acc + order.price, 0),
+      activeOrders: orders.filter((order) =>
+        ["Pending", "Processing", "Sent"].includes(order.status)
+      ).length,
+      activeProducts: products.length,
+      rating: shop?.rating?.toFixed(1) ?? "—",
+    }),
+    [orders, products, shop]
+  );
 
   const getStatusColor = (status: OrderStatus) => {
     switch(status) {
@@ -65,6 +105,24 @@ export function SellerDashboard() {
       default: return 'bg-muted text-muted-foreground';
     }
   };
+
+  if (isLoading) {
+    return <SellerDashboardSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="py-20 text-center bg-card/5 border border-dashed border-border/30 rounded-[2.5rem] space-y-4">
+        <ShoppingBag className="w-12 h-12 text-muted-foreground/20 mx-auto" />
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest max-w-md mx-auto">
+          {error}
+        </p>
+        <Button asChild className="rounded-xl font-bold uppercase tracking-widest text-[10px]">
+          <Link href="/register-shop">Register Your Shop</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-20">
@@ -136,7 +194,7 @@ export function SellerDashboard() {
                       </div>
                    </div>
                    <div className="flex items-center gap-4">
-                     <span className="text-xs font-black">{order.price}</span>
+                     <span className="text-xs font-black">{formatOrderAmount(order.price)}</span>
                      <ChevronRight size={16} className="text-muted-foreground group-hover:text-accent group-hover:translate-x-1 transition-all" />
                    </div>
                 </motion.div>
@@ -173,7 +231,9 @@ export function SellerDashboard() {
                          <p className="font-bold">{order.buyerName}</p>
                          <p className="text-[9px] text-muted-foreground font-bold uppercase">{order.phone}</p>
                       </TableCell>
-                      <TableCell className="text-accent font-black text-xs">{order.price}</TableCell>
+                      <TableCell className="text-accent font-black text-xs">
+                        {formatOrderAmount(order.price)}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-md", getStatusColor(order.status))}>
                           {order.status}
@@ -187,10 +247,34 @@ export function SellerDashboard() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-popover border-border min-w-[160px]">
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'Processing')} className="font-bold text-xs py-2.5 cursor-pointer">Set as Processing</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'Sent')} className="font-bold text-xs py-2.5 cursor-pointer">Mark as Sent/Shipped</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'Delivered')} className="font-bold text-xs py-2.5 cursor-pointer">Mark as Delivered</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => updateOrderStatus(order.id, 'Cancelled')} className="text-destructive font-bold text-xs py-2.5 cursor-pointer">Cancel Order</DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={updatingOrderId === order.id}
+                              onClick={() => void handleStatusUpdate(order.id, "Processing")}
+                              className="font-bold text-xs py-2.5 cursor-pointer"
+                            >
+                              Set as Processing
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={updatingOrderId === order.id}
+                              onClick={() => void handleStatusUpdate(order.id, "Sent")}
+                              className="font-bold text-xs py-2.5 cursor-pointer"
+                            >
+                              Mark as Sent/Shipped
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={updatingOrderId === order.id}
+                              onClick={() => void handleStatusUpdate(order.id, "Delivered")}
+                              className="font-bold text-xs py-2.5 cursor-pointer"
+                            >
+                              Mark as Delivered
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={updatingOrderId === order.id}
+                              onClick={() => void handleStatusUpdate(order.id, "Cancelled")}
+                              className="text-destructive font-bold text-xs py-2.5 cursor-pointer"
+                            >
+                              Cancel Order
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -211,7 +295,12 @@ export function SellerDashboard() {
                 className="bg-card/20 border border-border/50 rounded-[2rem] overflow-hidden group hover:bg-card/40 transition-smooth flex flex-col h-full"
               >
                 <div className="relative aspect-video">
-                  <Image src={product.images?.[0] ?? ''} alt={product.name} fill className="object-cover" />
+                  <Image
+                    src={product.images?.[0] ?? "/city_background.png"}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                  />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <Button size="icon" variant="secondary" className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-accent hover:text-white border-0"><Edit size={16} /></Button>
                     <Button size="icon" variant="secondary" className="h-10 w-10 rounded-full bg-white/10 backdrop-blur-md text-white hover:bg-destructive hover:text-white border-0"><Trash2 size={16} /></Button>
@@ -220,15 +309,26 @@ export function SellerDashboard() {
                 <div className="p-6 text-left flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-bold text-sm tracking-tight">{product.name}</h4>
-                    <span className="text-accent font-black text-xs">{product.price}</span>
+                    <span className="text-accent font-black text-xs">
+                      {formatOrderAmount(product.price)}
+                    </span>
                   </div>
                   <p className="text-[10px] text-muted-foreground line-clamp-2 leading-relaxed mb-6 font-bold flex-1 uppercase">
                     {product.description}
                   </p>
                   <div className="pt-4 border-t border-border/10 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">In Stock</span>
+                      <div
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-full",
+                          product.inStock === false
+                            ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+                            : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                        )}
+                      />
+                      <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                        {product.inStock === false ? "Out of Stock" : "In Stock"}
+                      </span>
                     </div>
                     <Button variant="ghost" size="sm" className="h-8 text-[9px] font-black uppercase tracking-widest text-accent hover:bg-accent/5">Quick Edit</Button>
                   </div>
@@ -258,11 +358,29 @@ function MetricCard({ label, value, icon: Icon, color, trend }: { label: string,
   );
 }
 
-function EmptyFeed({ message, icon: Icon }: { message: string, icon?: LucideIcon }) {
+function EmptyFeed({ message, icon: Icon = BarChart3 }: { message: string, icon?: LucideIcon }) {
   return (
     <div className="py-20 text-center bg-card/5 border border-dashed border-border/30 rounded-[2.5rem]">
-      {Icon ? <div className="text-muted-foreground/20 mb-4 flex justify-center"><Icon size={32} /></div> : <BarChart3 className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />}
+      <div className="text-muted-foreground/20 mb-4 flex justify-center"><Icon size={32} /></div>
       <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{message}</p>
+    </div>
+  );
+}
+
+function SellerDashboardSkeleton() {
+  return (
+    <div className="space-y-8 pb-20">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-32 rounded-3xl" />
+        ))}
+      </div>
+      <Skeleton className="h-12 max-w-xl rounded-full" />
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-20 rounded-2xl" />
+        ))}
+      </div>
     </div>
   );
 }

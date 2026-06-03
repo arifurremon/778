@@ -3,6 +3,7 @@ import { logAdminAction } from "@/lib/audit-log";
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -13,10 +14,6 @@ const moderationSchema = z.object({
   reason: z.string().min(5, "Reason must be at least 5 characters long").optional(),
 });
 
-/**
- * POST /api/admin/posts/[id]/moderate
- * Handles specific moderation decisions for a post.
- */
 export async function POST(
   req: NextRequest,
   { params }: RouteContext
@@ -31,7 +28,6 @@ export async function POST(
     const body = await req.json();
     const validatedData = moderationSchema.parse(body);
 
-    // All actions except 'approve' MUST require a reason
     if (validatedData.action !== "approve" && !validatedData.reason) {
       return NextResponse.json(
         { error: "A reason is required for this moderation action." },
@@ -49,76 +45,66 @@ export async function POST(
     let updatedPost;
 
     if (validatedData.action === "approve") {
-      // SCHEMA-FALLBACK: 'moderationStatus' or 'flagCount' may not exist
-      try {
-        updatedPost = await db.post.update({
-          where: { id },
-          data: {
-            // @ts-ignore
-            moderationStatus: "ACTIVE",
-            // @ts-ignore
-            flagCount: 0,
-          },
-        });
-      } catch (e) {
-        updatedPost = await db.post.update({
-          where: { id },
-          data: { visibility: "PUBLIC" },
-        });
-      }
+      updatedPost = await db.post.update({
+        where: { id },
+        data: {
+          moderationStatus: "ACTIVE",
+          flagCount: 0,
+        },
+      });
     } else if (validatedData.action === "hide") {
-      try {
-        updatedPost = await db.post.update({
-          where: { id },
-          data: {
-            // @ts-ignore
-            moderationStatus: "HIDDEN",
-            visibility: "PRIVATE",
-          },
-        });
-      } catch (e) {
-        updatedPost = await db.post.update({
-          where: { id },
-          data: { visibility: "PRIVATE" },
-        });
-      }
+      updatedPost = await db.post.update({
+        where: { id },
+        data: {
+          moderationStatus: "HIDDEN",
+          visibility: "PRIVATE",
+        },
+      });
     } else if (validatedData.action === "delete") {
-      try {
-        updatedPost = await db.post.update({
-          where: { id },
-          data: {
-            // @ts-ignore
-            deletedAt: new Date(),
-            // @ts-ignore
-            moderationStatus: "DELETED",
-          },
-        });
-      } catch (e) {
-        updatedPost = await db.post.update({
-          where: { id },
-          data: { visibility: "PRIVATE" },
-        });
-      }
+      updatedPost = await db.post.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+          moderationStatus: "DELETED",
+        },
+      });
     } else if (validatedData.action === "ban_author") {
-      // SCHEMA-FALLBACK: 'suspendedAt' or 'suspensionReason' may not exist on User
-      try {
-        await db.user.update({
-          where: { id: post.authorId },
-          data: {
-            // @ts-ignore
-            suspendedAt: new Date(),
-            // @ts-ignore
-            suspensionReason: validatedData.reason,
-          },
-        });
-      } catch (e) {
-        // SCHEMA_FALLBACK: Suspension fields missing on User.
-      }
+      await db.user.update({
+        where: { id: post.authorId },
+        data: {
+          suspendedAt: new Date(),
+          suspensionReason: validatedData.reason,
+        },
+      });
 
-      // Also hide the post
       updatedPost = await db.post.update({
         where: { id },
         data: { visibility: "PRIVATE" },
+      });
+    }
+
+    if (validatedData.action !== "approve") {
+      const messageByAction: Record<string, string> = {
+        hide: `Your post was hidden by a moderator. Reason: ${validatedData.reason}`,
+        delete: `Your post was removed by a moderator. Reason: ${validatedData.reason}`,
+        ban_author: `Your account was suspended. Reason: ${validatedData.reason}`,
+      };
+
+      await sendNotification({
+        userId: post.authorId,
+        actorId: session.user.id,
+        type:
+          validatedData.action === "ban_author"
+            ? NotificationType.MODERATION_ACTION
+            : NotificationType.POST_FLAGGED,
+        entityType: "Post",
+        entityId: id,
+        metadata: {
+          message: messageByAction[validatedData.action] ?? "Your post was moderated.",
+          severity: validatedData.action === "ban_author" ? "HIGH" : "LOW",
+          action: validatedData.action,
+          reason: validatedData.reason ?? null,
+        },
       });
     }
 
@@ -139,9 +125,6 @@ export async function POST(
       endpoint: "/api/admin/posts/[id]/moderate",
       method: "POST",
     });
-    return NextResponse.json(
-      formatAPIError(err),
-      { status: 500 }
-    );
+    return NextResponse.json(formatAPIError(err), { status: 500 });
   }
 }

@@ -39,13 +39,38 @@ import { toast } from "@/hooks/use-toast";
 
 export function ExpertDashboard() {
   const { user } = useAuth();
-  const { bookings, reviews, wallet, acceptBooking, declineBooking, updateOngoingStatus, completeBooking, replyToReview, initializeServices } = useServices();
+  const {
+    bookings,
+    reviews,
+    wallet,
+    acceptBooking,
+    declineBooking,
+    updateOngoingStatus,
+    completeBooking,
+    replyToReview,
+    initializeServices,
+    isLoading,
+    error,
+  } = useServices();
 
   useEffect(() => {
-    initializeServices();
+    void initializeServices();
   }, [initializeServices]);
   const [isOnline, setIsOnline] = useState(true);
   const [replyText, setReplyText] = useState<{ [key: string]: string }>({});
+
+  const runBookingAction = async (action: () => Promise<void>, successTitle: string) => {
+    try {
+      await action();
+      toast({ title: successTitle });
+    } catch (err) {
+      toast({
+        title: "Action Failed",
+        description: err instanceof Error ? err.message : "Could not update booking.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const stats = useMemo(() => ({
     totalRequests: bookings.length,
@@ -53,6 +78,28 @@ export function ExpertDashboard() {
     profileViews: "1.2K",
     rating: "4.9"
   }), [bookings]);
+
+  if (isLoading) {
+    return (
+      <div className="py-20 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground">
+        Loading expert console...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-20 text-center bg-card/5 border border-dashed border-border/30 rounded-[2.5rem] space-y-4">
+        <Briefcase className="w-12 h-12 text-muted-foreground/20 mx-auto" />
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest max-w-md mx-auto">
+          {error}
+        </p>
+        <Button asChild className="rounded-xl font-bold uppercase tracking-widest text-[10px]">
+          <a href="/register-service">Register Your Service</a>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-20">
@@ -130,8 +177,8 @@ export function ExpertDashboard() {
                     <BookingCard 
                       key={booking.id} 
                       booking={booking} 
-                      onAccept={() => acceptBooking(booking.id)}
-                      onDecline={() => declineBooking(booking.id)}
+                      onAccept={() => void runBookingAction(() => acceptBooking(booking.id), "Booking Accepted")}
+                      onDecline={() => void runBookingAction(() => declineBooking(booking.id), "Booking Declined")}
                     />
                   ))}
                   {bookings.filter(b => b.status === 'Pending').length === 0 && (
@@ -151,8 +198,8 @@ export function ExpertDashboard() {
                     <ActiveBookingCard 
                       key={booking.id} 
                       booking={booking} 
-                      onUpdate={(s) => updateOngoingStatus(booking.id, s)}
-                      onComplete={() => completeBooking(booking.id)}
+                      onUpdate={(s) => void runBookingAction(() => updateOngoingStatus(booking.id, s), "Status Updated")}
+                      onComplete={() => void runBookingAction(() => completeBooking(booking.id), "Booking Completed")}
                     />
                   ))}
                   {bookings.filter(b => b.status === 'Ongoing').length === 0 && (

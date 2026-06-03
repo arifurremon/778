@@ -17,8 +17,18 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/use-auth";
 import { useMessages } from "@/hooks/use-messages";
-import type { MockProduct, MockShop } from "@/lib/mock-data";
-import { MOCK_PRODUCTS, MOCK_SHOPS } from "@/lib/mock-data";
+import { api } from "@/lib/api";
+import {
+  formatShopPrice,
+  getProductImage,
+  getShopImage,
+  getShopOwnerName,
+  parseShopPrice,
+  toOrderProduct,
+  type ShopDetail,
+  type ShopDetailProduct,
+  type ShopOrderProduct,
+} from "@/lib/shop-utils";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -36,7 +46,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const container = {
   hidden: { opacity: 0 },
@@ -57,7 +68,10 @@ export default function ShopStorefront() {
   const { user } = useAuth();
   const { startConversation } = useMessages();
   
-  const [selectedProduct, setSelectedProduct] = useState<(MockProduct & { shopName: string }) | null>(null);
+  const [shop, setShop] = useState<ShopDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ShopOrderProduct | null>(null);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   
@@ -66,40 +80,92 @@ export default function ShopStorefront() {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [onlyInStock, setOnlyInStock] = useState(false);
 
-  const shop = useMemo(() => {
-    return (MOCK_SHOPS.find(s => s.id === shopId) || MOCK_SHOPS[0]) as MockShop;
+  useEffect(() => {
+    if (!shopId) return;
+
+    let cancelled = false;
+
+    const loadShop = async () => {
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const data = await api.get<ShopDetail>(`/api/shops/${shopId}`);
+        if (!cancelled) {
+          setShop(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setShop(null);
+          setLoadError(error instanceof Error ? error.message : "Failed to load shop.");
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadShop();
+
+    return () => {
+      cancelled = true;
+    };
   }, [shopId]);
 
-  const shopProducts = useMemo(() => {
-    const filtered = MOCK_PRODUCTS.filter(p => p.shopId === shopId);
-    return filtered.length > 0 ? filtered : MOCK_PRODUCTS.slice(0, 6);
-  }, [shopId]);
+  const shopProducts = useMemo(() => shop?.products ?? [], [shop]);
 
   const filteredCatalog = useMemo(() => {
-    return shopProducts.filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const numericPrice = parseInt(String(p.price).replace(/[^0-9]/g, ''));
+    return shopProducts.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const numericPrice = parseShopPrice(product.price);
       const matchesPrice = numericPrice >= priceRange[0] && numericPrice <= priceRange[1];
-      const matchesStock = onlyInStock ? p.inStock : true;
+      const matchesStock = onlyInStock ? product.inStock : true;
       return matchesSearch && matchesPrice && matchesStock;
     });
   }, [shopProducts, searchQuery, priceRange, onlyInStock]);
 
-  const handleBuyNow = (product: MockProduct) => {
-    setSelectedProduct({ ...product, shopName: shop.name });
+  const handleBuyNow = (product: ShopDetailProduct) => {
+    if (!shop) return;
+    setSelectedProduct(toOrderProduct(product, shop.name));
     setIsOrderModalOpen(true);
   };
 
   const handleMessageSeller = () => {
+    if (!shop) return;
+
     startConversation({
-      id: shop.id as string,
-      name: shop.name,
-      avatar: shop.image,
+      id: shop.user.id,
+      name: getShopOwnerName(shop),
+      avatar: getShopImage(shop),
       role: "Verified Merchant",
-      context: `Inquiry about ${shop.name}`
+      context: `Inquiry about ${shop.name}`,
     });
-    router.push('/messages');
+    router.push("/messages");
   };
+
+  if (isLoading) {
+    return <ShopStorefrontSkeleton />;
+  }
+
+  if (loadError || !shop) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center space-y-6">
+        <Package className="w-16 h-16 text-muted-foreground/30" />
+        <div className="space-y-2">
+          <h1 className="text-2xl font-black tracking-tight">Shop Not Found</h1>
+          <p className="text-sm text-muted-foreground font-medium max-w-md">
+            {loadError ?? "This shop is unavailable or may have been removed."}
+          </p>
+        </div>
+        <Button onClick={() => router.push("/shops")} className="rounded-xl font-bold uppercase tracking-widest text-[10px]">
+          Back to Marketplace
+        </Button>
+      </div>
+    );
+  }
+
+  const isOwner = user?.id === shop.user.id;
 
   return (
     <>
@@ -108,7 +174,7 @@ export default function ShopStorefront() {
         <div className="relative h-[400px] md:h-[500px]">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/30 via-background/60 to-background z-0" />
           <Image 
-            src={`/city_background.png${shop.id}-cover/1600/800`} 
+            src="/city_background.png" 
             alt="Cover" 
             fill 
             className="object-cover opacity-40 z-[-1]"
@@ -129,7 +195,7 @@ export default function ShopStorefront() {
           <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 flex flex-col md:flex-row md:items-end justify-between gap-10">
             <div className="flex flex-col md:flex-row items-center md:items-end gap-8 text-center md:text-left">
               <div className="relative w-32 h-32 md:w-44 md:h-44 rounded-[3rem] overflow-hidden border-8 border-background shadow-2xl ring-8 ring-accent/5">
-                <Image src={shop.image} alt={shop.name} fill className="object-cover" />
+                <Image src={getShopImage(shop)} alt={shop.name} fill className="object-cover" />
               </div>
               <div className="space-y-4 mb-2">
                 <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start">
@@ -139,7 +205,7 @@ export default function ShopStorefront() {
                   </Badge>
                 </div>
                 <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground font-black uppercase tracking-widest justify-center md:justify-start">
-                  <span className="flex items-center gap-2"><Star size={16} className="text-accent fill-accent" /> {shop.rating} ({shop.reviews} REVIEWS)</span>
+                  <span className="flex items-center gap-2"><Star size={16} className="text-accent fill-accent" /> {shop.rating.toFixed(1)} ({shopProducts.length} PRODUCTS)</span>
                   <span className="flex items-center gap-2"><MapPin size={16} className="text-primary" /> {shop.location}</span>
                   <span className={cn(
                     "flex items-center gap-2 px-3 py-1 rounded-lg border shadow-lg",
@@ -274,10 +340,10 @@ export default function ShopStorefront() {
                         </div>
                       )}
                       <div className="relative aspect-square overflow-hidden">
-                        <Image src={product.image} alt={product.name} fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
+                        <Image src={getProductImage(product)} alt={product.name} fill className="object-cover transition-transform duration-1000 group-hover:scale-110" />
                         <div className="absolute top-4 right-4">
                           <div className="bg-black/60 backdrop-blur-xl px-5 py-2.5 rounded-2xl border border-white/10 text-accent font-black text-sm shadow-2xl">
-                            {product.price}
+                            {formatShopPrice(product.price)}
                           </div>
                         </div>
                       </div>
@@ -312,14 +378,41 @@ export default function ShopStorefront() {
           </section>
 
           <section className="pt-24 border-t border-border/10">
-            <VerifiedReviews productId="general" shopId={shop.id as string} isOwner={user?.email?.includes('admin')} />
+            <VerifiedReviews productId="general" shopId={shop.id} isOwner={isOwner} />
           </section>
         </div>
       </div>
 
       {selectedProduct && (
-        <OrderModal product={selectedProduct} shopId={shop.id as string} isOpen={isOrderModalOpen} onClose={() => setSelectedProduct(null)} />
+        <OrderModal
+          product={selectedProduct}
+          shopId={shop.id}
+          isOpen={isOrderModalOpen}
+          onClose={() => {
+            setIsOrderModalOpen(false);
+            setSelectedProduct(null);
+          }}
+        />
       )}
     </>
+  );
+}
+
+function ShopStorefrontSkeleton() {
+  return (
+    <div className="min-h-screen pb-32">
+      <Skeleton className="h-[400px] md:h-[500px] w-full rounded-none" />
+      <div className="max-w-6xl mx-auto px-8 py-16 space-y-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <Skeleton className="md:col-span-2 h-48 rounded-[2.5rem]" />
+          <Skeleton className="h-48 rounded-[2.5rem]" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-[420px] rounded-[2.5rem]" />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

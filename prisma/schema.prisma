@@ -67,7 +67,13 @@ model User {
   expertService    ExpertService?
   postReactions    UserPostReaction[]
   commentReactions UserCommentReaction[]
+  savedPosts       SavedPost[]
+  followedPosts    FollowedPost[]
   orders           Order[]
+  serviceBookings  ServiceBooking[] @relation("ClientBookings")
+  productReviews   ProductReview[]
+  featureSuggestions FeatureSuggestion[]
+  contactInquiries   ContactInquiry[]
 
   // Social Trust
   sentRequests     NeighbourConnection[] @relation("Sender")
@@ -226,6 +232,11 @@ model Post {
   deletedAt        DateTime?
   comments         Comment[]
   reactions        UserPostReaction[]
+  savedBy          SavedPost[]
+  followedBy       FollowedPost[]
+  repostOfId       String?
+  repostOf         Post?              @relation("Reposts", fields: [repostOfId], references: [id], onDelete: SetNull)
+  reposts          Post[]             @relation("Reposts")
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
@@ -267,6 +278,7 @@ model ActivityLog {
   createdAt   DateTime     @default(now())
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 model Shop {
@@ -284,8 +296,10 @@ model Shop {
   rejectedAt      DateTime?
   rejectionReason String?
   payoutMethod    PayoutMethod?
+  registrationDetails Json?
   products        Product[]
   orders          Order[]
+  reviews         ProductReview[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -308,6 +322,31 @@ model Product {
   category      String
   createdAt     DateTime @default(now())
   orders        Order[]
+  reviews       ProductReview[]
+}
+
+model ProductReview {
+  id         String   @id @default(uuid())
+  shopId     String
+  shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  scope      String   @default("general")
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyerId    String
+  buyer      User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  orderId    String?
+  rating     Int
+  comment    String
+  reply      String?
+  isVerified Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([buyerId, shopId, scope])
+  @@index([shopId])
+  @@index([scope])
+  @@index([productId])
+  @@index([createdAt])
 }
 
 model ExpertService {
@@ -327,6 +366,8 @@ model ExpertService {
   rejectedAt      DateTime?
   rejectionReason String?
   payoutMethod    PayoutMethod?
+  registrationDetails Json?
+  bookings        ServiceBooking[]
   createdAt       DateTime      @default(now())
 
   // FIX(P1): Added missing indexes — category/location/isVerified are the
@@ -493,6 +534,41 @@ enum OrderStatus {
   REJECTED
 }
 
+enum ServiceBookingStatus {
+  PENDING
+  CONFIRMED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum ServiceBookingSubStatus {
+  CONFIRMED
+  ON_MY_WAY
+  SERVICE_STARTED
+}
+
+model ServiceBooking {
+  id              String                   @id @default(uuid())
+  expertServiceId String
+  expertService   ExpertService            @relation(fields: [expertServiceId], references: [id], onDelete: Cascade)
+  clientId        String
+  client          User                     @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Cascade)
+  scheduledDate   DateTime?
+  address         String?
+  notes           String?
+  fee             String
+  status          ServiceBookingStatus     @default(PENDING)
+  subStatus       ServiceBookingSubStatus?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  @@index([expertServiceId])
+  @@index([clientId])
+  @@index([status])
+}
+
 model Order {
   id         String      @id @default(uuid())
   shopId     String
@@ -547,6 +623,60 @@ model UserCommentReaction {
   @@id([userId, commentId])
 }
 
+model SavedPost {
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model FollowedPost {
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model ContactInquiry {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String
+  email     String
+  subject   String
+  message   String
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+model FeatureSuggestion {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  details   String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+}
+
 model EmergencyContact {
   id          String   @id @default(uuid())
   name        String
@@ -560,12 +690,17 @@ model EmergencyContact {
 
 model DirectoryEntry {
   id          String   @id @default(uuid())
+  type        String
   name        String
   category    String
   phone       String?
   address     String?
   website     String?
   description String?
+  metadata    Json     @default("{}")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([type])
+  @@index([category])
 }

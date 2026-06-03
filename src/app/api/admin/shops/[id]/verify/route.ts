@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -32,7 +33,6 @@ try {
 
     // [cite_start]Use Prisma transaction to update shop status and create notification. [cite: 109]
     await db.$transaction(async (tx) => {
-      // Update shop status
       await tx.shop.update({
         where: { id },
         data: { 
@@ -41,37 +41,22 @@ try {
         }
       });
 
-      // Update user role if needed
       await tx.user.update({
         where: { id: shop.userId },
         data: { isSeller: true, registrationStatus: 'APPROVED' }
       });
+    });
 
-      // [cite_start]Create an in-app notification for the owner. [cite: 109]
-      // SCHEMA-FALLBACK: 'notification' may not exist — verify schema
-      try {
-        await tx.notification.create({
-          data: {
-            userId: shop.userId,
-            type: "SHOP_VERIFIED",
-            entityType: "Shop",
-            entityId: shop.id,
-            metadata: {
-              approved: true,
-              message: "Your Chattala Shop Has Been Verified! You can now start listing products.",
-            },
-          }
-        });
-      } catch (e) {
-        // Fallback: Create an activity log instead
-        await tx.activityLog.create({
-          data: {
-            userId: shop.userId,
-            type: "SYSTEM",
-            description: "Your shop has been verified successfully.",
-          }
-        });
-      }
+    await sendNotification({
+      userId: shop.userId,
+      actorId: session.user.id,
+      type: NotificationType.SHOP_VERIFIED,
+      entityType: "Shop",
+      entityId: shop.id,
+      metadata: {
+        approved: "true",
+        message: "Your Chattala Shop Has Been Verified! You can now start listing products.",
+      },
     });
 
     // [cite_start]Send a success email: "Your Chattala Shop Has Been Verified! 🎉". [cite: 110]

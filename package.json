@@ -22,7 +22,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:e2e:install": "playwright install --with-deps chromium",
-    "check:db": "npx tsx scripts/check-db.ts",
+    "seed:phase3": "tsx scripts/seed-phase3-content.ts",
     "script:replace-logs": "node scripts/replace-logs.js",
     "script:test-csrf": "node scripts/test-csrf.js"
   },

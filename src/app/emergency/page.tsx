@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, MapPin, ShieldAlert, Siren, Truck, Building2, Search, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
-import { EMERGENCY_CONTACTS, EmergencyCategory } from "@/lib/emergency-data";
+import type { EmergencyContactDto } from "@/lib/emergency-utils";
+import { api } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CATEGORIES = [
   { id: 'All', label: 'All Contacts', icon: <Search size={14} /> },
@@ -20,13 +22,22 @@ const CATEGORIES = [
 export default function EmergencyPage() {
   const [activeTab, setActiveTab] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState("");
+  const [contacts, setContacts] = useState<EmergencyContactDto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredContacts = EMERGENCY_CONTACTS.filter(contact => {
-    const matchesTab = activeTab === 'All' || contact.category === activeTab;
-    const matchesSearch = contact.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          contact.phone.includes(searchQuery);
-    return matchesTab && matchesSearch;
-  });
+  useEffect(() => {
+    setIsLoading(true);
+    const params = new URLSearchParams();
+    if (activeTab !== "All") params.set("category", activeTab);
+    if (searchQuery.trim()) params.set("search", searchQuery.trim());
+
+    api.get<{ contacts: EmergencyContactDto[] }>(`/api/emergency?${params.toString()}`)
+      .then((response) => setContacts(response.contacts))
+      .catch(() => setContacts([]))
+      .finally(() => setIsLoading(false));
+  }, [activeTab, searchQuery]);
+
+  const filteredContacts = contacts;
 
   const getGoogleMapsUrl = (name: string) => {
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' Chittagong')}`;
@@ -80,6 +91,11 @@ export default function EmergencyPage() {
         </section>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={index} className="h-56 w-full rounded-2xl" />
+            ))
+          ) : (
           <AnimatePresence mode="popLayout">
             {filteredContacts.map((contact, idx) => (
               <motion.div
@@ -138,9 +154,10 @@ export default function EmergencyPage() {
               </motion.div>
             ))}
           </AnimatePresence>
+          )}
         </section>
 
-        {filteredContacts.length === 0 && (
+        {!isLoading && filteredContacts.length === 0 && (
           <div className="text-center py-20 border-2 border-dashed border-border/30 rounded-3xl">
             <Search className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
             <h3 className="text-xl font-bold">No contacts found</h3>

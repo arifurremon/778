@@ -1,7 +1,11 @@
 import { auth } from "@/lib/auth";
 import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotificationEmailIfAllowed } from "@/lib/notification-email";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { canUserViewPost } from "@/lib/post-visibility";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { requireActiveSession } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
@@ -91,11 +95,18 @@ export async function POST(
     if (active.error) return active.error;
     const { session } = active;
 
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.comments, session.user.id),
+      "Comments",
+      { quotaExceededMessage: "Comment limit reached (30/15 min)." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { postId } = await params;
 
     const post = await db.post.findUnique({
       where: { id: postId },
-      select: { id: true, authorId: true },
+      select: { id: true, authorId: true, content: true },
     });
 
     if (!post) {
@@ -134,30 +145,44 @@ export async function POST(
     });
 
     if (post.authorId !== commenterId) {
-      const postAuthor = await db.user.findUnique({ where: { id: post.authorId } });
+      const postAuthor = await db.user.findUnique({
+        where: { id: post.authorId },
+        select: { email: true, privacySettings: true },
+      });
       const commenterName = comment.author.preferredName || comment.author.name || "A user";
-      
-      await db.activityLog.create({
-        data: {
-          userId: post.authorId,
-          type: "COMMENT",
-          description: `${commenterName} commented on your post.`,
-          contextUrl: `/community#post-${postId}`,
+
+      await sendNotification({
+        userId: post.authorId,
+        actorId: commenterId,
+        type: NotificationType.NEW_COMMENT,
+        entityType: "Post",
+        entityId: postId,
+        metadata: {
+          commentPreview: sanitizedText.slice(0, 80),
+          commenterName,
         },
       });
 
-      if (postAuthor?.email) {
-        const { sendNotificationEmail } = await import("@/lib/mail");
-        await sendNotificationEmail(
-          postAuthor.email,
+      if (postAuthor) {
+        await sendNotificationEmailIfAllowed(
+          postAuthor,
           "New Comment on Your Post",
           "Someone left a comment!",
-          `${commenterName} commented: "${sanitizedText.substring(0, 50)}${sanitizedText.length > 50 ? '...' : ''}"`,
-          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/community`,
+          `${commenterName} commented: "${sanitizedText.substring(0, 50)}${sanitizedText.length > 50 ? "..." : ""}"`,
+          `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/community#post-${postId}`,
           "View Comment"
         );
       }
     }
+
+    await db.activityLog.create({
+      data: {
+        userId: commenterId,
+        type: "COMMENT",
+        description: "You commented on a post.",
+        contextUrl: `/community#post-${postId}`,
+      },
+    });
 
     return NextResponse.json(comment, { status: 201 });
   } catch (error) {

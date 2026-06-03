@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ServiceDetails } from "@/hooks/use-auth";
+import type { ServiceRegistrationFormInput } from "@/lib/service-registration";
+import { mapServiceRegistrationToApiPayload } from "@/lib/service-registration";
 import { useAuth } from "@/hooks/use-auth";
+import { api } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/page-header";
-import { CHITTAGONG_AREAS } from "@/lib/mock-data";
+import { CHITTAGONG_AREAS } from "@/lib/constants/chittagong-areas";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -81,9 +83,10 @@ const steps = [
 ];
 
 export default function RegisterServicePage() {
-  const { user, updateUser } = useAuth();
+  const { refreshProfile } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, control, watch, setValue, trigger, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -136,16 +139,26 @@ export default function RegisterServicePage() {
     setValue(fieldName, newList);
   };
 
-  const onSubmit = (data: RegisterFormValues) => {
-    updateUser({
-      serviceRegistrationStatus: 'Pending',
-      serviceDetails: data as ServiceDetails
-    });
-    toast({
-      title: "Service Application Received",
-      description: "Our verification team will review your credentials.",
-    });
-    router.push('/profile');
+  const onSubmit = async (data: RegisterFormValues) => {
+    setIsSubmitting(true);
+    try {
+      const payload = mapServiceRegistrationToApiPayload(data as ServiceRegistrationFormInput);
+      await api.post("/api/services", payload);
+      await refreshProfile();
+      toast({
+        title: "Service Application Received",
+        description: "Our verification team will review your credentials.",
+      });
+      router.push("/profile");
+    } catch (error) {
+      toast({
+        title: "Registration Failed",
+        description: error instanceof Error ? error.message : "Could not submit your service application.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -475,8 +488,8 @@ export default function RegisterServicePage() {
                     Continue <ChevronRight size={14} className="ml-2" />
                   </Button>
                 ) : (
-                  <Button type="submit" className="flex-[2] bg-accent text-accent-foreground h-12 rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-accent/20">
-                    Submit Expert Application <FileCheck size={16} className="ml-2" />
+                  <Button type="submit" disabled={isSubmitting} className="flex-[2] bg-accent text-accent-foreground h-12 rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-accent/20">
+                    {isSubmitting ? "Submitting..." : "Submit Expert Application"} <FileCheck size={16} className="ml-2" />
                   </Button>
                 )}
               </div>

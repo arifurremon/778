@@ -38,14 +38,33 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         include: {
-          product: { select: { name: true, images: true } }
-        }
+          product: { select: { name: true, images: true } },
+          buyer: { select: { email: true } },
+        },
       }),
-      db.order.count({ where: whereClause })
+      db.order.count({ where: whereClause }),
     ]);
 
+    const formattedOrders = orders.map((order) => ({
+      id: order.id,
+      shopId: order.shopId,
+      productId: order.productId,
+      buyerId: order.buyerId,
+      buyerName: order.buyerName,
+      buyerPhone: order.buyerPhone,
+      status: order.status,
+      quantity: order.quantity,
+      totalPrice: order.totalPrice.toNumber(),
+      address: order.address,
+      note: order.note,
+      createdAt: order.createdAt,
+      product: order.product,
+      buyer: order.buyer,
+    }));
+
     return NextResponse.json({
-      orders,
+      shopId: shop.id,
+      orders: formattedOrders,
       total,
       page,
       limit,

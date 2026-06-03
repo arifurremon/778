@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { triggerNotificationReadEvent } from "@/lib/notification-service";
 import { requireActiveMutation } from "@/lib/session-guards";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -32,6 +33,8 @@ export async function PATCH(
       where: { id, userId: session.user.id },
       data: { isRead: true },
     });
+
+    await triggerNotificationReadEvent(session.user.id, { id });
 
     return NextResponse.json({ success: true });
   } catch (error) {

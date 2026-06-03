@@ -3,7 +3,10 @@ import { requireActiveMutation } from "@/lib/session-guards";
 import { cachedQuery, invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -102,6 +105,8 @@ const createServiceSchema = z.object({
   fee:             z.string().min(1, "Fee is required."),
   bio:             z.string().min(20, "Bio must be at least 20 characters."),
   qualifications:  z.array(z.string()).min(1, "At least one qualification is required."),
+  payoutMethod: z.enum(["BKASH", "NAGAD", "BANK"]).optional(),
+  registrationDetails: z.record(z.unknown()).optional(),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -109,6 +114,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.serviceRegistration, session.user.id),
+      "ServiceRegistration",
+      { quotaExceededMessage: "Service registration limit reached (3/hour)." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const body: unknown = await req.json();
     const parsed = createServiceSchema.safeParse(body);
@@ -132,8 +144,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
+    const { profession, category, location, experienceYears, fee, bio, qualifications, payoutMethod, registrationDetails } =
+      parsed.data;
+
     const service = await db.expertService.create({
-      data: { userId, ...parsed.data },
+      data: {
+        userId,
+        profession,
+        category,
+        location,
+        experienceYears,
+        fee,
+        bio,
+        qualifications,
+        ...(payoutMethod ? { payoutMethod } : {}),
+        ...(registrationDetails ? { registrationDetails: registrationDetails as Prisma.InputJsonValue } : {}),
+      },
       select: expertSelect,
     });
 

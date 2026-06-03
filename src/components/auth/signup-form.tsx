@@ -21,12 +21,7 @@ import { Controller, useForm } from "react-hook-form";
 import { authStyles } from "@/lib/design/auth-styles";
 import * as z from "zod";
 
-const CHITTAGONG_AREAS = [
-  'Akbar Shah', 'Bakalia', 'Bandar', 'Bayezid Bostami', 
-  'Chandgaon', 'Chawkbazar', 'Double Mooring', 'EPZ', 
-  'Halishahar', 'Karnaphuli', 'Khulshi', 'Kotwali', 
-  'Pahartali', 'Panchlaish', 'Patenga', 'Sadarghat'
-] as const;
+import { CHITTAGONG_AREAS } from "@/lib/constants/chittagong-areas";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Full name must be at least 2 characters"),

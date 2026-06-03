@@ -33,11 +33,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useMemo, useState } from "react";
-const CHITTAGONG_AREAS = [
-  "Akbar Shah", "Bakalia", "Bandar", "Bayezid Bostami", "Chandgaon",
-  "Chawkbazar", "Double Mooring", "EPZ", "Halishahar", "Karnaphuli",
-  "Khulshi", "Kotwali", "Pahartali", "Panchlaish", "Patenga", "Sadarghat",
-];
+import { CHITTAGONG_AREAS } from "@/lib/constants/chittagong-areas";
 
 type RealShop = {
   id: string;

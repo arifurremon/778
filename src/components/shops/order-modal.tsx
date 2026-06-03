@@ -12,16 +12,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/use-auth";
-import { useBusiness } from "@/hooks/use-business";
 import { toast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
-import type { MockProduct } from "@/lib/mock-data";
+import type { ShopOrderProduct } from "@/lib/shop-utils";
 import { CheckCircle2, MapPin, Phone as PhoneIcon, ShoppingCart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface OrderModalProps {
-  product: MockProduct & { shopName?: string };
+  product: ShopOrderProduct;
   shopId: string;
   isOpen: boolean;
   onClose: () => void;
@@ -29,12 +28,7 @@ interface OrderModalProps {
 
 export function OrderModal({ product, shopId, isOpen, onClose }: OrderModalProps) {
   const { user } = useAuth();
-  const { initializeBusiness } = useBusiness();
   const router = useRouter();
-
-  useEffect(() => {
-    initializeBusiness();
-  }, [initializeBusiness]);
 
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);

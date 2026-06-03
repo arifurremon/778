@@ -27,7 +27,8 @@ import {
   Heart,
   MessageCircle,
   Check,
-  Home
+  Home,
+  Package
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useMessages } from "@/hooks/use-messages";
@@ -246,10 +247,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           ) : (
             notifications.map((n) => {
-              const isLike = n.type === 'POST_REACTION';
-              const isComment = n.type === 'NEW_COMMENT' || n.type === 'COMMENT_REPLY';
-              const isConnection = n.type === 'NEIGHBOR_REQUEST' || n.type === 'NEIGHBOR_ACCEPTED';
-              const isPopular = n.type === 'SYSTEM_ALERT';
+              const isLike = n.type === "POST_REACTION";
+              const isComment = n.type === "NEW_COMMENT" || n.type === "COMMENT_REPLY";
+              const isConnection = n.type === "NEIGHBOR_REQUEST" || n.type === "NEIGHBOR_ACCEPTED";
+              const isModeration =
+                n.type === "SYSTEM_ALERT" ||
+                n.type === "MODERATION_ACTION" ||
+                n.type === "POST_FLAGGED";
+              const isCommerce =
+                n.type === "NEW_ORDER" ||
+                n.type === "ORDER_UPDATED" ||
+                n.type === "SHOP_VERIFIED" ||
+                n.type === "NEW_PRODUCT_REVIEW";
+              const isService =
+                n.type === "SERVICE_BOOKED" ||
+                n.type === "SERVICE_UPDATED" ||
+                n.type === "SERVICE_VERIFIED";
 
               return (
                 <div 
@@ -265,16 +278,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   <div className={cn(
                     "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm border border-border/30",
-                    isPopular ? "bg-rose-500/10 text-rose-500" :
+                    isModeration ? "bg-rose-500/10 text-rose-500" :
                     isLike ? "bg-blue-500/10 text-blue-500" :
                     isComment ? "bg-emerald-500/10 text-emerald-500" :
                     isConnection ? "bg-purple-500/10 text-purple-500" :
+                    isCommerce ? "bg-amber-500/10 text-amber-500" :
+                    isService ? "bg-cyan-500/10 text-cyan-500" :
                     "bg-muted text-muted-foreground"
                   )}>
-                    {isPopular ? <Flame size={18} className="fill-current" /> :
+                    {isModeration ? <ShieldAlert size={18} /> :
                      isLike ? <Heart size={18} className="fill-current" /> :
                      isComment ? <MessageCircle size={18} className="fill-current" /> :
                      isConnection ? <Users size={18} className="fill-current" /> :
+                     isCommerce ? <Package size={18} /> :
+                     isService ? <Briefcase size={18} /> :
                      <Bell size={18} />}
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
@@ -293,7 +310,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             })
           )}
         </div>
-        <div className="p-4 border-t border-border/50 bg-muted/20 shrink-0">
+        <div className="p-4 border-t border-border/50 bg-muted/20 shrink-0 space-y-1">
+          <p className="text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest">
+            Alerts are actionable · Activity History is your timeline
+          </p>
           <Link href="/activity" className="w-full">
             <Button variant="link" className="w-full text-[10px] font-black uppercase tracking-widest text-muted-foreground h-auto p-0">
               View Activity History

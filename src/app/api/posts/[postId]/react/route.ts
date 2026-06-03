@@ -1,5 +1,8 @@
 import { validateCsrfRequest } from "@/lib/csrf";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { requireActiveUser } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -35,12 +38,19 @@ export async function POST(
     if (active.error) return active.error;
     const { session } = active;
 
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.reactions, session.user.id),
+      "Reactions",
+      { quotaExceededMessage: "Reaction limit reached (60/15 min)." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { postId } = await params;
     const userId = session.user.id;
 
     const postExists = await db.post.findUnique({
       where: { id: postId },
-      select: { id: true, authorId: true },
+      select: { id: true, authorId: true, content: true },
     });
 
     if (!postExists) {
@@ -127,8 +137,39 @@ export async function POST(
         });
       }
 
+      if (userReaction !== null) {
+        await tx.activityLog.create({
+          data: {
+            userId,
+            type: type === "helpful" ? "LIKE" : "POST_DISLIKE",
+            description:
+              type === "helpful"
+                ? "You marked a post as helpful."
+                : "You marked a post as not helpful.",
+            contextUrl: `/community#post-${postId}`,
+          },
+        });
+      }
+
       return { updated, userReaction };
     });
+
+    if (
+      result.userReaction === "helpful" &&
+      result.updated.authorId !== userId
+    ) {
+      await sendNotification({
+        userId: result.updated.authorId,
+        actorId: userId,
+        type: NotificationType.POST_REACTION,
+        entityType: "Post",
+        entityId: postId,
+        metadata: {
+          emoji: "👍",
+          postPreview: postExists.content.slice(0, 80),
+        },
+      });
+    }
 
     return NextResponse.json({
       id: result.updated.id,

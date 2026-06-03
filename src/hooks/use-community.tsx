@@ -61,10 +61,10 @@ interface CommunityContextType {
   likeComment: (postId: string, commentId: string) => void;
   unlikeComment: (postId: string, commentId: string) => void;
   interactPost: (postId: string, type: 'helpful' | 'not-helpful') => Promise<void>;
-  toggleSavePost: (id: string) => void;
-  toggleFollowPost: (id: string) => void;
+  toggleSavePost: (id: string) => Promise<void>;
+  toggleFollowPost: (id: string) => Promise<void>;
   blockUser: (username: string) => void;
-  repost: (postId: string, caption: string, user: Post['author']) => void;
+  repost: (postId: string, caption: string, user: Post['author']) => Promise<void>;
 }
 
 interface PostApiResponse {
@@ -107,7 +107,8 @@ function mapVisibilityFromAPI(v: string): PrivacyLevel {
   return 'Public';
 }
 
-function mapApiPost(p: any): Post {
+export function mapApiPost(p: any): Post {
+  const reaction = p.userReaction ?? null;
   return {
     ...p,
     timestamp: p.createdAt,
@@ -119,11 +120,12 @@ function mapApiPost(p: any): Post {
       likes: c.likes ?? 0,
       unlikes: c.unlikes ?? 0,
     })),
-    isSaved: false,
-    isFollowing: false,
+    isSaved: p.isSaved ?? false,
+    isFollowing: p.isFollowing ?? false,
     helpfulCount: p.helpfulCount ?? 0,
     notHelpfulCount: p.notHelpfulCount ?? 0,
-    userReaction: null,
+    userReaction: reaction,
+    visibility: mapVisibilityFromAPI(p.visibility ?? "PUBLIC"),
   };
 }
 
@@ -202,12 +204,13 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     await fetchPosts();
   }, [fetchPosts]);
 
-  const addPost = async (postData: Omit<Post, 'id' | 'timestamp' | 'helpfulCount' | 'notHelpfulCount' | 'comments'>) => {
+  const addPost = async (postData: Omit<Post, 'id' | 'timestamp' | 'helpfulCount' | 'notHelpfulCount' | 'comments'> & { repostOfId?: string }) => {
     const newPostRaw = await api.post<PostApiResponse>('/api/posts', {
       content: postData.content,
       images: postData.images,
       checkInLocation: postData.checkInLocation,
-      visibility: postData.visibility === 'Public' ? 'PUBLIC' : postData.visibility === 'Neighbours' ? 'NEIGHBOURS' : 'PRIVATE'
+      visibility: postData.visibility === 'Public' ? 'PUBLIC' : postData.visibility === 'Neighbours' ? 'NEIGHBOURS' : 'PRIVATE',
+      repostOfId: postData.repostOfId,
     });
     const newPost: Post = {
       id: newPostRaw.id,
@@ -381,12 +384,52 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const toggleSavePost = (id: string) => {
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, isSaved: !p.isSaved } : p));
+  const toggleSavePost = async (id: string) => {
+    const target = posts.find((post) => post.id === id);
+    if (!target) return;
+
+    const nextSaved = !target.isSaved;
+    setPosts((prev) =>
+      prev.map((post) => (post.id === id ? { ...post, isSaved: nextSaved } : post))
+    );
+
+    try {
+      if (nextSaved) {
+        await api.post(`/api/posts/${id}/save`);
+      } else {
+        await api.del(`/api/posts/${id}/save`);
+      }
+    } catch (error) {
+      setPosts((prev) =>
+        prev.map((post) => (post.id === id ? { ...post, isSaved: !nextSaved } : post))
+      );
+      throw error;
+    }
   };
 
-  const toggleFollowPost = (id: string) => {
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, isFollowing: !p.isFollowing } : p));
+  const toggleFollowPost = async (id: string) => {
+    const target = posts.find((post) => post.id === id);
+    if (!target) return;
+
+    const nextFollowing = !target.isFollowing;
+    setPosts((prev) =>
+      prev.map((post) => (post.id === id ? { ...post, isFollowing: nextFollowing } : post))
+    );
+
+    try {
+      if (nextFollowing) {
+        await api.post(`/api/posts/${id}/follow`);
+      } else {
+        await api.del(`/api/posts/${id}/follow`);
+      }
+    } catch (error) {
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === id ? { ...post, isFollowing: !nextFollowing } : post
+        )
+      );
+      throw error;
+    }
   };
 
   const blockUser = async (username: string) => {
@@ -401,26 +444,27 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const repost = (postId: string, caption: string, user: Post['author']) => {
-    const originalPost = posts.find(p => p.id === postId);
+  const repost = async (postId: string, caption: string, user: Post['author']) => {
+    const originalPost = posts.find((post) => post.id === postId);
     if (!originalPost) return;
 
-    const repostContent = `${caption}\n\n---\nReposted from @${originalPost.author.username}:\n"${originalPost.content}"`;
-
-    addPost({
+    await addPost({
       author: {
         id: user.id,
         name: user.name,
         username: user.username,
-        avatar: (user as { profileImage?: string }).profileImage ?? user.avatar ?? '',
+        avatar: (user as { profileImage?: string }).profileImage ?? user.avatar ?? "",
         location: user.location,
         isVerified: user.isVerified,
         isSeller: user.isSeller,
-        isServiceProvider: user.isServiceProvider
+        isServiceProvider: user.isServiceProvider,
       },
-      content: repostContent,
+      content: caption.trim() || "Reposted a discussion.",
       images: originalPost.images,
-      visibility: 'Public' as PrivacyLevel
+      visibility: "Public" as PrivacyLevel,
+      repostOfId: postId,
+    } as Omit<Post, "id" | "timestamp" | "helpfulCount" | "notHelpfulCount" | "comments"> & {
+      repostOfId: string;
     });
   };
 
