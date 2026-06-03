@@ -22,6 +22,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderStatus, useBusiness } from "@/hooks/use-business";
 import { formatOrderAmount } from "@/lib/business-utils";
+import {
+  calculateDeliveredRevenueTrend,
+  formatTrendPercent,
+} from "@/lib/seller/seller-metrics";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -91,6 +95,15 @@ export function SellerDashboard() {
       ).length,
       activeProducts: products.length,
       rating: shop?.rating?.toFixed(1) ?? "—",
+      revenueTrend: formatTrendPercent(
+        calculateDeliveredRevenueTrend(
+          orders.map((order) => ({
+            price: order.price,
+            status: order.status,
+            createdAt: order.createdAt,
+          }))
+        )
+      ),
     }),
     [orders, products, shop]
   );
@@ -133,7 +146,7 @@ export function SellerDashboard() {
           value={`৳${stats.totalSales.toLocaleString()}`} 
           icon={TrendingUp} 
           color="text-emerald-400"
-          trend="+12%"
+          trend={stats.revenueTrend}
         />
         <MetricCard 
           label="Active Orders" 

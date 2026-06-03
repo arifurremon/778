@@ -7,7 +7,7 @@ import {
 } from "../src/lib/directory-data";
 import { EMERGENCY_CONTACTS } from "../src/lib/emergency-data";
 
-async function seedEmergencyContacts() {
+export async function seedEmergencyContacts() {
   for (const contact of EMERGENCY_CONTACTS) {
     await db.emergencyContact.upsert({
       where: { id: contact.id },
@@ -28,7 +28,7 @@ async function seedEmergencyContacts() {
   }
 }
 
-async function seedDirectoryEntries() {
+export async function seedDirectoryEntries() {
   for (const spot of TOURISM_SPOTS) {
     await db.directoryEntry.upsert({
       where: { id: spot.id },

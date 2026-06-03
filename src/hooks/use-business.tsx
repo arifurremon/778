@@ -27,6 +27,7 @@ export interface Order {
   price: number;
   status: OrderStatus;
   timestamp: string;
+  createdAt: string;
 }
 
 export interface Product {

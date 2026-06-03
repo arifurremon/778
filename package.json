@@ -23,6 +23,8 @@
     "test:e2e:report": "playwright show-report",
     "test:e2e:install": "playwright install --with-deps chromium",
     "seed:phase3": "tsx scripts/seed-phase3-content.ts",
+    "seed:staging": "tsx scripts/seed-staging.ts",
+    "migrate:verify-fresh": "bash scripts/verify-fresh-migrate.sh",
     "drill:smoke": "tsx scripts/dr-drill-smoke.ts",
     "script:replace-logs": "node scripts/replace-logs.js",
     "script:test-csrf": "node scripts/test-csrf.js"

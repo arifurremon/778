@@ -93,6 +93,7 @@ export function mapApiSellerOrder(order: ApiSellerOrder): Order {
     price: order.totalPrice,
     status: mapApiOrderStatusToUi(order.status),
     timestamp: new Date(order.createdAt).toLocaleString(),
+    createdAt: order.createdAt,
   };
 }
 

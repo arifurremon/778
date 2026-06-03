@@ -144,12 +144,12 @@
 **Goal:** Migration integrity, real analytics, retention automation.
 
 ### Tasks
-- [ ] **5.1** CI validate job: run `prisma migrate deploy` on empty Postgres (same as E2E).
-- [ ] **5.2** Remove or quarantine risky migration `clean_old_users` if not needed in fresh installs.
-- [ ] **5.3** Admin analytics: replace hardcoded trend badges with real SQL aggregations.
-- [ ] **5.4** Add DB indexes audit — verify all hot queries covered (use `EXPLAIN ANALYZE` in staging).
-- [ ] **5.5** Staging database seed script: `npm run seed:staging` (users, shops, posts, directory).
-- [ ] **5.6** Backup verification job (weekly GitHub Action): restore Neon branch → run smoke query.
+- [x] **5.1** CI validate job: run `prisma migrate deploy` on empty Postgres (same as E2E).
+- [x] **5.2** Remove or quarantine risky migration `clean_old_users` if not needed in fresh installs.
+- [x] **5.3** Admin analytics: replace hardcoded trend badges with real SQL aggregations.
+- [x] **5.4** Add DB indexes audit — verify all hot queries covered (use `EXPLAIN ANALYZE` in staging).
+- [x] **5.5** Staging database seed script: `npm run seed:staging` (users, shops, posts, directory).
+- [x] **5.6** Backup verification job (weekly GitHub Action): restore Neon branch → run smoke query.
 
 ### Exit Criteria
 - Fresh `migrate deploy` passes in both CI validate and E2E.
