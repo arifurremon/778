@@ -46,6 +46,10 @@
     --auth-brand-deep: 221 83% 45%;
     --auth-brand-darker: 221 84% 38%;
     --auth-foreground: 222 47% 11%;
+    --auth-glass-from: 0 0% 100%;
+    --auth-glass-via: 210 40% 98%;
+    --auth-glass-border: 0 0% 100%;
+    --auth-glass-tab: 0 0% 96%;
   }
 
   .dark {
@@ -86,6 +90,10 @@
     --auth-brand-deep: 221 83% 50%;
     --auth-brand-darker: 221 84% 42%;
     --auth-foreground: 0 0% 95%;
+    --auth-glass-from: 222 47% 12%;
+    --auth-glass-via: 217 33% 16%;
+    --auth-glass-border: 0 0% 100%;
+    --auth-glass-tab: 0 0% 18%;
   }
 }
 
