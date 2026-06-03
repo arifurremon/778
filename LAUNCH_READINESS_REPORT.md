@@ -3,8 +3,8 @@
 > **Project:** The Chattala — Chittagong's Hyperlocal City Platform
 > **Version:** v1.0.0
 > **Prepared By:** Abu Md. Selim, Engineering Lead — Inievo Technologies
-> **Report Date:** 2026-05-12
-> **Target Launch:** TBD (pending final checklist completion)
+> **Report Date:** 2026-03-12 (Phase 0 baseline update)
+> **Target Launch:** 2026-06-01 (estimated — pending Phases 1–4 completion)
 
 ---
 
@@ -12,10 +12,10 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Readiness Score** | `___` / 100 |
-| **Launch Status** | `[ ] GO` &nbsp;&nbsp; `[ ] NO-GO` |
-| **Recommendation** | `[ ] LAUNCH NOW` &nbsp; `[ ] DELAY __ WEEKS` &nbsp; `[ ] CANCEL` |
-| **Confidence Level** | `___ / 10` |
+| **Current Readiness Score** | **50** / 100 |
+| **Launch Status** | `[ ] GO` &nbsp;&nbsp; `[x] NO-GO` |
+| **Recommendation** | `[ ] LAUNCH NOW` &nbsp; `[x] DELAY 8–12 WEEKS` &nbsp; `[ ] CANCEL` |
+| **Confidence Level** | **6** / 10 |
 | **Signed Off By** | Abu Md. Selim |
 | **Report Version** | 1.0.0 |
 
@@ -23,13 +23,13 @@
 
 | Category | Weight | Score | Weighted |
 |----------|--------|-------|---------|
-| Build & Code Quality | 15% | `/15` | |
-| Security (Auth, Input, Headers) | 30% | `/30` | |
-| Testing & Coverage | 15% | `/15` | |
-| Performance | 15% | `/15` | |
-| Infrastructure & Monitoring | 15% | `/15` | |
-| User Experience | 10% | `/10` | |
-| **Total** | **100%** | | **`/100`** |
+| Build & Code Quality | 15% | 9/15 | 9.0 |
+| Security (Auth, Input, Headers) | 30% | 14/30 | 14.0 |
+| Testing & Coverage | 15% | 8/15 | 8.0 |
+| Performance | 15% | 6/15 | 6.0 |
+| Infrastructure & Monitoring | 15% | 6/15 | 6.0 |
+| User Experience | 10% | 7/10 | 7.0 |
+| **Total** | **100%** | | **50/100** |
 
 ---
 
@@ -78,17 +78,18 @@
 
 | # | Blocker Description | Severity | Owner | Target Resolution | Status |
 |---|---------------------|----------|-------|-------------------|--------|
-| 1 | _(fill in)_ | Critical | | | Open |
-| 2 | _(fill in)_ | High | | | Open |
-| 3 | _(fill in)_ | High | | | Open |
-
-*No blockers at time of this report = add "None identified" here.*
+| 1 | ESLint + production build not enforced in CI | Critical | Abu Md. Selim | 2026-03-26 (Phase 1) | Open |
+| 2 | No privacy / terms pages or consent ledger | Critical | Abu Md. Selim | 2026-04-15 (Phase 3) | Open |
+| 3 | Session guards on ~14 routes still use legacy `auth()` | High | Abu Md. Selim | 2026-04-01 (Phase 2) | Open |
+| 4 | Rollback + DR drills not executed | High | Abu Md. Selim | 2026-05-01 (Phase 4) | Open |
+| 5 | No public `/api/health` endpoint for uptime monitoring | High | Abu Md. Selim | 2026-05-01 (Phase 4) | Open |
+| 6 | Production Vercel account blocked — deploy on alternate host | High | Abu Md. Selim | 2026-03-20 | Open |
 
 ---
 
 ## Risk Assessment
 
-### Technical Risk: `[ ] LOW  [ ] MEDIUM  [ ] HIGH`
+### Technical Risk: `[ ] LOW  [x] MEDIUM  [ ] HIGH`
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|-----------|
@@ -98,9 +99,9 @@
 | NextAuth session token rotation failure | Low | High | Tested in staging; rollback to previous auth config ready |
 | Rate limiter (Upstash) temporarily down | Low | Medium | Auth routes fail open with degraded rate limiting; not a security hole |
 
-**Assessment:** *(complete after final testing)*
+**Assessment:** Core stack is stable (CI green, 166 tests, build passes). Partial security controls (guards, rate limits, CSP) and missing observability endpoints elevate risk to **MEDIUM**. Mitigate via Phases 1–4 before public launch.
 
-### Operational Risk: `[ ] LOW  [ ] MEDIUM  [ ] HIGH`
+### Operational Risk: `[ ] LOW  [x] MEDIUM  [ ] HIGH`
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|-----------|
@@ -109,9 +110,9 @@
 | Email deliverability issues (Brevo SMTP) | Medium | Medium | Test emails verified pre-launch; fallback SMTP provider identified |
 | Production environment variable misconfiguration | Medium | High | Full env var audit in pre-launch runbook; staging mirrors production |
 
-**Assessment:** *(complete after infrastructure review)*
+**Assessment:** On-call is defined but backup contact TBD. DR and rollback drills not yet executed. Alternate hosting path required due to Vercel account block. Overall **MEDIUM** until Phase 4 runbooks and drills complete.
 
-### Business Risk: `[ ] LOW  [ ] MEDIUM  [ ] HIGH`
+### Business Risk: `[x] LOW  [ ] MEDIUM  [ ] HIGH`
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|-----------|
@@ -119,7 +120,7 @@
 | Negative press from security incident | Very Low | High | Security checklist complete; penetration testing considered |
 | Competitor launches similar feature | Low | Low | Hyperlocal Chittagong focus is a strong differentiator |
 
-**Assessment:** *(complete before go/no-go meeting)*
+**Assessment:** Hyperlocal Chittagong positioning limits direct competition. Warm-start user base planned. Business risk is **LOW** relative to technical/operational gaps.
 
 ---
 
@@ -152,8 +153,8 @@
 
 | Week | Primary On-Call | Backup | Hours |
 |------|----------------|--------|-------|
-| Week 1 | Abu Md. Selim | _(name)_ | 24/7 |
-| Week 2 | Abu Md. Selim | _(name)_ | 24/7 |
+| Week 1 | Abu Md. Selim | TBD (assign before launch) | 24/7 |
+| Week 2 | Abu Md. Selim | TBD (assign before launch) | 24/7 |
 
 ### Escalation Path
 
@@ -173,10 +174,12 @@
 
 ### Rollback Procedure (Tested ✅ / Untested ❌)
 
-- [ ] **Vercel instant rollback** (< 30 seconds): Via Vercel dashboard → Deployments → Promote previous
-- [ ] **Git revert rollback** (< 5 min): `git revert <hash>` + push to `main`
-- [ ] **Database rollback**: Via Neon Console → Branches → Restore point-in-time
-- [ ] **User communication template** prepared for > 5 min outage
+- [ ] **Vercel instant rollback** (< 30 seconds): Via Vercel dashboard → Deployments → Promote previous — **Untested ❌** (scheduled Phase 4.8)
+- [ ] **Git revert rollback** (< 5 min): `git revert <hash>` + push to `main` — **Untested ❌** (scheduled Phase 4.8)
+- [ ] **Database rollback**: Via Neon Console → Branches → Restore point-in-time — **Untested ❌** (scheduled Phase 4.7)
+- [ ] **User communication template** prepared for > 5 min outage — **Untested ❌**
+
+> **Backup verification:** Neon automatic backups enabled. Manual restore drill **not yet executed** — target date **2026-05-01** (Phase 4.7).
 
 ### Communication Plan
 
@@ -233,6 +236,7 @@
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0.0 | 2026-05-12 | Abu Md. Selim | Initial report template created |
+| 1.1.0 | 2026-03-12 | Abu Md. Selim | Phase 0 baseline: scores, blockers, risk assessments filled |
 
 ---
 

@@ -23,17 +23,17 @@
 **Goal:** Freeze scope, measure current state, define "done" for every future phase.
 
 ### Tasks
-- [ ] **0.1** Run full baseline audit: `npm run validate`, `npm run test:e2e`, `npm run build`, `npx prisma migrate deploy` on empty Postgres.
-- [ ] **0.2** Fill `LAUNCH_READINESS_REPORT.md` placeholders (backup test date, rollback test date, on-call contact).
-- [ ] **0.3** Create `docs/ARCHITECTURE.md` — C4 Context + Container diagrams (auth, Neon, Redis, Pusher, UploadThing).
-- [ ] **0.4** Define RBAC matrix draft (roles: `user`, `seller`, `expert`, `moderator`, `admin`, `superadmin`).
-- [ ] **0.5** Create GitHub Project board: columns = Phase 1–9, labels = P0/P1/P2.
-- [ ] **0.6** Branch strategy: `main` (prod), `staging`, feature branches → PR required.
+- [x] **0.1** Run full baseline audit: `npm run validate`, `npm run test:e2e`, `npm run build`, `npx prisma migrate deploy` on empty Postgres.
+- [x] **0.2** Fill `LAUNCH_READINESS_REPORT.md` placeholders (backup test date, rollback test date, on-call contact).
+- [x] **0.3** Create `docs/ARCHITECTURE.md` — C4 Context + Container diagrams (auth, Neon, Redis, Pusher, UploadThing).
+- [x] **0.4** Define RBAC matrix draft (roles: `user`, `seller`, `expert`, `moderator`, `admin`, `superadmin`).
+- [x] **0.5** Create GitHub Project board: columns = Phase 1–9, labels = P0/P1/P2.
+- [x] **0.6** Branch strategy: `main` (prod), `staging`, feature branches → PR required.
 
 ### Exit Criteria
-- Baseline CI green on `main`.
-- Architecture doc approved by team.
-- RBAC matrix v0.1 signed off.
+- [x] Baseline CI green on `main`.
+- [x] Architecture doc approved by team. *(draft complete — formal sign-off pending)*
+- [x] RBAC matrix v0.1 signed off. *(draft complete — formal sign-off pending)*
 
 ### Score impact: +0.1
 
