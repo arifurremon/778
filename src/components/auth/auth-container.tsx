@@ -1,6 +1,7 @@
 "use client";
 
 import Logo from "@/components/brand/logo";
+import { authStyles } from "@/lib/design/auth-styles";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
@@ -48,6 +49,7 @@ export default function AuthContainer({ defaultTab = "login" }: AuthContainerPro
                 onClick={() => setIsLogin(true)}
                 className={cn(
                   "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-300",
+                  authStyles.tabFocus,
                   isLogin
                     ? "bg-card text-foreground shadow-md"
                     : "text-muted-foreground hover:text-foreground"
@@ -60,6 +62,7 @@ export default function AuthContainer({ defaultTab = "login" }: AuthContainerPro
                 onClick={() => setIsLogin(false)}
                 className={cn(
                   "px-6 py-2 rounded-full text-sm font-semibold transition-all duration-300",
+                  authStyles.tabFocus,
                   !isLogin
                     ? "bg-card text-foreground shadow-md"
                     : "text-muted-foreground hover:text-foreground"

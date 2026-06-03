@@ -146,3 +146,89 @@ export function DashboardPageLoading() {
     </div>
   );
 }
+
+export function ActivityPageLoading() {
+  return (
+    <div className="max-w-4xl mx-auto py-8 px-6 space-y-8 animate-pulse">
+      <PageHeaderSkeleton />
+      <div className="h-11 w-full max-w-2xl bg-muted/50 rounded-full" />
+      <div className="space-y-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-20 rounded-2xl border border-border/50 bg-card/30"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function ServicesPageLoading() {
+  return (
+    <div className="p-6 md:p-10 space-y-8 animate-pulse">
+      <PageHeaderSkeleton />
+      <div className="flex flex-wrap gap-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-10 w-28 bg-muted/50 rounded-full" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-48 rounded-2xl border border-border/50 bg-card/30"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function NeighboursPageLoading() {
+  return (
+    <div className="max-w-4xl mx-auto py-8 px-6 space-y-8 animate-pulse">
+      <PageHeaderSkeleton />
+      <div className="h-11 w-full bg-muted/50 rounded-xl" />
+      <div className="h-10 w-64 bg-muted/40 rounded-full" />
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-4 p-4 rounded-2xl border border-border/50 bg-card/20"
+          >
+            <div className="w-12 h-12 rounded-full bg-muted shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-32 bg-muted rounded-lg" />
+              <div className="h-3 w-24 bg-muted/60 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function EmergencyPageLoading() {
+  return (
+    <div className="max-w-5xl mx-auto py-8 px-6 space-y-8 animate-pulse">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <PageHeaderSkeleton />
+        <div className="h-11 w-full md:w-80 bg-muted/50 rounded-xl" />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-9 w-24 bg-muted/50 rounded-full" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-28 rounded-2xl border border-border/50 bg-card/30"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

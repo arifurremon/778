@@ -102,7 +102,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
           <CheckCircle className="w-10 h-10 text-green-600" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-auth-foreground">Account Created Successfully!</h2>
+          <h2 className={authStyles.heading}>Account Created Successfully!</h2>
           <p className="text-sm text-slate-600 max-w-sm leading-relaxed">
             We&apos;ve sent a verification email to{" "}
             <span className="font-bold text-auth-foreground">{registeredEmail}</span>. Please check your inbox and click the verification link to activate your account.
@@ -137,8 +137,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         )}
         {/* Full Name */}
         <div className="space-y-2 text-left">
-          <Label htmlFor="name" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
-            <User className="w-4 h-4 text-auth-brand" /> Full Name *
+          <Label htmlFor="name" className={authStyles.labelWithIcon}>
+            <User className={authStyles.fieldIcon} /> Full Name *
           </Label>
           <Input
             id="name"
@@ -155,8 +155,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         {/* Username & Phone Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2 text-left">
-            <Label htmlFor="username" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
-              <AtSign className="w-4 h-4 text-auth-brand" /> Username *
+            <Label htmlFor="username" className={authStyles.labelWithIcon}>
+              <AtSign className={authStyles.fieldIcon} /> Username *
             </Label>
             <Input
               id="username"
@@ -170,8 +170,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             )}
           </div>
           <div className="space-y-2 text-left">
-            <Label htmlFor="mobile" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
-              <Phone className="w-4 h-4 text-auth-brand" /> Phone *
+            <Label htmlFor="mobile" className={authStyles.labelWithIcon}>
+              <Phone className={authStyles.fieldIcon} /> Phone *
             </Label>
             <Input
               id="mobile"
@@ -189,8 +189,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         {/* Email & DOB Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2 text-left">
-            <Label htmlFor="email" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
-              <Mail className="w-4 h-4 text-auth-brand" /> Email *
+            <Label htmlFor="email" className={authStyles.labelWithIcon}>
+              <Mail className={authStyles.fieldIcon} /> Email *
             </Label>
             <Input
               id="email"
@@ -204,8 +204,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             )}
           </div>
           <div className="space-y-2 text-left">
-            <Label htmlFor="dob" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
-              <Calendar className="w-4 h-4 text-auth-brand" /> Date of Birth *
+            <Label htmlFor="dob" className={authStyles.labelWithIcon}>
+              <Calendar className={authStyles.fieldIcon} /> Date of Birth *
             </Label>
             <Input
               id="dob"
@@ -221,8 +221,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
         {/* Location Dropdown */}
         <div className="space-y-2 text-left">
-          <Label htmlFor="location" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
-            <MapPin className="w-4 h-4 text-auth-brand" /> Select Your Thana (Area) *
+          <Label htmlFor="location" className={authStyles.labelWithIcon}>
+            <MapPin className={authStyles.fieldIcon} /> Select Your Thana (Area) *
           </Label>
           <Controller
             name="location"
@@ -232,9 +232,9 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
                 <SelectTrigger className={authStyles.selectTrigger}>
                   <SelectValue placeholder="Choose your Thana from the list below" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border border-slate-200/80 shadow-xl max-h-[400px]">
+                <SelectContent className={authStyles.selectContent}>
                   {CHITTAGONG_AREAS.map((area) => (
-                    <SelectItem key={area} value={area} className="cursor-pointer hover:bg-blue-100 font-medium py-2">
+                    <SelectItem key={area} value={area} className={authStyles.selectItem}>
                       {area}
                     </SelectItem>
                   ))}
@@ -249,8 +249,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
         {/* Profession - Optional */}
         <div className="space-y-2 text-left">
-          <Label htmlFor="profession" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
-            <UserPlus className="w-4 h-4 text-green-600" /> Profession (Optional)
+          <Label htmlFor="profession" className={authStyles.labelWithIcon}>
+            <UserPlus className={authStyles.fieldIconOptional} /> Profession (Optional)
           </Label>
           <Input
             id="profession"
@@ -264,8 +264,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         {/* Password & Confirm Password Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2 text-left">
-            <Label htmlFor="password" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
-              <Lock className="w-4 h-4 text-auth-brand" /> Password *
+            <Label htmlFor="password" className={authStyles.labelWithIcon}>
+              <Lock className={authStyles.fieldIcon} /> Password *
             </Label>
             <div className="relative">
               <Input
@@ -289,8 +289,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             )}
           </div>
           <div className="space-y-2 text-left">
-            <Label htmlFor="confirmPassword" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
-              <Lock className="w-4 h-4 text-auth-brand" /> Confirm Password *
+            <Label htmlFor="confirmPassword" className={authStyles.labelWithIcon}>
+              <Lock className={authStyles.fieldIcon} /> Confirm Password *
             </Label>
             <div className="relative">
               <Input

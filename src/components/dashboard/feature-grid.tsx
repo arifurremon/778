@@ -217,12 +217,9 @@ export function FeatureGrid() {
                  className="bg-card/20 border-border/50 min-h-[120px] focus:ring-accent resize-none p-4 font-bold rounded-xl"
                />
              </div>
-             <div className="p-4 bg-cyan-500/5 border border-cyan-500/20 rounded-2xl flex flex-col gap-2">
-               <Label className="text-[10px] font-bold uppercase tracking-widest text-cyan-500">Reference Attachment (Optional)</Label>
-               <div className="h-24 border-2 border-dashed border-cyan-500/20 rounded-xl flex items-center justify-center text-muted-foreground/40 hover:border-cyan-500/40 transition-colors cursor-pointer">
-                 <span className="text-[10px] font-bold uppercase tracking-widest">Click to upload mock-up</span>
-               </div>
-             </div>
+             <p className="text-[10px] text-muted-foreground font-medium leading-relaxed rounded-xl bg-muted/30 border border-border/40 px-4 py-3">
+               File attachments are not available yet. Include links or details in your description above.
+             </p>
           </form>
 
           <DialogFooter className="gap-3">
