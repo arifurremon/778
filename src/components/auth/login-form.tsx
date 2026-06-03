@@ -1,20 +1,21 @@
 "use client";
 
+import AuthDivider from "@/components/auth/auth-divider";
 import GoogleSignInButton from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { authStyles } from "@/lib/design/auth-styles";
+import { loginPasswordSchema } from "@/lib/validation/password";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { AlertCircle, CheckCircle, LogIn, Eye, EyeOff, Mail } from "lucide-react";
+import { AlertCircle, CheckCircle, Eye, EyeOff, Lock, LogIn, Mail } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { authStyles } from "@/lib/design/auth-styles";
-import { loginPasswordSchema } from "@/lib/validation/password";
 import * as z from "zod";
 
 const loginSchema = z.object({
@@ -69,11 +70,9 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
       await login(data.email, data.password);
       router.push("/dashboard");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
-      if (
-        message.includes("EmailNotVerified") ||
-        message.includes("verify your email")
-      ) {
+      const message =
+        err instanceof Error ? err.message : "Invalid email or password. Please try again.";
+      if (message.includes("EmailNotVerified") || message.includes("verify your email")) {
         setIsEmailUnverified(true);
         setResendEmail(data.email);
         setLoginError(message);
@@ -108,34 +107,23 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <GoogleSignInButton onSignIn={loginWithGoogle} />
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-200/70" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-transparent px-3 text-gray-500 font-semibold tracking-wider">
-            or sign in with email
-          </span>
-        </div>
-      </div>
+      <AuthDivider label="or sign in with email" />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        {/* Email-unverified: amber warning with resend option */}
         {isEmailUnverified && loginError && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl bg-amber-50/90 border border-amber-200/70 p-4 text-sm text-amber-800 backdrop-blur-sm space-y-3"
+            className={authStyles.alertWarning}
           >
             <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
               <span className="font-medium leading-relaxed">{loginError}</span>
             </div>
             {resendSuccess ? (
-              <div className="flex items-center gap-2 text-green-700 bg-green-50 rounded-lg px-3 py-2 text-xs font-semibold">
+              <div className={authStyles.alertSuccessInline}>
                 <CheckCircle className="h-4 w-4 shrink-0" />
                 Verification email sent! Check your inbox.
               </div>
@@ -144,16 +132,16 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
                 type="button"
                 onClick={handleResendVerification}
                 disabled={resendLoading}
-                className="w-full h-9 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold uppercase tracking-wide transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                className="h-9 w-full rounded-xl bg-amber-600 text-xs font-bold uppercase tracking-wide text-white transition-all hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {resendLoading ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     Sending...
                   </div>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
-                    <Mail className="w-4 h-4" />
+                    <Mail className="h-4 w-4" />
                     Resend Verification Email
                   </span>
                 )}
@@ -162,45 +150,56 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
           </motion.div>
         )}
 
-        {/* Standard error display for non-email-verification errors */}
         {loginError && !isEmailUnverified && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 rounded-xl bg-red-50/80 border border-red-200/50 p-4 text-sm text-red-700 backdrop-blur-sm"
+            className={authStyles.alertError}
           >
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span className="font-medium">{loginError}</span>
           </motion.div>
         )}
-        
-        <div className="space-y-3">
-          <Label htmlFor="email" className={authStyles.label}>Email Address</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="you@example.com"
-            className={authStyles.input}
-            {...register("email")}
-          />
+
+        <div className="space-y-2">
+          <Label htmlFor="email" className={authStyles.label}>
+            Email Address
+          </Label>
+          <div className={authStyles.inputGroup}>
+            <Mail className={`${authStyles.inputIcon} h-[18px] w-[18px]`} aria-hidden="true" />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              className={authStyles.inputWithIcon}
+              {...register("email")}
+            />
+          </div>
           {errors.email && (
-            <p className="text-xs text-red-600 font-medium">{errors.email.message}</p>
+            <p className="text-xs font-medium text-red-600 dark:text-red-400">
+              {errors.email.message}
+            </p>
           )}
         </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="password" className={authStyles.label}>Password</Label>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="password" className={authStyles.label}>
+              Password
+            </Label>
             <Link href="/forgot-password" className={authStyles.linkSmall}>
               Forgot it?
             </Link>
           </div>
-          <div className="relative">
+          <div className={authStyles.inputGroup}>
+            <Lock className={`${authStyles.inputIcon} h-[18px] w-[18px]`} aria-hidden="true" />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
               placeholder="••••••••"
-              className={authStyles.inputWithToggle}
+              className={authStyles.inputWithIconToggle}
               {...register("password")}
             />
             <button
@@ -213,36 +212,31 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
             </button>
           </div>
           {errors.password && (
-            <p className="text-xs text-red-600 font-medium">{errors.password.message}</p>
+            <p className="text-xs font-medium text-red-600 dark:text-red-400">
+              {errors.password.message}
+            </p>
           )}
         </div>
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className={authStyles.buttonPrimary}
-        >
+        <Button type="submit" disabled={isSubmitting} className={`${authStyles.buttonPrimary} mt-2`}>
           {isSubmitting ? (
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               Authenticating...
             </div>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              <LogIn className="w-5 h-5" />
+              <LogIn className="h-5 w-5" />
               Sign In
             </span>
           )}
         </Button>
       </form>
 
-      <div className="pt-6 border-t border-gray-200/50 text-center">
-        <p className="text-sm text-gray-600 font-medium">
+      <div className="border-t border-border/50 pt-5 text-center">
+        <p className={authStyles.footerText}>
           New to The Chattala?{" "}
-          <button
-            onClick={onSwitch}
-            className={authStyles.link}
-          >
+          <button type="button" onClick={onSwitch} className={authStyles.link}>
             Create account
           </button>
         </p>

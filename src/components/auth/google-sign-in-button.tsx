@@ -61,20 +61,17 @@ export default function GoogleSignInButton({
       variant="outline"
       disabled={isLoading}
       onClick={handleClick}
-      className={cn(
-        "w-full h-12 rounded-2xl border-border/70 bg-white/80 dark:bg-card/60 font-bold text-sm shadow-sm hover:bg-white dark:hover:bg-card transition-all",
-        className
-      )}
+      className={cn(authStyles.googleButton, className)}
     >
       {isLoading ? (
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-auth-brand border-t-transparent rounded-full animate-spin" />
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-auth-brand border-t-transparent" />
           Redirecting...
         </div>
       ) : (
         <span className="flex items-center justify-center gap-3">
           <GoogleIcon className="h-5 w-5" />
-          <span className={authStyles.link.replace("hover:underline", "")}>{label}</span>
+          <span>{label}</span>
         </span>
       )}
     </Button>

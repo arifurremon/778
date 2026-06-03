@@ -6,6 +6,7 @@ import CityBackground from "@/components/ui/city-background";
 import { GlobalLoader } from "@/components/ui/global-loader";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { authStyles } from "@/lib/design/auth-styles";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
@@ -53,14 +54,14 @@ export default function AuthPageShell({ defaultTab }: AuthPageShellProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="relative min-h-screen flex flex-col overflow-hidden bg-auth-bg"
+        className={authStyles.pageShell}
       >
-        <div className="relative flex flex-1 items-center justify-center p-4">
+        <div className={authStyles.pageInner}>
           <CityBackground />
-          <div className="absolute inset-0 z-10 bg-gradient-to-br from-auth-brand/5 via-transparent to-auth-brand-deep/5 pointer-events-none" />
-          <div className="absolute inset-0 z-5 pointer-events-none overflow-hidden">
-            <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-br from-auth-brand/8 via-auth-bg/20 to-auth-brand-deep/10 pointer-events-none" />
+          <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden">
+            <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-white/8 blur-3xl" />
+            <div className="absolute -bottom-32 -left-32 h-80 w-80 rounded-full bg-auth-brand/10 blur-3xl" />
           </div>
           <AuthContainer defaultTab={defaultTab} />
           <VerificationHandler />

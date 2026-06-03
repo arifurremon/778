@@ -1,26 +1,21 @@
 "use client";
 
+import AuthDivider from "@/components/auth/auth-divider";
+import GoogleSignInButton from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "framer-motion";
-import { AlertCircle, AtSign, Calendar, CheckCircle, Lock, Mail, MapPin, Phone, User, UserPlus, Eye, EyeOff } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import Link from "next/link";
-import { Checkbox } from "@/components/ui/checkbox";
-import GoogleSignInButton from "@/components/auth/google-sign-in-button";
+import { CHITTAGONG_AREAS } from "@/lib/constants/chittagong-areas";
 import { authStyles } from "@/lib/design/auth-styles";
 import {
   loginPasswordSchema,
@@ -28,34 +23,67 @@ import {
   passwordSchema,
   passwordsMatchRefine,
 } from "@/lib/validation/password";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { motion } from "framer-motion";
+import {
+  AlertCircle,
+  AtSign,
+  Calendar,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  User,
+  UserPlus,
+} from "lucide-react";
+import Link from "next/link";
+import { useState, type ReactNode } from "react";
+import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 
-import { CHITTAGONG_AREAS } from "@/lib/constants/chittagong-areas";
-
-const signupSchema = z.object({
-  name: z.string().min(2, "Full name must be at least 2 characters"),
-  username: z.string().min(3, "Username must be at least 3 characters").regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers and underscores"),
-  mobile: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Enter a valid Bangladesh mobile number"),
-  email: z.string().email("Please enter a valid email address"),
-  location: z.enum(CHITTAGONG_AREAS, {
-    errorMap: () => ({ message: "Please select your Thana" }),
-  }),
-  profession: z.string().optional(),
-  dob: z.string().min(1, "Date of birth is required"),
-  password: passwordSchema,
-  confirmPassword: z.string().min(1, "Please confirm your password"),
-  acceptTermsAndPrivacy: z
-    .boolean()
-    .refine((v) => v === true, "You must accept the Terms and Privacy Policy"),
-}).refine(passwordsMatchRefine, {
-  message: PASSWORDS_MISMATCH_MESSAGE,
-  path: ["confirmPassword"],
-});
+const signupSchema = z
+  .object({
+    name: z.string().min(2, "Full name must be at least 2 characters"),
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters")
+      .regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers and underscores"),
+    mobile: z.string().regex(/^(?:\+8801|01)[3-9]\d{8}$/, "Enter a valid Bangladesh mobile number"),
+    email: z.string().email("Please enter a valid email address"),
+    location: z.enum(CHITTAGONG_AREAS, {
+      errorMap: () => ({ message: "Please select your Thana" }),
+    }),
+    profession: z.string().optional(),
+    dob: z.string().min(1, "Date of birth is required"),
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+    acceptTermsAndPrivacy: z
+      .boolean()
+      .refine((v) => v === true, "You must accept the Terms and Privacy Policy"),
+  })
+  .refine(passwordsMatchRefine, {
+    message: PASSWORDS_MISMATCH_MESSAGE,
+    path: ["confirmPassword"],
+  });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
+function FormSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className={authStyles.formSection}>
+      <div className={authStyles.sectionTitle}>
+        <span>{title}</span>
+        <span className={authStyles.sectionLine} />
+      </div>
+      <div className="space-y-4">{children}</div>
+    </section>
+  );
+}
+
 export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
-  const router = useRouter();
   const { signup, loginWithGoogle } = useAuth();
   const { toast } = useToast();
   const {
@@ -89,12 +117,17 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         acceptTermsAndPrivacy: data.acceptTermsAndPrivacy,
       });
       if (res && res.emailSent === false) {
-        toast({ title: "Email Delivery Failed", description: res.emailError, variant: "destructive" });
+        toast({
+          title: "Email Delivery Failed",
+          description: res.emailError,
+          variant: "destructive",
+        });
       }
       setRegisteredEmail(data.email);
       setRegistrationSuccess(true);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Registration failed. Please try again.";
+      const message =
+        err instanceof Error ? err.message : "Registration failed. Please try again.";
       setSignupError(message);
     }
   };
@@ -105,26 +138,23 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4 }}
-        className="flex flex-col items-center text-center space-y-6 py-6"
+        className={authStyles.successCard}
       >
-        <div className="flex items-center justify-center w-20 h-20 rounded-full bg-green-100 border-4 border-green-200 shadow-md">
-          <CheckCircle className="w-10 h-10 text-green-600" />
+        <div className={authStyles.successIconWrap}>
+          <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
         </div>
         <div className="space-y-2">
           <h2 className={authStyles.heading}>Account Created Successfully!</h2>
-          <p className="text-sm text-slate-600 max-w-sm leading-relaxed">
+          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
             We&apos;ve sent a verification email to{" "}
-            <span className="font-bold text-auth-foreground">{registeredEmail}</span>. Please check your inbox and click the verification link to activate your account.
+            <span className="font-bold text-auth-foreground">{registeredEmail}</span>. Please check
+            your inbox and click the verification link to activate your account.
           </p>
         </div>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground/80">
           Didn&apos;t receive it? Check your spam folder or contact support.
         </p>
-        <Button
-          type="button"
-          onClick={onSwitch}
-          className={authStyles.buttonSecondary}
-        >
+        <Button type="button" onClick={onSwitch} className={authStyles.buttonSecondary}>
           Back to Sign In
         </Button>
       </motion.div>
@@ -132,264 +162,271 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <GoogleSignInButton onSignIn={loginWithGoogle} label="Sign up with Google" />
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-gray-200/70" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-transparent px-3 text-gray-500 font-semibold tracking-wider">
-            or register with email
-          </span>
-        </div>
-      </div>
+      <AuthDivider label="or register with email" />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {signupError && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 rounded-xl bg-red-50/80 border border-red-200/50 p-4 text-sm text-red-700 backdrop-blur-sm"
+            className={authStyles.alertError}
           >
             <AlertCircle className="h-5 w-5 shrink-0" />
             <span className="font-medium">{signupError}</span>
           </motion.div>
         )}
-        {/* Full Name */}
-        <div className="space-y-2 text-left">
-          <Label htmlFor="name" className={authStyles.labelWithIcon}>
-            <User className={authStyles.fieldIcon} /> Full Name *
-          </Label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="Your full name"
-            className={authStyles.input}
-            {...register("name")}
-          />
-          {errors.name && (
-            <p className="text-xs text-red-600 font-medium">{errors.name.message}</p>
-          )}
-        </div>
 
-        {/* Username & Phone Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FormSection title="Personal Details">
           <div className="space-y-2 text-left">
-            <Label htmlFor="username" className={authStyles.labelWithIcon}>
-              <AtSign className={authStyles.fieldIcon} /> Username *
+            <Label htmlFor="name" className={authStyles.labelWithIcon}>
+              <User className={authStyles.fieldIcon} /> Full Name *
             </Label>
             <Input
-              id="username"
+              id="name"
               type="text"
-              placeholder="username"
+              autoComplete="name"
+              placeholder="Your full name"
               className={authStyles.input}
-              {...register("username")}
+              {...register("name")}
             />
-            {errors.username && (
-              <p className="text-xs text-red-600 font-medium">{errors.username.message}</p>
+            {errors.name && (
+              <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                {errors.name.message}
+              </p>
             )}
           </div>
-          <div className="space-y-2 text-left">
-            <Label htmlFor="mobile" className={authStyles.labelWithIcon}>
-              <Phone className={authStyles.fieldIcon} /> Phone *
-            </Label>
-            <Input
-              id="mobile"
-              type="tel"
-              placeholder="01XXXXXXXXX"
-              className={authStyles.input}
-              {...register("mobile")}
-            />
-            {errors.mobile && (
-              <p className="text-xs text-red-600 font-medium">{errors.mobile.message}</p>
-            )}
-          </div>
-        </div>
 
-        {/* Email & DOB Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2 text-left">
-            <Label htmlFor="email" className={authStyles.labelWithIcon}>
-              <Mail className={authStyles.fieldIcon} /> Email *
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              className={authStyles.input}
-              {...register("email")}
-            />
-            {errors.email && (
-              <p className="text-xs text-red-600 font-medium">{errors.email.message}</p>
-            )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2 text-left">
+              <Label htmlFor="username" className={authStyles.labelWithIcon}>
+                <AtSign className={authStyles.fieldIcon} /> Username *
+              </Label>
+              <Input
+                id="username"
+                type="text"
+                autoComplete="username"
+                placeholder="username"
+                className={authStyles.input}
+                {...register("username")}
+              />
+              {errors.username && (
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                  {errors.username.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2 text-left">
+              <Label htmlFor="mobile" className={authStyles.labelWithIcon}>
+                <Phone className={authStyles.fieldIcon} /> Phone *
+              </Label>
+              <Input
+                id="mobile"
+                type="tel"
+                autoComplete="tel"
+                placeholder="01XXXXXXXXX"
+                className={authStyles.input}
+                {...register("mobile")}
+              />
+              {errors.mobile && (
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                  {errors.mobile.message}
+                </p>
+              )}
+            </div>
           </div>
-          <div className="space-y-2 text-left">
-            <Label htmlFor="dob" className={authStyles.labelWithIcon}>
-              <Calendar className={authStyles.fieldIcon} /> Date of Birth *
-            </Label>
-            <Input
-              id="dob"
-              type="date"
-              className={authStyles.input}
-              {...register("dob")}
-            />
-            {errors.dob && (
-              <p className="text-xs text-red-600 font-medium">{errors.dob.message}</p>
-            )}
-          </div>
-        </div>
 
-        {/* Location Dropdown */}
-        <div className="space-y-2 text-left">
-          <Label htmlFor="location" className={authStyles.labelWithIcon}>
-            <MapPin className={authStyles.fieldIcon} /> Select Your Thana (Area) *
-          </Label>
-          <Controller
-            name="location"
-            control={control}
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger className={authStyles.selectTrigger}>
-                  <SelectValue placeholder="Choose your Thana from the list below" />
-                </SelectTrigger>
-                <SelectContent className={authStyles.selectContent}>
-                  {CHITTAGONG_AREAS.map((area) => (
-                    <SelectItem key={area} value={area} className={authStyles.selectItem}>
-                      {area}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2 text-left">
+              <Label htmlFor="email" className={authStyles.labelWithIcon}>
+                <Mail className={authStyles.fieldIcon} /> Email *
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                className={authStyles.input}
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2 text-left">
+              <Label htmlFor="dob" className={authStyles.labelWithIcon}>
+                <Calendar className={authStyles.fieldIcon} /> Date of Birth *
+              </Label>
+              <Input id="dob" type="date" className={authStyles.input} {...register("dob")} />
+              {errors.dob && (
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                  {errors.dob.message}
+                </p>
+              )}
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection title="Location & Profile">
+          <div className="space-y-2 text-left">
+            <Label htmlFor="location" className={authStyles.labelWithIcon}>
+              <MapPin className={authStyles.fieldIcon} /> Select Your Thana (Area) *
+            </Label>
+            <Controller
+              name="location"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectTrigger className={authStyles.selectTrigger}>
+                    <SelectValue placeholder="Choose your Thana from the list below" />
+                  </SelectTrigger>
+                  <SelectContent className={authStyles.selectContent}>
+                    {CHITTAGONG_AREAS.map((area) => (
+                      <SelectItem key={area} value={area} className={authStyles.selectItem}>
+                        {area}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.location && (
+              <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                {errors.location.message}
+              </p>
             )}
-          />
-          {errors.location && (
-            <p className="text-xs text-red-600 font-medium">{errors.location.message}</p>
+          </div>
+
+          <div className="space-y-2 text-left">
+            <Label htmlFor="profession" className={authStyles.labelWithIcon}>
+              <UserPlus className={authStyles.fieldIconOptional} /> Profession (Optional)
+            </Label>
+            <Input
+              id="profession"
+              type="text"
+              placeholder="e.g., Engineer, Doctor, Student, Business Owner"
+              className={authStyles.input}
+              {...register("profession")}
+            />
+          </div>
+        </FormSection>
+
+        <FormSection title="Security">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2 text-left">
+              <Label htmlFor="password" className={authStyles.labelWithIcon}>
+                <Lock className={authStyles.fieldIcon} /> Password *
+              </Label>
+              <div className={authStyles.inputGroup}>
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Min 6 characters"
+                  className={authStyles.inputWithToggle}
+                  {...register("password")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={authStyles.passwordToggle}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2 text-left">
+              <Label htmlFor="confirmPassword" className={authStyles.labelWithIcon}>
+                <Lock className={authStyles.fieldIcon} /> Confirm Password *
+              </Label>
+              <div className={authStyles.inputGroup}>
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Re-enter your password"
+                  className={authStyles.inputWithToggle}
+                  {...register("confirmPassword")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className={authStyles.passwordToggle}
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3 text-left">
+            <Controller
+              name="acceptTermsAndPrivacy"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  id="acceptTermsAndPrivacy"
+                  checked={field.value}
+                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                  className="mt-0.5"
+                />
+              )}
+            />
+            <Label
+              htmlFor="acceptTermsAndPrivacy"
+              className="text-sm font-normal leading-snug text-muted-foreground"
+            >
+              I agree to the{" "}
+              <Link href="/terms" className={authStyles.link} target="_blank">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className={authStyles.link} target="_blank">
+                Privacy Policy
+              </Link>
+              .
+            </Label>
+          </div>
+          {errors.acceptTermsAndPrivacy && (
+            <p className="text-xs font-medium text-red-600 dark:text-red-400">
+              {errors.acceptTermsAndPrivacy.message}
+            </p>
           )}
-        </div>
+        </FormSection>
 
-        {/* Profession - Optional */}
-        <div className="space-y-2 text-left">
-          <Label htmlFor="profession" className={authStyles.labelWithIcon}>
-            <UserPlus className={authStyles.fieldIconOptional} /> Profession (Optional)
-          </Label>
-          <Input
-            id="profession"
-            type="text"
-            placeholder="e.g., Engineer, Doctor, Student, Business Owner"
-            className={authStyles.input}
-            {...register("profession")}
-          />
-        </div>
-
-        {/* Password & Confirm Password Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2 text-left">
-            <Label htmlFor="password" className={authStyles.labelWithIcon}>
-              <Lock className={authStyles.fieldIcon} /> Password *
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Min 6 characters"
-                className={authStyles.inputWithToggle}
-                {...register("password")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className={authStyles.passwordToggle}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-xs text-red-600 font-medium">{errors.password.message}</p>
-            )}
-          </div>
-          <div className="space-y-2 text-left">
-            <Label htmlFor="confirmPassword" className={authStyles.labelWithIcon}>
-              <Lock className={authStyles.fieldIcon} /> Confirm Password *
-            </Label>
-            <div className="relative">
-              <Input
-                id="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Re-enter your password"
-                className={authStyles.inputWithToggle}
-                {...register("confirmPassword")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className={authStyles.passwordToggle}
-                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-              >
-                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            {errors.confirmPassword && (
-              <p className="text-xs text-red-600 font-medium">{errors.confirmPassword.message}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-start gap-3 text-left">
-          <Controller
-            name="acceptTermsAndPrivacy"
-            control={control}
-            render={({ field }) => (
-              <Checkbox
-                id="acceptTermsAndPrivacy"
-                checked={field.value}
-                onCheckedChange={(checked) => field.onChange(checked === true)}
-              />
-            )}
-          />
-          <Label htmlFor="acceptTermsAndPrivacy" className="text-sm font-normal leading-snug text-gray-600">
-            I agree to the{" "}
-            <Link href="/terms" className="text-auth-brand underline" target="_blank">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="text-auth-brand underline" target="_blank">
-              Privacy Policy
-            </Link>
-            .
-          </Label>
-        </div>
-        {errors.acceptTermsAndPrivacy && (
-          <p className="text-xs text-red-600 font-medium">{errors.acceptTermsAndPrivacy.message}</p>
-        )}
-
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className={authStyles.buttonPrimary}
-        >
+        <Button type="submit" disabled={isSubmitting} className={authStyles.buttonPrimary}>
           {isSubmitting ? (
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               Creating Account...
             </div>
           ) : (
             <span className="flex items-center justify-center gap-2">
-              Create Account <UserPlus className="w-5 h-5" />
+              Create Account <UserPlus className="h-5 w-5" />
             </span>
           )}
         </Button>
       </form>
 
-      <div className="pt-6 border-t border-gray-200/50 text-center">
-        <p className="text-sm text-gray-600 font-medium">
+      <div className="border-t border-border/50 pt-5 text-center">
+        <p className={authStyles.footerText}>
           Already a member?{" "}
-          <button
-            onClick={onSwitch}
-            className="text-auth-brand font-bold hover:text-auth-brand-deep transition-all hover:underline"
-          >
+          <button type="button" onClick={onSwitch} className={authStyles.link}>
             Sign in
           </button>
         </p>
