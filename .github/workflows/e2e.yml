@@ -61,7 +61,7 @@ jobs:
         run: npx prisma generate
 
       - name: Verify fresh migration on empty Postgres (Phase 5.1)
-        run: npx prisma migrate deploy
+        run: npm run migrate:deploy
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium

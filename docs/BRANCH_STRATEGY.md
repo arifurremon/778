@@ -63,7 +63,7 @@ hotfix/*      ← urgent production fixes (branch from main)
       git checkout main && git pull && git checkout -b feat/phase1-eslint-ci
 
 2. Implement + test locally
-      npm run validate && npm run build
+      npm run validate && npm run build:ci
 
 3. Push and open PR → main
       - Fill PR template (if present)

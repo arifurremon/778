@@ -25,7 +25,8 @@ Run through this checklist **before every production deployment**:
 
 ### Code Quality
 
-- [ ] `npm run build` succeeds locally with zero errors
+- [ ] `npm run build:ci` succeeds in CI (or locally with a disposable Postgres — see below)
+- [ ] `npm run build` succeeds locally (compile only — **does not** touch production DB)
 - [ ] `npm run typecheck` passes (zero TypeScript errors)
 - [ ] `npm run lint` passes (zero ESLint errors)
 - [ ] `npm run test` passes (all unit + integration tests green)
@@ -77,7 +78,7 @@ On the configuration screen:
 |---------|-------|
 | Framework Preset | **Next.js** (auto-detected) |
 | Root Directory | `./` (default) |
-| Build Command | `npm run build` |
+| Build Command | `npm run build:vercel` (via `vercel.json`; migrate + compile on deploy only) |
 | Output Directory | `.next` (default) |
 | Install Command | `npm install` |
 
@@ -112,7 +113,7 @@ Click **Environment Variables** and add all variables from `.env.example` with p
 Click **Deploy**. Vercel will:
 1. Clone the repository
 2. Run `npm install` (triggers `prisma generate` via postinstall)
-3. Run `npm run build`
+3. Run `npm run build:vercel` (migrate on Neon via `DIRECT_URL`, then `next build`)
 4. Deploy to Vercel's global Edge Network
 
 First build takes ~3–5 minutes. Subsequent deploys take ~1–2 minutes.
@@ -129,8 +130,8 @@ For every subsequent deployment after initial setup:
 1. Merge your PR into `main` on GitHub
    └── Vercel webhook triggers automatically
          └── Vercel pulls latest code
-               └── Runs: npm install → npm run build
-                     └── Deploys to production if build passes
+               └── Runs: npm install → npm run build:vercel
+                     └── Applies pending migrations once per deploy, then deploys
 ```
 
 ### Manual (for hotfixes)
@@ -152,7 +153,7 @@ Step 2: Vercel builds automatically (~2 min)
          ↓
 Step 3: Check build logs at vercel.com/dashboard
          ↓
-Step 4: Run database migrations (if schema changed)
+Step 4: Migrations run automatically during Vercel build (`build:vercel`) if `prisma/migrations/` changed
          ↓
 Step 5: Run smoke tests
          ↓
@@ -217,20 +218,22 @@ https://www.thechattala.com/api/auth/callback/google
 
 > **Never run `prisma db push` in production** — it can cause data loss. Always use `migrate deploy`.
 
-### When to Run Migrations
+### Where migrations run (single owner per environment)
 
-Run after deployment **only if** `prisma/migrations/` has new migration files.
+| Context | Command | Database | Notes |
+|---------|---------|----------|-------|
+| **Local compile check** | `npm run build` | None | Safe — no `migrate deploy` |
+| **CI / staging workflow build job** | `npm run build:ci` | Ephemeral Postgres service | Validates migrate + compile |
+| **Vercel production / staging deploy** | `npm run build:vercel` (in `vercel.json`) | Neon via `DIRECT_URL` | **Only** place prod/staging schema should change on deploy |
+| **Manual / hotfix** | `npm run migrate:deploy` | Neon via `DIRECT_URL` | Retries advisory-lock timeouts; use when not deploying via Vercel |
 
-### How to Run
+> **Do not** run `npm run build:ci` or `npm run migrate:deploy` against production Neon from a laptop while Vercel is deploying — both acquire the same Postgres advisory lock (`P1002`).
+
+### How to run manually
 
 ```bash
-# Option 1: Vercel CLI (recommended)
-vercel env pull .env.production.local  # Pull production env vars
-npx prisma migrate deploy              # Apply pending migrations
-
-# Option 2: Via a one-off Vercel function or admin script
-# Set DIRECT_URL in environment before running
-DATABASE_URL=$DIRECT_URL npx prisma migrate deploy
+vercel env pull .env.production.local
+npm run migrate:deploy   # uses DIRECT_URL + retries (scripts/migrate-deploy.sh)
 ```
 
 ### Neon DB Branch Strategy (Staging)

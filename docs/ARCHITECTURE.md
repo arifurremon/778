@@ -128,7 +128,7 @@ Browser → POST /api/auth/[...nextauth] → NextAuth (Credentials)
 | Driver | `@neondatabase/serverless` + WebSocket (`ws`) |
 | Connection | `DATABASE_URL` (pooled) for runtime; `DIRECT_URL` for migrations |
 | Factory | `src/lib/db.ts` — singleton PrismaClient (not Edge-safe) |
-| Migrations | 16 files in `prisma/migrations/`; `prisma migrate deploy` in build |
+| Migrations | `prisma/migrations/`; `npm run migrate:deploy` on Vercel (`build:vercel`) and CI Postgres (`build:ci`); local `npm run build` is compile-only |
 
 **Core entities:** User, Post, Comment, Shop, Product, Order, ExpertService, ServiceBooking, NeighbourConnection, Conversation, Message, Notification, AuditLog, ActivityLog.
 

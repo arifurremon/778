@@ -116,5 +116,5 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Build
-        run: npm run build
+      - name: Build (migrate on CI Postgres + Next.js compile)
+        run: npm run build:ci

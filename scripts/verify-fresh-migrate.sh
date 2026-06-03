@@ -8,7 +8,7 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
 fi
 
 echo "[migrate:verify-fresh] Applying all migrations to target database..."
-npx prisma migrate deploy
+bash scripts/migrate-deploy.sh
 
 echo "[migrate:verify-fresh] Running smoke query..."
 npx tsx scripts/dr-drill-smoke.ts

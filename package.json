@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -p 9002",
-    "build": "prisma migrate deploy && next build",
+    "build": "next build",
+    "build:ci": "npm run migrate:deploy && npm run build",
+    "build:vercel": "npm run migrate:deploy && npm run build",
+    "migrate:deploy": "bash scripts/migrate-deploy.sh",
     "start": "next start",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",

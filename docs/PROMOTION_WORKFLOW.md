@@ -18,7 +18,7 @@
 ### Before promotion
 
 - [ ] All Phase exit criteria for current release met on `staging`
-- [ ] `npm run validate && npm run build` green on `staging` branch
+- [ ] `npm run validate && npm run build:ci` green on `staging` branch (or CI equivalent)
 - [ ] Staging smoke passed: `STAGING_URL=https://... bash scripts/staging-smoke.sh`
 - [ ] E2E optional on staging: `npm run test:e2e` with staging base URL
 - [ ] No open P0/P1 incidents
