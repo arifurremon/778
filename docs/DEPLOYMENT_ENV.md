@@ -75,9 +75,10 @@ NEXT_PUBLIC_APP_URL="https://thechattala.com"
 **Status:** ✅ Active
 
 ```bash
-# Google OAuth (optional — not wired in app yet)
+# Google OAuth (optional — wired when GOOGLE_* + NEXT_PUBLIC flag are set)
 GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
+NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED="true"
 ```
 
 **Key Details:**

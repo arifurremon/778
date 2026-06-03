@@ -47,7 +47,7 @@ We will confirm receipt, provide a tracking ID, and notify you when the issue is
 
 ## Security Architecture (Summary)
 
-- **Authentication:** NextAuth v5 credentials + JWT; live DB checks on privileged routes
+- **Authentication:** NextAuth v5 credentials + JWT; optional Google OAuth when `GOOGLE_*` env vars are set; live DB checks on privileged routes
 - **Authorization:** Role-based (`Role` enum) with DB-backed admin verification
 - **Admin MFA:** TOTP required in production (`ADMIN_MFA_REQUIRED`)
 - **Rate limiting:** Upstash Redis, fail-closed in production
@@ -55,6 +55,21 @@ We will confirm receipt, provide a tracking ID, and notify you when the issue is
 - **Audit:** Admin and auth events persisted to `AuditLog`
 
 See `docs/ARCHITECTURE.md` and `docs/RBAC_MATRIX.md` for details.
+
+### Content-Security-Policy notes
+
+| Directive | Value | Rationale |
+|-----------|-------|-----------|
+| `script-src` | `'nonce-…'` + `'strict-dynamic'` (prod) | Blocks inline script injection; third-party hosts allowlisted |
+| `style-src` | `'self' 'unsafe-inline'` | **Accepted risk:** Tailwind CSS and React/Next.js inject inline styles at runtime. Removing `'unsafe-inline'` requires a strict style-nonce build pipeline (not yet adopted). |
+| `frame-src` | `'self' https://accounts.google.com` | Google OAuth consent / One Tap flows |
+| `frame-ancestors` | `'none'` | Clickjacking protection (complements `X-Frame-Options: DENY`) |
+
+Google OAuth guardrails (server-side):
+
+- Suspended or deleted accounts are blocked at the `signIn` callback
+- MFA-enabled admin accounts must use credentials + TOTP (Google sign-in denied)
+- Successful Google sign-ins set `emailVerified` and are audit-logged
 
 ---
 

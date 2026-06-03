@@ -13,6 +13,7 @@ describe('LoginForm Component', () => {
     vi.clearAllMocks();
     vi.mocked(useAuth).mockReturnValue({
       login: vi.fn().mockResolvedValue(true),
+      loginWithGoogle: vi.fn().mockResolvedValue(undefined),
       user: null,
       isAuthenticated: false,
     } as any);
@@ -41,6 +42,7 @@ describe('LoginForm Component', () => {
     const mockLogin = vi.fn().mockResolvedValue(true);
     vi.mocked(useAuth).mockReturnValue({
       login: mockLogin,
+      loginWithGoogle: vi.fn().mockResolvedValue(undefined),
       user: null,
       isAuthenticated: false,
     } as any);
@@ -66,6 +68,7 @@ describe('LoginForm Component', () => {
     const mockLogin = vi.fn().mockRejectedValue(new Error('Invalid credentials'));
     vi.mocked(useAuth).mockReturnValue({
       login: mockLogin,
+      loginWithGoogle: vi.fn().mockResolvedValue(undefined),
       user: null,
       isAuthenticated: false,
     } as any);

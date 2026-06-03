@@ -157,6 +157,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   signup: (data: {
     email: string;
     pass: string;
@@ -180,6 +181,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "AccessDenied": "Access denied. Your account may be suspended.",
   "Verification": "Please verify your email before signing in.",
   "EmailNotVerified": "Please verify your email address before signing in. Check your inbox for the verification link.",
+  "OAuthAccountNotLinked": "This email is registered with a password. Please sign in with email and password.",
+  "OAuthSignin": "Google sign-in failed. Please try again or use email and password.",
   "Default": "An authentication error occurred. Please try again."
 };
 
@@ -223,6 +226,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await api.get<Record<string, unknown>>("/api/user/profile");
     setUserProfile(mapProfileFromApi(data));
     await update();
+  };
+
+  const loginWithGoogle = async () => {
+    await signIn("google", { callbackUrl: "/dashboard" });
   };
 
   const login = async (email: string, pass: string) => {
@@ -282,7 +289,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider value={{ 
       user: userProfile, 
       isLoading: !timeoutReached && (status === "loading" || isProfileLoading), 
-      login, 
+      login,
+      loginWithGoogle,
       signup, 
       logout, 
       updateUser,

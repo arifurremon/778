@@ -20,6 +20,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
+import GoogleSignInButton from "@/components/auth/google-sign-in-button";
 import { authStyles } from "@/lib/design/auth-styles";
 import {
   loginPasswordSchema,
@@ -55,7 +56,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
   const router = useRouter();
-  const { signup } = useAuth();
+  const { signup, loginWithGoogle } = useAuth();
   const { toast } = useToast();
   const {
     register,
@@ -132,6 +133,19 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
   return (
     <div className="space-y-8">
+      <GoogleSignInButton onSignIn={loginWithGoogle} label="Sign up with Google" />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-gray-200/70" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-transparent px-3 text-gray-500 font-semibold tracking-wider">
+            or register with email
+          </span>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {signupError && (
           <motion.div

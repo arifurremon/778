@@ -1,4 +1,5 @@
 import { authConfig } from "@/auth.config";
+import { evaluateGoogleSignIn, isGoogleOAuthEnabled } from "@/lib/auth-providers";
 import { persistSecurityAuditEvent, getClientIp } from "@/lib/security-audit";
 import { isAdminRole } from "@/lib/rbac";
 import { db } from "@/lib/db";
@@ -7,11 +8,13 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { headers } from "next/headers";
 
 /**
  * Full Auth.js configuration including Node.js-only providers and adapters.
- * Only credentials-based authentication (email + password) is enabled.
+ * Credentials (email + password) is always enabled; Google OAuth is optional
+ * when GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are configured.
  *
  * This module exports `handlers`, `auth`, `signIn`, and `signOut`.
  * It does NOT export GET or POST — those HTTP verb handlers belong
@@ -19,11 +22,88 @@ import { headers } from "next/headers";
  */
 const baseCallbacks = authConfig.callbacks ?? {};
 
+const googleProvider = isGoogleOAuthEnabled()
+  ? Google({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    })
+  : null;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: PrismaAdapter(db),
+  events: {
+    async signIn({ user, account, isNewUser }) {
+      if (account?.provider !== "google" || !user.id) return;
+
+      const headersList = await headers();
+      const clientIp = getClientIp(headersList);
+      const userAgent = headersList.get("user-agent");
+
+      await db.user.update({
+        where: { id: user.id },
+        data: {
+          emailVerified: new Date(),
+          ...(user.image ? { profileImage: user.image, image: user.image } : {}),
+          ...(isNewUser ? { joinDate: new Date() } : {}),
+        },
+      });
+
+      await persistSecurityAuditEvent({
+        action: "USER_LOGIN_SUCCESS",
+        userId: user.id,
+        email: user.email,
+        ipAddress: clientIp,
+        userAgent,
+        details: { provider: "google", isNewUser: !!isNewUser },
+      });
+    },
+  },
   callbacks: {
     ...baseCallbacks,
+    async signIn({ user, account }) {
+      if (account?.provider !== "google") {
+        return true;
+      }
+
+      const email = user.email?.toLowerCase().trim();
+      if (!email) {
+        return false;
+      }
+
+      const headersList = await headers();
+      const clientIp = getClientIp(headersList);
+      const userAgent = headersList.get("user-agent");
+
+      const dbUser = await db.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          deletedAt: true,
+          suspendedAt: true,
+          role: true,
+          isAdmin: true,
+          mfaEnabled: true,
+        },
+      });
+
+      const decision = evaluateGoogleSignIn(dbUser);
+      if (!decision.allowed) {
+        if (dbUser?.id) {
+          await persistSecurityAuditEvent({
+            action: "USER_LOGIN_FAILED",
+            userId: dbUser.id,
+            email,
+            ipAddress: clientIp,
+            userAgent,
+            details: { reason: decision.reason, provider: "google" },
+          });
+        }
+        return decision.redirect ?? false;
+      }
+
+      return true;
+    },
     async jwt({ token, user, trigger, session }) {
       if (baseCallbacks.jwt) {
         const nextToken = await baseCallbacks.jwt({ token, user, trigger, session } as Parameters<
@@ -69,6 +149,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     authorized: baseCallbacks.authorized,
   },
   providers: [
+    ...(googleProvider ? [googleProvider] : []),
     CredentialsProvider({
       name: "credentials",
       credentials: {

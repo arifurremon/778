@@ -54,14 +54,19 @@
 | D-H3 | **Cache invalidation unit tests** | ✅ `src/__tests__/lib/cache.test.ts` (hit/miss/invalidate/ping) |
 | D-H4 | **`any` cleanup (priority paths)** | ✅ Partial — orders routes, block route, `use-community`, `use-auth` |
 
+### ✅ Phase 3 security polish (complete `feat/phase3-security-polish`)
+
+| # | Issue | Status |
+|---|-------|--------|
+| D-H5 | **Google OAuth wired** | ✅ `Google` provider in `src/lib/auth.ts`; guards + audit; login/signup UI |
+| D-H6 | **CSP `style-src 'unsafe-inline'`** | ✅ Documented in `SECURITY.md`; `frame-src` for Google; `csp.test.ts` |
+
 ### ⚠️ High — remaining pre-launch
 
 | # | Issue | Notes |
 |---|-------|-------|
 | D-H1b | Coverage → **60%+** | Next increment after more admin/shop route tests |
 | D-H4b | **`any` cleanup (rest)** | Admin routes, remaining hooks — ~90 occurrences left |
-| D-H5 | **Google OAuth not wired** | Implement OR remove from docs/env |
-| D-H6 | **CSP `style-src 'unsafe-inline'`** | Document risk or tighten |
 
 ### 💡 Medium — next sprint / post-launch
 
@@ -91,9 +96,9 @@
 |----------------|-------------|-------|---------|
 | Testing | 5.5/10 | **~6.5/10** | More tests + CI workflows; coverage gate still low |
 | DevOps | 7.0/10 | **~8.0/10** | ZAP, Lighthouse, staging/promote, migrate split |
-| Security | 8.0/10 | **~8.0/10** | Block gap + password + CSP unchanged |
+| Security | 8.0/10 | **~8.4/10** | OAuth wired; CSP documented; block + password done |
 | Performance | 6.5/10 | **~6.5/10** | k6 script added; asset + query issues remain |
-| **Overall** | 7.6/10 | **~8.2/10** | Phase 1–2 code hardening done; **GO blocked by deploy + D-H5/H6** |
+| **Overall** | 7.6/10 | **~8.4/10** | Phase 1–3 code hardening done; **GO blocked by deploy (Section A)** |
 
 ---
 

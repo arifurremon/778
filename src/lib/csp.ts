@@ -1,5 +1,10 @@
 /** Shared CSP builder for middleware (nonce-based script-src in production). */
 
+/** Accepted risk: Tailwind/Next inject inline styles; strict style nonces need build pipeline changes. */
+export const CSP_STYLE_SRC = "style-src 'self' 'unsafe-inline'";
+
+const cspFrameHosts = ["https://accounts.google.com"].join(" ");
+
 const cspScriptHosts = [
   "https://js.pusher.com",
   "https://js.sentry-cdn.com",
@@ -27,10 +32,11 @@ export function buildContentSecurityPolicy(nonce: string, isDev: boolean): strin
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
-    "style-src 'self' 'unsafe-inline'",
+    CSP_STYLE_SRC,
     "img-src 'self' data: https: blob:",
     "font-src 'self'",
     `connect-src 'self' ${cspConnectHosts}`,
+    `frame-src 'self' ${cspFrameHosts}`,
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

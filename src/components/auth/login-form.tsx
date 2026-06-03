@@ -1,5 +1,6 @@
 "use client";
 
+import GoogleSignInButton from "@/components/auth/google-sign-in-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,8 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { AlertCircle, CheckCircle, LogIn, Eye, EyeOff, Mail } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { authStyles } from "@/lib/design/auth-styles";
 import { loginPasswordSchema } from "@/lib/validation/password";
@@ -23,9 +24,17 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  AccessDenied: "Access denied. Your account may be suspended or requires password sign-in.",
+  OAuthAccountNotLinked:
+    "This email is registered with a password. Please sign in with email and password.",
+  OAuthSignin: "Google sign-in failed. Please try again or use email and password.",
+};
+
 export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [loginError, setLoginError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -41,6 +50,16 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
+
+  useEffect(() => {
+    const oauthError = searchParams.get("error");
+    if (!oauthError || oauthError === "EmailNotVerified") return;
+
+    const message =
+      OAUTH_ERROR_MESSAGES[oauthError] ??
+      "An authentication error occurred. Please try again.";
+    setLoginError(message);
+  }, [searchParams]);
 
   const onSubmit = async (data: LoginFormValues) => {
     setLoginError(null);
@@ -90,6 +109,18 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
 
   return (
     <div className="space-y-8">
+      <GoogleSignInButton onSignIn={loginWithGoogle} />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-gray-200/70" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-transparent px-3 text-gray-500 font-semibold tracking-wider">
+            or sign in with email
+          </span>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Email-unverified: amber warning with resend option */}
