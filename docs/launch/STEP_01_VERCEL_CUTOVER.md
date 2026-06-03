@@ -48,6 +48,7 @@ Vercel → Project → Settings → Environment Variables → **Production**
 | `NEXTAUTH_SECRET` | Same as `AUTH_SECRET` or separate 32+ char secret |
 | `NEXTAUTH_URL` | `https://www.thechattala.com` (or `*.vercel.app` for first test) |
 | `NEXT_PUBLIC_APP_URL` | Must match public URL (email links) |
+| ~~`NODE_ENV`~~ | **Do NOT set in Vercel env vars** — Vercel sets this automatically; breaks `npm ci` if set to `production` during install |
 | `UPSTASH_REDIS_REST_URL` | Rate limit + cache |
 | `UPSTASH_REDIS_REST_TOKEN` | |
 | `UPLOADTHING_SECRET` | |

@@ -97,13 +97,16 @@
     "react-hook-form": "^7.54.2",
     "recharts": "^2.15.1",
     "sanitize-html": "^2.17.4",
+    "postcss": "^8",
     "tailwind-merge": "^3.0.1",
+    "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
     "uploadthing": "^7.7.4",
     "ws": "^8.20.0",
     "zod": "^3.24.2",
     "zustand": "^5.0.13",
-    "prisma": "^7.0.0"
+    "prisma": "^7.0.0",
+    "typescript": "^5"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
@@ -131,9 +134,6 @@
     "jsdom": "^29.1.1",
     "lint-staged": "^17.0.7",
     "pg": "^8.21.0",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5",
     "vitest": "^4.1.6",
     "wait-on": "^8.0.5"
   },
