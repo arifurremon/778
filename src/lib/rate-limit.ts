@@ -111,6 +111,56 @@ export const rateLimiters = {
     limiter: Ratelimit.slidingWindow(3, "15 m"),
     analytics: true,
   })),
+  comments: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(30, "15 m"),
+    analytics: true,
+  })),
+  reactions: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(60, "15 m"),
+    analytics: true,
+  })),
+  neighbours: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(10, "1 h"),
+    analytics: true,
+  })),
+  neighbourActions: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(20, "1 h"),
+    analytics: true,
+  })),
+  reviews: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(5, "1 h"),
+    analytics: true,
+  })),
+  bookings: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(10, "1 h"),
+    analytics: true,
+  })),
+  shopRegistration: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(3, "1 h"),
+    analytics: true,
+  })),
+  serviceRegistration: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(3, "1 h"),
+    analytics: true,
+  })),
+  publicRead: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(60, "1 m"),
+    analytics: true,
+  })),
+  pusherAuth: createLimiter((redisClient) => ({
+    redis: redisClient,
+    limiter: Ratelimit.slidingWindow(30, "1 m"),
+    analytics: true,
+  })),
 };
 
 /**

@@ -1,4 +1,8 @@
 import { logErrorToSentry } from "@/lib/error-handler";
+import { sendNotificationEmailIfAllowed } from "@/lib/notification-email";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { requireActiveMutation } from "@/lib/session-guards";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -21,6 +25,13 @@ export async function PATCH(
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.neighbourActions, session.user.id),
+      "NeighbourActions",
+      { quotaExceededMessage: "Neighbour action limit reached (20/hour)." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const { connectionId } = await params;
     const body: unknown = await req.json();
@@ -65,27 +76,30 @@ export async function PATCH(
         data: { status: "ACCEPTED" },
       });
       
-      const sender = await db.user.findUnique({ where: { id: connection.senderId } });
-      const receiver = connection.receiver;
-      const receiverName = receiver.preferredName || receiver.name || "A user";
+      const sender = await db.user.findUnique({
+        where: { id: connection.senderId },
+        select: { email: true, privacySettings: true },
+      });
 
-      await db.activityLog.create({
-        data: {
-          userId: connection.senderId,
-          type: "CONNECTION_ACCEPTED",
-          description: `${receiverName} accepted your neighbour request.`,
-          contextUrl: `/profile/${session.user.username || 'me'}`,
+      await sendNotification({
+        userId: connection.senderId,
+        actorId: session.user.id,
+        type: NotificationType.NEIGHBOR_ACCEPTED,
+        entityType: "NeighbourConnection",
+        entityId: connectionId,
+        metadata: {
+          receiverName,
+          receiverUsername: session.user.username,
         },
       });
 
-      if (sender?.email) {
-        const { sendNotificationEmail } = await import("@/lib/mail");
-        await sendNotificationEmail(
-          sender.email,
+      if (sender) {
+        await sendNotificationEmailIfAllowed(
+          sender,
           "Trust Request Accepted!",
           "You have a new Neighbour!",
           `${receiverName} has accepted your trust request. You can now view their private contact information and interact closely with them on The Chattala.`,
-          `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/profile/${session.user.username || 'me'}`,
+          `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/profile/${session.user.username || "me"}`,
           "View Profile"
         );
       }
@@ -93,13 +107,19 @@ export async function PATCH(
       return NextResponse.json({ success: true, message: "Request accepted." });
     } else {
       await db.neighbourConnection.delete({ where: { id: connectionId } });
-      await db.activityLog.create({
-        data: {
-          userId: connection.senderId,
-          type: "SYSTEM",
-          description: `${receiverName} declined your neighbour request.`,
+
+      await sendNotification({
+        userId: connection.senderId,
+        actorId: session.user.id,
+        type: NotificationType.SYSTEM_ALERT,
+        entityType: "NeighbourConnection",
+        entityId: connectionId,
+        metadata: {
+          message: `${receiverName} declined your neighbour request.`,
+          severity: "LOW",
         },
       });
+
       return NextResponse.json({ success: true, message: "Request rejected." });
     }
   } catch (error) {

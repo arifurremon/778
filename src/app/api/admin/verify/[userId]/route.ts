@@ -2,17 +2,15 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 type RouteContext = { params: Promise<{ userId: string }> };
 
-// ---------------------------------------------------------------------------
-// POST /api/admin/verify/[userId]  — approve/reject applications
-// ---------------------------------------------------------------------------
 const verifySchema = z.object({
   action: z.enum(["approve", "reject"]),
-  type:   z.enum(["resident", "shop", "service"]),
+  type: z.enum(["resident", "shop", "service"]),
   reason: z.string().optional(),
 });
 
@@ -24,11 +22,11 @@ export async function POST(
   if (csrfError) return csrfError;
 
   try {
-    const { error } = await requireAdmin();
-    if (error) return error;
+    const { session, error } = await requireAdmin();
+    if (error || !session) return error;
 
     const { userId } = await params;
-    
+
     const body: unknown = await req.json();
     const parsed = verifySchema.safeParse(body);
     if (!parsed.success) {
@@ -51,7 +49,7 @@ export async function POST(
 
     const isApproved = action === "approve";
     const statusText = isApproved ? "APPROVED" : "REJECTED";
-    let logDescription = "";
+    let message = "";
 
     if (type === "resident") {
       await db.user.update({
@@ -62,10 +60,9 @@ export async function POST(
           ...(!isApproved && reason ? { verificationReason: reason } : {}),
         },
       });
-      logDescription = isApproved
+      message = isApproved
         ? "Your resident verification request has been approved."
         : `Your resident verification request was rejected. Reason: ${reason || "N/A"}`;
-        
     } else if (type === "shop") {
       await db.user.update({
         where: { id: userId },
@@ -76,15 +73,14 @@ export async function POST(
         },
       });
       if (isApproved) {
-         await db.shop.updateMany({
-           where: { userId },
-           data: { isVerified: true },
-         });
+        await db.shop.updateMany({
+          where: { userId },
+          data: { isVerified: true },
+        });
       }
-      logDescription = isApproved
+      message = isApproved
         ? "Your shop registration has been approved."
         : `Your shop registration was rejected. Reason: ${reason || "N/A"}`;
-
     } else if (type === "service") {
       await db.user.update({
         where: { id: userId },
@@ -94,16 +90,31 @@ export async function POST(
           ...(!isApproved && reason ? { verificationReason: reason } : {}),
         },
       });
-      logDescription = isApproved
+      message = isApproved
         ? "Your expert service registration has been approved."
         : `Your expert service registration was rejected. Reason: ${reason || "N/A"}`;
     }
+
+    await sendNotification({
+      userId,
+      actorId: session.user.id,
+      type: NotificationType.MODERATION_ACTION,
+      entityType: "User",
+      entityId: userId,
+      metadata: {
+        message,
+        severity: isApproved ? "LOW" : "HIGH",
+        applicationType: type,
+        approved: String(isApproved),
+        reason: reason ?? null,
+      },
+    });
 
     await db.activityLog.create({
       data: {
         userId,
         type: "SYSTEM",
-        description: logDescription,
+        description: message,
       },
     });
 
@@ -113,9 +124,6 @@ export async function POST(
       endpoint: "/api/admin/verify/[userId]",
       method: "POST",
     });
-    return NextResponse.json(
-      formatAPIError(error),
-      { status: 500 }
-    );
+    return NextResponse.json(formatAPIError(error), { status: 500 });
   }
 }

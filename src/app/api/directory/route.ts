@@ -5,6 +5,9 @@ import {
 } from "@/lib/directory-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { getClientIp } from "@/lib/request-ip";
 import { NextRequest, NextResponse } from "next/server";
 
 const VALID_TYPES = new Set<DirectoryType>(["tourism", "heritage", "transport", "news"]);
@@ -12,6 +15,12 @@ const VALID_TYPES = new Set<DirectoryType>(["tourism", "heritage", "transport", 
 // GET /api/directory — public directory entries by type
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.publicRead, getClientIp(req)),
+      "DirectoryRead"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const typeParam = (req.nextUrl.searchParams.get("type") ?? "tourism") as DirectoryType;
     const type = VALID_TYPES.has(typeParam) ? typeParam : "tourism";
     const search = req.nextUrl.searchParams.get("search")?.trim().toLowerCase() ?? "";

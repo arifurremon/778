@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import {
   normalizeReviewScope,
   recalculateShopRating,
@@ -127,6 +129,14 @@ export async function POST(req: NextRequest, { params }: RouteContext): Promise<
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.reviews, session.user.id),
+      "Reviews",
+      { quotaExceededMessage: "Review limit reached (5/hour)." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { shopId } = await params;
 
     const body: unknown = await req.json();

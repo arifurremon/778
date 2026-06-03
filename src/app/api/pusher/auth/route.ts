@@ -27,6 +27,8 @@ import { validateCsrfRequest } from "@/lib/csrf";
 import { NextRequest, NextResponse } from "next/server";
 import { requireActiveUser } from "@/lib/session-guards";
 import { pusher } from "@/lib/pusher";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { logErrorToSentry } from "@/lib/error-handler";
 
 export const runtime = "nodejs";
@@ -39,6 +41,12 @@ try {
     const active = await requireActiveUser();
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.pusherAuth, session.user.id),
+      "PusherAuth"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     // 2. Pusher is optional (may be null if env vars are missing).
     if (!pusher) {

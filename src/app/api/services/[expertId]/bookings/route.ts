@@ -3,6 +3,8 @@ import { bookingSelect, serializeServiceBooking } from "@/lib/booking-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sendNotification, NotificationType } from "@/lib/notification-service";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -25,6 +27,14 @@ export async function POST(req: NextRequest, { params }: RouteContext): Promise<
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.bookings, session.user.id),
+      "Bookings",
+      { quotaExceededMessage: "Booking limit reached (10/hour)." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { expertId } = await params;
 
     const body: unknown = await req.json();

@@ -3,6 +3,8 @@ import { requireActiveMutation } from "@/lib/session-guards";
 import { cachedQuery, invalidateCache } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
@@ -109,6 +111,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const active = await requireActiveMutation(req);
     if (active.error) return active.error;
     const { session } = active;
+
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.shopRegistration, session.user.id),
+      "ShopRegistration",
+      { quotaExceededMessage: "Shop registration limit reached (3/hour)." }
+    );
+    if (rateLimitResponse) return rateLimitResponse;
 
     const body: unknown = await req.json();
     const parsed = createShopSchema.safeParse(body);

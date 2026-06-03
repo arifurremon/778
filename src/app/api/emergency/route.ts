@@ -1,11 +1,20 @@
 import { mapEmergencyContact } from "@/lib/emergency-utils";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
+import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { getClientIp } from "@/lib/request-ip";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/emergency — public emergency contacts list
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
+    const rateLimitResponse = await enforceRateLimit(
+      () => runRateLimit(rateLimiters.publicRead, getClientIp(req)),
+      "EmergencyRead"
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
     const category = req.nextUrl.searchParams.get("category");
     const search = req.nextUrl.searchParams.get("search")?.trim().toLowerCase() ?? "";
 
