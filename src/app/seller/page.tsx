@@ -12,13 +12,19 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/ui/page-header";
+import { useBusiness } from "@/hooks/use-business";
 import { cn } from "@/lib/utils";
 import { History, LayoutDashboard, Package, Plus, Settings, ShoppingBag, Store } from "lucide-react";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
 export default function SellerPage() {
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
-  const pathname = usePathname();
+  const { shopId, initializeBusiness } = useBusiness();
+
+  useEffect(() => {
+    void initializeBusiness();
+  }, [initializeBusiness]);
 
   return (
       <div className="flex h-full">
@@ -58,19 +64,29 @@ export default function SellerPage() {
             />
 
             <div className="flex gap-4">
-              <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl h-14 px-8 font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-2xl shadow-primary/30 hover:scale-[1.02]">
-                    <Plus size={18} className="mr-2" /> List New Product
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-background border-border sm:max-w-[500px] rounded-[2.5rem] p-8">
-                  <DialogHeader className="mb-6">
-                    <DialogTitle className="text-2xl font-black tracking-tight uppercase">Create Marketplace Listing</DialogTitle>
-                  </DialogHeader>
-                  <ProductForm onSuccess={() => setIsAddProductOpen(false)} />
-                </DialogContent>
-              </Dialog>
+              {shopId ? (
+                <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl h-14 px-8 font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-2xl shadow-primary/30 hover:scale-[1.02]">
+                      <Plus size={18} className="mr-2" /> List New Product
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-background border-border sm:max-w-[500px] rounded-[2.5rem] p-8">
+                    <DialogHeader className="mb-6">
+                      <DialogTitle className="text-2xl font-black tracking-tight uppercase">
+                        Create Marketplace Listing
+                      </DialogTitle>
+                    </DialogHeader>
+                    <ProductForm onSuccess={() => setIsAddProductOpen(false)} />
+                  </DialogContent>
+                </Dialog>
+              ) : (
+                <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl h-14 px-8 font-black text-[11px] uppercase tracking-[0.2em]">
+                  <Link href="/register-shop">
+                    <Store size={18} className="mr-2" /> Register Shop First
+                  </Link>
+                </Button>
+              )}
             </div>
           </header>
 
