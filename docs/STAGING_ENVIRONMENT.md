@@ -120,6 +120,7 @@ Or promote feature branches to `staging` first, then `main` after QA.
 
 ## Related docs
 
+- [Phase B ops runbook](./launch/PHASE_B_OPS.md) — **current**
 - [Promotion Workflow](./PROMOTION_WORKFLOW.md)
 - [Branch Strategy](./BRANCH_STRATEGY.md)
 - [Deferred post-completion tasks](./DEFERRED_POST_COMPLETION_TASKS.md)

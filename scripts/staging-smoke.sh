@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Staging smoke tests — used by CI promotion workflow (Phase 8.2)
-# Usage: STAGING_URL=https://staging.example.com bash scripts/staging-smoke.sh
+# Staging smoke tests — CI + Phase B.2 validation
+# Usage: STAGING_URL=https://staging.example.com npm run smoke:staging
 
 set -euo pipefail
 
-BASE_URL="${STAGING_URL:-${1:-}}"
+BASE_URL="${STAGING_URL:-${DEPLOY_URL:-${1:-}}}"
 if [[ -z "$BASE_URL" ]]; then
-  echo "ERROR: Set STAGING_URL or pass URL as first argument."
+  echo "ERROR: Set STAGING_URL (or DEPLOY_URL) or pass URL as first argument."
   exit 1
 fi
 
@@ -14,40 +14,17 @@ BASE_URL="${BASE_URL%/}"
 PASS=0
 FAIL=0
 
-check_endpoint() {
-  local name="$1"
-  local path="$2"
-  local expected="${3:-200}"
-  local url="${BASE_URL}${path}"
-  local status
-
-  status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$url" || echo "000")
-
-  if [[ "$status" == "$expected" ]]; then
-    echo "✅ ${name} (${status})"
-    PASS=$((PASS + 1))
-  else
-    echo "❌ ${name} — expected ${expected}, got ${status} — ${url}"
-    FAIL=$((FAIL + 1))
-  fi
-}
+# shellcheck source=scripts/smoke-common.sh
+source "$(dirname "$0")/smoke-common.sh"
 
 echo "🔍 Staging smoke tests against ${BASE_URL}"
 echo "---"
 
-check_endpoint "Health (v1)" "/api/v1/health" "200"
-check_endpoint "OpenAPI" "/api/openapi.json" "200"
-check_endpoint "Shops list" "/api/v1/shops?page=1&limit=6" "200"
-check_endpoint "Services list" "/api/v1/services?page=1&limit=6" "200"
-check_endpoint "Directory" "/api/v1/directory?type=tourism" "200"
-check_endpoint "Emergency" "/api/v1/emergency" "200"
-check_endpoint "Status page" "/status" "200"
+run_core_smoke_checks
+check_endpoint "Login page" "/login" "200"
 
-echo "---"
-echo "Passed: ${PASS} | Failed: ${FAIL}"
-
-if [[ "$FAIL" -gt 0 ]]; then
+if ! print_smoke_summary; then
   exit 1
 fi
 
-echo "All staging smoke checks passed."
+echo "Staging core checks OK. Run E2E: PLAYWRIGHT_BASE_URL=${BASE_URL} npm run test:e2e"

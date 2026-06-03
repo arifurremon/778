@@ -289,7 +289,7 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 # Expected: {"success":true,"processed":0} (or N pending)
 ```
 
-### `vercel.json` cron snippet (add when crons enabled)
+### `vercel.json` cron snippet (committed — Phase B)
 
 ```json
 {
@@ -300,7 +300,9 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 }
 ```
 
-- [ ] Crons committed + deployed on new Vercel (Pro plan may be required for cron)
+- [x] Crons committed in `vercel.json` (Phase B)
+- [ ] `CRON_SECRET` set in Vercel + redeploy
+- [ ] `npm run verify:cron-live` pass — `docs/launch/PHASE_B_OPS.md`
 
 ---
 

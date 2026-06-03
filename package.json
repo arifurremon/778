@@ -33,6 +33,11 @@
     "smoke:staging": "bash scripts/staging-smoke.sh",
     "smoke:production": "bash scripts/post-deploy-smoke.sh",
     "verify:production-env": "bash scripts/verify-production-env.sh",
+    "verify:staging-env": "bash scripts/verify-staging-env.sh",
+    "verify:phase-b-env": "bash scripts/verify-phase-b-env.sh",
+    "verify:cron-live": "bash scripts/verify-cron-live.sh",
+    "checklist:github-secrets": "bash scripts/github-secrets-checklist.sh",
+    "setup:staging-branch": "bash scripts/setup-staging-branch.sh",
     "lhci": "lhci autorun",
     "script:replace-logs": "node scripts/replace-logs.js",
     "script:test-csrf": "node scripts/test-csrf.js"

@@ -87,27 +87,11 @@ jobs:
       - run: npx prisma generate
       - run: npm run build:ci
 
-  smoke-staging:
-    name: Post-deploy smoke (live staging)
-    runs-on: ubuntu-latest
-    needs: build
-    if: ${{ secrets.STAGING_URL != '' }}
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run staging smoke tests
-        env:
-          STAGING_URL: ${{ secrets.STAGING_URL }}
-        run: bash scripts/staging-smoke.sh
-
   deploy-vercel-staging:
     name: Deploy to Vercel (staging project)
     runs-on: ubuntu-latest
-    needs: [build, smoke-staging]
+    needs: build
     if: |
-      always() &&
-      needs.build.result == 'success' &&
-      (needs.smoke-staging.result == 'success' || needs.smoke-staging.result == 'skipped') &&
       secrets.VERCEL_TOKEN != '' &&
       secrets.VERCEL_ORG_ID != '' &&
       secrets.VERCEL_STAGING_PROJECT_ID != ''
@@ -133,3 +117,19 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_STAGING_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel deploy --prod --token="$VERCEL_TOKEN"
+
+  smoke-staging:
+    name: Post-deploy smoke (live staging)
+    runs-on: ubuntu-latest
+    needs: deploy-vercel-staging
+    if: |
+      always() &&
+      needs.deploy-vercel-staging.result == 'success' &&
+      secrets.STAGING_URL != ''
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run staging smoke tests
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+        run: bash scripts/staging-smoke.sh

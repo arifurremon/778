@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Post-deploy smoke tests — Step 2 (Section A.8)
+# Post-deploy smoke tests — Step 2 / Phase B validation
 # Usage:
 #   DEPLOY_URL=https://www.thechattala.com npm run smoke:production
 #   bash scripts/post-deploy-smoke.sh https://your-project.vercel.app
@@ -16,48 +16,19 @@ BASE_URL="${BASE_URL%/}"
 PASS=0
 FAIL=0
 
-check_endpoint() {
-  local name="$1"
-  local path="$2"
-  local expected="${3:-200}"
-  local url="${BASE_URL}${path}"
-  local status
-
-  status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$url" || echo "000")
-
-  if [[ "$status" == "$expected" ]]; then
-    echo "✅ ${name} (${status})"
-    PASS=$((PASS + 1))
-  else
-    echo "❌ ${name} — expected ${expected}, got ${status} — ${url}"
-    FAIL=$((FAIL + 1))
-  fi
-}
+# shellcheck source=scripts/smoke-common.sh
+source "$(dirname "$0")/smoke-common.sh"
 
 echo "🔍 Post-deploy smoke tests against ${BASE_URL}"
 echo "---"
 
-check_endpoint "Health (v1)" "/api/v1/health" "200"
-check_endpoint "Health (legacy)" "/api/health" "200"
-check_endpoint "OpenAPI" "/api/openapi.json" "200"
-check_endpoint "Shops list" "/api/v1/shops?page=1&limit=6" "200"
-check_endpoint "Services list" "/api/v1/services?page=1&limit=6" "200"
-check_endpoint "Directory" "/api/v1/directory?type=tourism" "200"
-check_endpoint "Emergency" "/api/v1/emergency" "200"
-check_endpoint "Status page" "/status" "200"
-check_endpoint "Login page" "/login" "200"
-check_endpoint "API docs" "/api/docs" "200"
+run_production_smoke_checks
 
-echo "---"
-echo "Passed: ${PASS} | Failed: ${FAIL}"
-
-if [[ "$FAIL" -gt 0 ]]; then
-  echo ""
-  echo "Fix failing endpoints before Step 2 sign-off."
+if ! print_smoke_summary; then
   echo "Manual checks still required: credentials login, Google OAuth, email verify, upload."
+  echo "See docs/launch/STEP_02_POST_DEPLOY_SMOKE.md"
   exit 1
 fi
 
-echo ""
-echo "All post-deploy smoke checks passed."
-echo "Next: complete manual auth/upload checks in docs/launch/STEP_02_POST_DEPLOY_SMOKE.md"
+echo "Next: manual auth/upload checks in docs/launch/STEP_02_POST_DEPLOY_SMOKE.md"
+echo "Phase B: npm run verify:phase-b-env && npm run verify:cron-live"
