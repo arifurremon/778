@@ -89,10 +89,16 @@ Runbook: [`docs/launch/PHASE_E_OPS.md`](./launch/PHASE_E_OPS.md)
 
 ---
 
-## Phase F (backlog)
+## Phase F — GO + first 10 users 🔄
 
-| Phase | Focus |
-|-------|--------|
-| **F** | GO sign-off + first 10 real users |
+| Task | Status |
+|------|--------|
+| F.1 GO sign-off checklist + verify script | ✅ |
+| F.2 First 10 users playbook | ✅ |
+| F.3 Lead sign-offs | ⏳ You — [`GO_SIGNOFF_CHECKLIST.md`](./launch/GO_SIGNOFF_CHECKLIST.md) |
+| F.4 Pending ops (migrations, crons, DR) | ⏳ You — Phase B + C + E runbooks |
+| F.5 Invite 10 real users | ⏳ You — [`FIRST_10_USERS.md`](./launch/FIRST_10_USERS.md) |
 
-See [`DEFERRED_POST_COMPLETION_TASKS.md`](./DEFERRED_POST_COMPLETION_TASKS.md).
+Runbook: [`docs/launch/PHASE_F_OPS.md`](./launch/PHASE_F_OPS.md)
+
+**Audit plan code phases A–F: agent work complete.** Remaining items are ops + human sign-off.

@@ -60,4 +60,4 @@ See also [`docs/DATA_INDEX_AUDIT.md`](../DATA_INDEX_AUDIT.md).
 - First 10 real users onboarding
 - Final smoke + monitoring
 
-See [`docs/AUDIT_EXECUTION_PLAN.md`](../AUDIT_EXECUTION_PLAN.md).
+See [`PHASE_F_OPS.md`](./PHASE_F_OPS.md) and [`docs/AUDIT_EXECUTION_PLAN.md`](../AUDIT_EXECUTION_PLAN.md).

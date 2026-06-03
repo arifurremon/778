@@ -3,8 +3,31 @@
 > **Project:** The Chattala — Chittagong's Hyperlocal City Platform
 > **Version:** v1.0.0
 > **Prepared By:** Abu Md. Selim, Engineering Lead — Inievo Technologies
-> **Report Date:** 2026-03-13 (Phase 9 validation & enterprise scorecard)
-> **Target Launch:** 2026-06-01 (estimated — pending Phases 1–4 completion)
+> **Report Date:** 2026-06-10 (Phase F — GO readiness update)  
+> **Target Launch:** Soft launch — first 10 users after GO sign-off
+
+---
+
+## Phase F Update (June 2026)
+
+> Production is **live** at `https://www.thechattala.com`. Code phases **A–F** agent deliverables are complete. **GO** is blocked on ops sign-off only.
+
+| Category | Was (Mar 2026) | Now (Jun 2026) |
+|----------|----------------|----------------|
+| Readiness score (est.) | 58/100 | **~82/100** |
+| Tests | 190+ | **319** Vitest + Playwright E2E |
+| API coverage gate | <60% | **≥60%** enforced |
+| RBAC | `isAdmin` boolean | **`role` enum only** |
+| Expert fees | String | **Decimal(10,2)** |
+| Production deploy | Blocked (old Vercel) | **Live** on new account |
+| Remaining blockers | Code + deploy | **Ops only** — migrations, crons, DR drill, lead sign-offs |
+
+**Next steps:** [`docs/launch/PHASE_F_OPS.md`](docs/launch/PHASE_F_OPS.md) → [`GO_SIGNOFF_CHECKLIST.md`](docs/launch/GO_SIGNOFF_CHECKLIST.md) → [`FIRST_10_USERS.md`](docs/launch/FIRST_10_USERS.md)
+
+```bash
+npm run verify:go-readiness
+DEPLOY_URL=https://www.thechattala.com npm run verify:go-readiness
+```
 
 ---
 
@@ -12,12 +35,12 @@
 
 | Field | Value |
 |-------|-------|
-| **Current Readiness Score** | **58** / 100 |
-| **Launch Status** | `[ ] GO` &nbsp;&nbsp; `[x] NO-GO` |
-| **Recommendation** | `[ ] LAUNCH NOW` &nbsp; `[x] DELAY 8–12 WEEKS` &nbsp; `[ ] CANCEL` |
-| **Confidence Level** | **6** / 10 |
+| **Current Readiness Score** | **~82** / 100 (Phase F estimate) |
+| **Launch Status** | `[ ] GO` &nbsp;&nbsp; `[x] NO-GO` *(pending ops sign-off)* |
+| **Recommendation** | `[ ] LAUNCH NOW` &nbsp; `[x] SOFT LAUNCH after GO checklist` &nbsp; `[ ] CANCEL` |
+| **Confidence Level** | **8** / 10 |
 | **Signed Off By** | Abu Md. Selim |
-| **Report Version** | 1.0.0 |
+| **Report Version** | 1.2.0 |
 
 ### Readiness Score Breakdown
 
@@ -58,7 +81,7 @@
 - [ ] **Any** of the following critical security issues remain open:
   - Plaintext passwords in database
   - CSRF tokens not validated
-  - Admin routes accessible without `isAdmin` check
+  - Admin routes guarded by live DB **`role`** check (not JWT alone)
   - SQL injection possible via raw queries
   - Sessions not invalidated on sign-out
 - [ ] Test coverage < **60%** on auth routes
@@ -83,7 +106,9 @@
 | 3 | Session guards on ~14 routes still use legacy `auth()` | High | Abu Md. Selim | 2026-04-01 (Phase 2) | **Resolved** |
 | 4 | Rollback + DR drills not executed | High | Abu Md. Selim | Before launch | **Partial** — git revert + DB smoke validated; Neon PITR + hosting rollback need your Console/panel (~30 min) |
 | 5 | No public `/api/health` endpoint for uptime monitoring | High | Abu Md. Selim | 2026-05-01 (Phase 4) | **Resolved** |
-| 6 | Production deploy — **migrate to new Vercel account** (old account retired) | High | Abu Md. Selim | Before launch | **Open** — see `docs/DEFERRED_POST_COMPLETION_TASKS.md` Section A |
+| 6 | Production deploy on new Vercel account | High | Abu Md. Selim | Before launch | **Resolved** — `www.thechattala.com` live |
+| 7 | Phase C+E migrations on production Neon | High | Abu Md. Selim | Before GO | **Open** — `npx prisma migrate deploy` |
+| 8 | Phase B ops (crons, Inngest, secret rotation) | High | Abu Md. Selim | Before GO | **Open** — `docs/launch/PHASE_B_OPS.md` |
 
 ---
 

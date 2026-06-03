@@ -36,6 +36,7 @@
     "verify:staging-env": "bash scripts/verify-staging-env.sh",
     "verify:phase-b-env": "bash scripts/verify-phase-b-env.sh",
     "verify:cron-live": "bash scripts/verify-cron-live.sh",
+    "verify:go-readiness": "bash scripts/verify-go-readiness.sh",
     "checklist:github-secrets": "bash scripts/github-secrets-checklist.sh",
     "setup:staging-branch": "bash scripts/setup-staging-branch.sh",
     "lhci": "lhci autorun",
