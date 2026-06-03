@@ -27,10 +27,10 @@ test.describe("Registration & navigation", () => {
     await expect(page.locator("#password")).toBeVisible();
   });
 
-  test("loads the public about page", async ({ page }) => {
-    const response = await page.goto("/about");
-    expect(response?.ok()).toBeTruthy();
-    await expect(page.locator("body")).toBeVisible();
+  test("redirects unauthenticated users away from /about", async ({ page }) => {
+    await page.goto("/about");
+    await expect(page).not.toHaveURL(/\/about/, { timeout: 15_000 });
+    await expect(page.getByRole("tab", { name: /^Inquiry$/i })).toHaveCount(0);
   });
 
   test("redirects unauthenticated users from dashboard to login", async ({ page }) => {
