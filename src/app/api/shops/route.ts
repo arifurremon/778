@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         category,
         location,
         ...(payoutMethod ? { payoutMethod } : {}),
-        ...(registrationDetails ? { registrationDetails } : {}),
+        ...(registrationDetails ? { registrationDetails: registrationDetails as Prisma.InputJsonValue } : {}),
       },
       select: shopSelect,
     });

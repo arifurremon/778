@@ -1,10 +1,16 @@
 
 "use client";
 
+import { api } from "@/lib/api";
+import {
+  mapApiServiceBooking,
+  mapUiBookingSubStatusToApi,
+  type ApiServiceBooking,
+} from "@/lib/booking-utils";
 import React, { createContext, useCallback, useContext, useRef, useState } from "react";
 
-export type BookingStatus = 'Pending' | 'Ongoing' | 'Completed' | 'Cancelled';
-export type OngoingSubStatus = 'Confirmed' | 'On My Way' | 'Service Started';
+export type BookingStatus = "Pending" | "Ongoing" | "Completed" | "Cancelled";
+export type OngoingSubStatus = "Confirmed" | "On My Way" | "Service Started";
 
 export interface Booking {
   id: string;
@@ -33,112 +39,120 @@ export interface ServiceReview {
 interface ServicesContextType {
   bookings: Booking[];
   reviews: ServiceReview[];
-  acceptBooking: (id: string) => void;
-  declineBooking: (id: string) => void;
-  updateOngoingStatus: (id: string, subStatus: OngoingSubStatus) => void;
-  completeBooking: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  acceptBooking: (id: string) => Promise<void>;
+  declineBooking: (id: string) => Promise<void>;
+  updateOngoingStatus: (id: string, subStatus: OngoingSubStatus) => Promise<void>;
+  completeBooking: (id: string) => Promise<void>;
   replyToReview: (id: string, text: string) => void;
   wallet: {
     balance: number;
-    history: { id: string, amount: string, type: 'Credit' | 'Withdrawal', date: string, status: string }[];
+    history: { id: string; amount: string; type: "Credit" | "Withdrawal"; date: string; status: string }[];
   };
-  initializeServices: () => void;
+  initializeServices: () => Promise<void>;
+  refreshServices: () => Promise<void>;
 }
 
 const ServicesContext = createContext<ServicesContextType | null>(null);
 
-const MOCK_BOOKINGS: Booking[] = [
-  {
-    id: "b1",
-    expertId: "me",
-    clientName: "Sabbir Ahmed",
-    clientAvatar: "/city_background.png",
-    serviceType: "Heart Consultation",
-    price: "৳1,000",
-    status: 'Pending',
-    timestamp: "Today, 4:30 PM",
-    address: "House 12, Road 4, Panchlaish",
-    notes: "Regular checkup for hypertension."
-  },
-  {
-    id: "b2",
-    expertId: "me",
-    clientName: "Nusrat Jahan",
-    clientAvatar: "/city_background.png",
-    serviceType: "Pediatric Visit",
-    price: "৳800",
-    status: 'Ongoing',
-    subStatus: 'On My Way',
-    timestamp: "Today, 2:00 PM",
-    address: "Agrabad C/A, Chattagram",
-  }
-];
-
-const MOCK_REVIEWS: ServiceReview[] = [
-  {
-    id: "r1",
-    expertId: "me",
-    clientName: "Tanvir Hossain",
-    rating: 5,
-    comment: "Excellent service. The expert was very professional and punctual.",
-    timestamp: "2 days ago",
-  }
-];
-
-const MOCK_WALLET = {
-  balance: 5400,
-  history: [
-    { id: 'w1', amount: '৳2,000', type: 'Withdrawal' as const, date: 'Oct 15, 2024', status: 'Completed' },
-    { id: 'w2', amount: '৳1,000', type: 'Credit' as const, date: 'Oct 12, 2024', status: 'Settled' },
-  ]
+const EMPTY_WALLET = {
+  balance: 0,
+  history: [] as ServicesContextType["wallet"]["history"],
 };
 
 export function ServicesProvider({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [reviews, setReviews] = useState<ServiceReview[]>([]);
-  const [wallet, setWallet] = useState(MOCK_WALLET);
-  const hasFetchedRef = useRef(false);
+  const [wallet] = useState(EMPTY_WALLET);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fetchPromiseRef = useRef<Promise<void> | null>(null);
 
-  const initializeServices = useCallback(() => {
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
-    setBookings(MOCK_BOOKINGS);
-    setReviews(MOCK_REVIEWS);
-    setWallet(MOCK_WALLET);
+  const loadExpertBookings = useCallback(async (force = false) => {
+    if (fetchPromiseRef.current && !force) {
+      return fetchPromiseRef.current;
+    }
+
+    const fetchTask = (async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await api.get<{ bookings: ApiServiceBooking[] }>(
+          "/api/bookings/expert?limit=50"
+        );
+        setBookings(response.bookings.map(mapApiServiceBooking));
+      } catch (err) {
+        setBookings([]);
+        setError(err instanceof Error ? err.message : "Failed to load expert bookings.");
+      } finally {
+        setIsLoading(false);
+        fetchPromiseRef.current = null;
+      }
+    })();
+
+    fetchPromiseRef.current = fetchTask;
+    return fetchTask;
   }, []);
 
-  const acceptBooking = (id: string) => {
-    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Ongoing', subStatus: 'Confirmed' } : b));
+  const initializeServices = useCallback(async () => {
+    await loadExpertBookings(false);
+  }, [loadExpertBookings]);
+
+  const refreshServices = useCallback(async () => {
+    await loadExpertBookings(true);
+  }, [loadExpertBookings]);
+
+  const patchBooking = async (
+    id: string,
+    body: { status?: string; subStatus?: string }
+  ) => {
+    const response = await api.patch<{ booking: ApiServiceBooking }>(
+      `/api/bookings/${id}`,
+      body
+    );
+    const mapped = mapApiServiceBooking(response.booking);
+    setBookings((prev) => prev.map((booking) => (booking.id === id ? mapped : booking)));
   };
 
-  const declineBooking = (id: string) => {
-    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Cancelled' } : b));
+  const acceptBooking = async (id: string) => {
+    await patchBooking(id, { status: "CONFIRMED", subStatus: "CONFIRMED" });
   };
 
-  const updateOngoingStatus = (id: string, subStatus: OngoingSubStatus) => {
-    setBookings(prev => prev.map(b => b.id === id ? { ...b, subStatus } : b));
+  const declineBooking = async (id: string) => {
+    await patchBooking(id, { status: "REJECTED" });
   };
 
-  const completeBooking = (id: string) => {
-    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'Completed', subStatus: undefined } : b));
+  const updateOngoingStatus = async (id: string, subStatus: OngoingSubStatus) => {
+    await patchBooking(id, { subStatus: mapUiBookingSubStatusToApi(subStatus) });
+  };
+
+  const completeBooking = async (id: string) => {
+    await patchBooking(id, { status: "COMPLETED" });
   };
 
   const replyToReview = (id: string, reply: string) => {
-    setReviews(prev => prev.map(r => r.id === id ? { ...r, reply } : r));
+    setReviews((prev) => prev.map((review) => (review.id === id ? { ...review, reply } : review)));
   };
 
   return (
-    <ServicesContext.Provider value={{
-      bookings,
-      reviews,
-      acceptBooking,
-      declineBooking,
-      updateOngoingStatus,
-      completeBooking,
-      replyToReview,
-      wallet,
-      initializeServices,
-    }}>
+    <ServicesContext.Provider
+      value={{
+        bookings,
+        reviews,
+        isLoading,
+        error,
+        acceptBooking,
+        declineBooking,
+        updateOngoingStatus,
+        completeBooking,
+        replyToReview,
+        wallet,
+        initializeServices,
+        refreshServices,
+      }}
+    >
       {children}
     </ServicesContext.Provider>
   );

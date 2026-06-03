@@ -68,6 +68,7 @@ model User {
   postReactions    UserPostReaction[]
   commentReactions UserCommentReaction[]
   orders           Order[]
+  serviceBookings  ServiceBooking[] @relation("ClientBookings")
 
   // Social Trust
   sentRequests     NeighbourConnection[] @relation("Sender")
@@ -329,6 +330,7 @@ model ExpertService {
   rejectionReason String?
   payoutMethod    PayoutMethod?
   registrationDetails Json?
+  bookings        ServiceBooking[]
   createdAt       DateTime      @default(now())
 
   // FIX(P1): Added missing indexes — category/location/isVerified are the
@@ -493,6 +495,41 @@ enum OrderStatus {
   DELIVERED
   CANCELLED
   REJECTED
+}
+
+enum ServiceBookingStatus {
+  PENDING
+  CONFIRMED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  REJECTED
+}
+
+enum ServiceBookingSubStatus {
+  CONFIRMED
+  ON_MY_WAY
+  SERVICE_STARTED
+}
+
+model ServiceBooking {
+  id              String                   @id @default(uuid())
+  expertServiceId String
+  expertService   ExpertService            @relation(fields: [expertServiceId], references: [id], onDelete: Cascade)
+  clientId        String
+  client          User                     @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Cascade)
+  scheduledDate   DateTime?
+  address         String?
+  notes           String?
+  fee             String
+  status          ServiceBookingStatus     @default(PENDING)
+  subStatus       ServiceBookingSubStatus?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+
+  @@index([expertServiceId])
+  @@index([clientId])
+  @@index([status])
 }
 
 model Order {

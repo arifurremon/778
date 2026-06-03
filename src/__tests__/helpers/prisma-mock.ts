@@ -31,6 +31,8 @@ export const prismaMock = {
   neighbourConnection: createMockModel(),
   product: createMockModel(),
   expertService: createMockModel(),
+  serviceBooking: createMockModel(),
+  notification: createMockModel(),
   auditLog: createMockModel(),
   $transaction: vi.fn((arg: unknown) => {
     if (typeof arg === "function") {
