@@ -17,6 +17,7 @@ const createMockModel = () => ({
   deleteMany: vi.fn(),
   count: vi.fn(),
   upsert: vi.fn(),
+  aggregate: vi.fn(),
 });
 
 export const prismaMock = {
@@ -30,6 +31,8 @@ export const prismaMock = {
   verificationToken: createMockModel(),
   neighbourConnection: createMockModel(),
   product: createMockModel(),
+  order: createMockModel(),
+  productReview: createMockModel(),
   expertService: createMockModel(),
   serviceBooking: createMockModel(),
   notification: createMockModel(),

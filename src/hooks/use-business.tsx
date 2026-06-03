@@ -10,6 +10,7 @@ import {
   type ApiSellerProduct,
   type ApiSellerShop,
 } from "@/lib/business-utils";
+import { mapApiProductReview, type ApiProductReview } from "@/lib/review-utils";
 import React, { createContext, useCallback, useContext, useRef, useState } from "react";
 
 export type OrderStatus = "Pending" | "Processing" | "Sent" | "Delivered" | "Cancelled";
@@ -63,8 +64,8 @@ interface BusinessContextType {
   addOrder: (order: Omit<Order, "id" | "status" | "timestamp">) => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
   addProduct: (product: Omit<Product, "id">) => Promise<void>;
-  addReview: (review: Omit<Review, "id" | "timestamp" | "isVerified">) => void;
-  addReply: (reviewId: string, reply: string) => void;
+  addReview: (review: Omit<Review, "id" | "timestamp" | "isVerified">) => Promise<void>;
+  addReply: (reviewId: string, reply: string) => Promise<void>;
   initializeBusiness: () => Promise<void>;
   refreshBusiness: () => Promise<void>;
 }
@@ -95,9 +96,10 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
         setShop(sellerShop);
         setShopId(sellerShop.id);
 
-        const [ordersResponse, productsResponse] = await Promise.all([
+        const [ordersResponse, productsResponse, reviewsResponse] = await Promise.all([
           api.get<{ orders: ApiSellerOrder[] }>("/api/orders/seller?limit=50"),
           api.get<{ products: ApiSellerProduct[] }>(`/api/shops/${sellerShop.id}/products`),
+          api.get<{ reviews: ApiProductReview[] }>("/api/reviews/seller?limit=50"),
         ]);
 
         setOrders(ordersResponse.orders.map(mapApiSellerOrder));
@@ -106,11 +108,13 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
             mapApiSellerProduct(product, sellerShop.id)
           )
         );
+        setReviews(reviewsResponse.reviews.map(mapApiProductReview));
       } catch (err) {
         setShop(null);
         setShopId(null);
         setOrders([]);
         setProducts([]);
+        setReviews([]);
         setError(err instanceof Error ? err.message : "Failed to load seller data.");
       } finally {
         setIsLoading(false);
@@ -181,27 +185,28 @@ export function BusinessProvider({ children }: { children: React.ReactNode }) {
     ]);
   };
 
-  const addReview = (reviewData: Omit<Review, "id" | "timestamp" | "isVerified">) => {
-    const hasOrder = orders.some(
-      (order) =>
-        order.productId === reviewData.productId &&
-        order.buyerEmail === reviewData.userEmail &&
-        order.status === "Delivered"
-    );
+  const addReview = async (reviewData: Omit<Review, "id" | "timestamp" | "isVerified">) => {
+    if (!shopId) {
+      throw new Error("No shop found for this seller.");
+    }
 
-    const newReview: Review = {
-      ...reviewData,
-      id: `rev-${Math.random().toString(36).slice(2, 11)}`,
-      timestamp: new Date().toLocaleString(),
-      isVerified: hasOrder,
-    };
+    const created = await api.post<ApiProductReview>(`/api/shops/${shopId}/reviews`, {
+      productId: reviewData.productId,
+      rating: reviewData.rating,
+      comment: reviewData.comment,
+    });
 
-    setReviews((prev) => [newReview, ...prev]);
+    setReviews((prev) => [mapApiProductReview(created), ...prev]);
   };
 
-  const addReply = (reviewId: string, reply: string) => {
+  const addReply = async (reviewId: string, reply: string) => {
+    const response = await api.patch<{ review: ApiProductReview }>(`/api/reviews/${reviewId}`, {
+      reply,
+    });
+
+    const mapped = mapApiProductReview(response.review);
     setReviews((prev) =>
-      prev.map((review) => (review.id === reviewId ? { ...review, reply } : review))
+      prev.map((review) => (review.id === reviewId ? mapped : review))
     );
   };
 

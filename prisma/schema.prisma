@@ -69,6 +69,7 @@ model User {
   commentReactions UserCommentReaction[]
   orders           Order[]
   serviceBookings  ServiceBooking[] @relation("ClientBookings")
+  productReviews   ProductReview[]
 
   // Social Trust
   sentRequests     NeighbourConnection[] @relation("Sender")
@@ -288,6 +289,7 @@ model Shop {
   registrationDetails Json?
   products        Product[]
   orders          Order[]
+  reviews         ProductReview[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -310,6 +312,31 @@ model Product {
   category      String
   createdAt     DateTime @default(now())
   orders        Order[]
+  reviews       ProductReview[]
+}
+
+model ProductReview {
+  id         String   @id @default(uuid())
+  shopId     String
+  shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  scope      String   @default("general")
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyerId    String
+  buyer      User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  orderId    String?
+  rating     Int
+  comment    String
+  reply      String?
+  isVerified Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([buyerId, shopId, scope])
+  @@index([shopId])
+  @@index([scope])
+  @@index([productId])
+  @@index([createdAt])
 }
 
 model ExpertService {
