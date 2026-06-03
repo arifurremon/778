@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { AppEmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -283,9 +284,12 @@ export default function ProfileView() {
                   <PostCard post={post} />
                 </motion.div>
               )) : (
-                <EmptyState icon={<Grid3x3 size={28}/>} title="No posts yet"
-                  desc="Share your first update with the Chattala community."
-                  cta="Create a Post" href="/community" />
+                <AppEmptyState
+                  icon={Grid3x3}
+                  title="No posts yet"
+                  description="Share your first update with the Chattala community."
+                  action={{ label: "Create a Post", href: "/community" }}
+                />
               )}
             </TabsContent>
 
@@ -296,9 +300,12 @@ export default function ProfileView() {
                   <PostCard post={post} />
                 </motion.div>
               )) : (
-                <EmptyState icon={<Bookmark size={28}/>} title="Nothing saved yet"
-                  desc="Bookmark posts to find them here quickly."
-                  cta="Explore Community" href="/community" />
+                <AppEmptyState
+                  icon={Bookmark}
+                  title="Nothing saved yet"
+                  description="Bookmark posts to find them here quickly."
+                  action={{ label: "Explore Community", href: "/community" }}
+                />
               )}
             </TabsContent>
 
@@ -555,19 +562,3 @@ export default function ProfileView() {
   );
 }
 
-function EmptyState({ icon, title, desc, cta, href }: {
-  icon: React.ReactNode; title: string; desc: string; cta: string; href: string;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border/40 rounded-2xl bg-muted/10 text-center px-6">
-      <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground mb-4">
-        {icon}
-      </div>
-      <h3 className="text-base font-bold mb-1">{title}</h3>
-      <p className="text-sm text-muted-foreground max-w-xs mb-5">{desc}</p>
-      <Link href={href}>
-        <Button size="sm" className="rounded-xl text-xs font-semibold px-6">{cta}</Button>
-      </Link>
-    </div>
-  );
-}

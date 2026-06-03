@@ -11,6 +11,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { History, LayoutDashboard, Package, Plus, Settings, ShoppingBag, Store } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -41,17 +42,20 @@ export default function SellerPage() {
 
         <div className="flex-1 max-w-6xl mx-auto py-8 px-6 space-y-10">
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-            <div className="space-y-2 text-left">
-              <div className="flex items-center gap-2 text-accent font-black uppercase tracking-[0.3em] text-[10px]">
-                 <Store size={12} /> Digital Storefront Operations
-              </div>
-              <h1 className="text-4xl font-black tracking-tighter">
-                Merchant <span className="text-accent">Console</span>
-              </h1>
-              <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em] opacity-50">
-                Manage hyperlocal fulfillment and inventory
-              </p>
-            </div>
+            <PageHeader
+              className="text-left"
+              eyebrow="Digital Storefront Operations"
+              eyebrowIcon={Store}
+              eyebrowClassName="font-black tracking-[0.3em]"
+              title={
+                <>
+                  Merchant <span className="text-accent">Console</span>
+                </>
+              }
+              titleClassName="text-4xl font-black tracking-tighter"
+              subtitle="Manage hyperlocal fulfillment and inventory"
+              subtitleClassName="text-[10px] font-black uppercase tracking-[0.2em] opacity-50"
+            />
 
             <div className="flex gap-4">
               <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>

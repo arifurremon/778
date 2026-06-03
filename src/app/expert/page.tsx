@@ -2,6 +2,7 @@
 "use client";
 
 import { ExpertDashboard } from "@/components/expert/expert-dashboard";
+import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 import { Calendar, LayoutDashboard, Settings, ShieldCheck, Star, Wallet } from "lucide-react";
 export default function ExpertPage() {
@@ -27,17 +28,20 @@ export default function ExpertPage() {
 
         <div className="flex-1 max-w-6xl mx-auto py-8 px-6 space-y-10">
           <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-            <div className="space-y-2 text-left">
-              <div className="flex items-center gap-2 text-accent font-black uppercase tracking-[0.3em] text-[10px]">
-                 <ShieldCheck size={12} /> Verified Professional Interface
-              </div>
-              <h1 className="text-4xl font-black tracking-tighter">
-                Professional <span className="text-accent">Hub</span>
-              </h1>
-              <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em] opacity-50">
-                Manage deployments and neighborhood reputation
-              </p>
-            </div>
+            <PageHeader
+              className="text-left"
+              eyebrow="Verified Professional Interface"
+              eyebrowIcon={ShieldCheck}
+              eyebrowClassName="font-black tracking-[0.3em]"
+              title={
+                <>
+                  Professional <span className="text-accent">Hub</span>
+                </>
+              }
+              titleClassName="text-4xl font-black tracking-tighter"
+              subtitle="Manage deployments and neighborhood reputation"
+              subtitleClassName="text-[10px] font-black uppercase tracking-[0.2em] opacity-50"
+            />
           </header>
 
           <ExpertDashboard />

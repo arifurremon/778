@@ -16,6 +16,7 @@ import {
     Sun,
     Trash2
 } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 import { useState } from "react";
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -41,17 +42,17 @@ export default function SettingsPage() {
 
   return (
       <div className="max-w-3xl mx-auto py-10 px-6 space-y-12">
-        <section className="space-y-2">
-          <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
-            <SettingsIcon size={12} /> System Preferences
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            App <span className="text-accent">Settings</span>
-          </h1>
-          <p className="text-muted-foreground text-xs font-bold tracking-wide opacity-60 uppercase">
-            Customize your digital experience on The Chattala
-          </p>
-        </section>
+        <PageHeader
+          eyebrow="System Preferences"
+          eyebrowIcon={SettingsIcon}
+          title={
+            <>
+              App <span className="text-accent">Settings</span>
+            </>
+          }
+          subtitle="Customize your digital experience on The Chattala"
+          subtitleClassName="text-xs font-bold tracking-wide opacity-60 uppercase"
+        />
 
         <div className="space-y-8">
           <section className="bg-card/20 border border-border/50 rounded-3xl p-8 space-y-6">

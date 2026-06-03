@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 export interface AppEmptyStateProps {
@@ -9,8 +10,11 @@ export interface AppEmptyStateProps {
   description: ReactNode;
   action?: {
     label: string;
-    onClick: () => void;
+    onClick?: () => void;
+    href?: string;
   };
+  /** Extra actions or links below the description */
+  footer?: ReactNode;
   className?: string;
 }
 
@@ -22,6 +26,7 @@ export function AppEmptyState({
   title,
   description,
   action,
+  footer,
   className,
 }: AppEmptyStateProps) {
   return (
@@ -42,15 +47,24 @@ export function AppEmptyState({
       <p className="text-sm text-muted-foreground mt-2 max-w-[320px] leading-relaxed">
         {description}
       </p>
-      {action && (
-        <Button
-          type="button"
-          onClick={action.onClick}
-          className="mt-8 font-bold px-8 rounded-xl shadow-lg shadow-primary/20"
-        >
-          {action.label}
-        </Button>
-      )}
+      {action &&
+        (action.href ? (
+          <Button
+            asChild
+            className="mt-8 font-bold px-8 rounded-xl shadow-lg shadow-primary/20"
+          >
+            <Link href={action.href}>{action.label}</Link>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            onClick={action.onClick}
+            className="mt-8 font-bold px-8 rounded-xl shadow-lg shadow-primary/20"
+          >
+            {action.label}
+          </Button>
+        ))}
+      {footer}
     </div>
   );
 }
