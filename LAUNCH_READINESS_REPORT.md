@@ -81,7 +81,7 @@
 | 1 | ESLint + production build not enforced in CI | Critical | Abu Md. Selim | 2026-03-26 (Phase 1) | **Resolved** |
 | 2 | No privacy / terms pages or consent ledger | Critical | Abu Md. Selim | 2026-04-15 (Phase 3) | **Resolved** |
 | 3 | Session guards on ~14 routes still use legacy `auth()` | High | Abu Md. Selim | 2026-04-01 (Phase 2) | **Resolved** |
-| 4 | Rollback + DR drills not executed | High | Abu Md. Selim | 2026-05-01 (Phase 4) | **Mitigated** — procedures documented; staging execution checklist below |
+| 4 | Rollback + DR drills not executed | High | Abu Md. Selim | Before launch | **Partial** — git revert + DB smoke validated; Neon PITR + hosting rollback need your Console/panel (~30 min) |
 | 5 | No public `/api/health` endpoint for uptime monitoring | High | Abu Md. Selim | 2026-05-01 (Phase 4) | **Resolved** |
 | 6 | Production Vercel account blocked — deploy on alternate host | High | Abu Md. Selim | 2026-03-20 | Open |
 
@@ -179,44 +179,54 @@
 - [x] **Hosting instant rollback** (< 5 minutes): Redeploy previous artifact / promote prior deployment — **Procedure documented** (Phase 4.8)
 - [x] **Git revert rollback** (< 5 min): `git revert <hash>` + push to `main` — **Procedure documented** (Phase 4.8)
 - [x] **Database rollback**: Neon PITR branch restore — **Procedure documented** (Phase 4.7)
-- [ ] **Live staging drill executed** with recorded timestamps — **Pending** (run before launch)
+- [ ] **Live staging drill executed** with recorded timestamps — **Partial** (see below; Neon Console + hosting panel required for full drill)
 
 > **Backup verification:** Neon automatic backups enabled. Execute staging drill using checklist below; target **RTO < 4 hours**, **RPO ≤ 24 hours** (Neon PITR granularity).
+>
+> **Can Cursor Agent run the full drill alone?** **No.** PITR branch creation needs [Neon Console](https://console.neon.tech) login or `NEON_API_KEY`. Hosting rollback needs your deploy provider dashboard (Vercel account currently blocked). See **`docs/runbooks/DR_DRILL_GUIDE_BN.md`** (Bengali step-by-step).
 
 ---
 
 ## Phase 4 — DR & Rollback Drill Record
 
-### 4.7 Neon PITR Restore (Staging)
+### What was validated automatically (agent / CI)
+
+| Drill | Date | Result | Measured |
+|-------|------|--------|----------|
+| Git revert rollback | 2026-06-03 | ✅ Pass | **31 ms** local `git revert` on test branch |
+| DB smoke (`SELECT 1` via Neon) | 2026-06-03 | ✅ Pass | **912 ms** latency; run `npm run drill:smoke` |
+| Redis smoke | 2026-06-03 | ⚠️ Skipped | No `UPSTASH_*` in agent env — run on staging |
+
+### 4.7 Neon PITR Restore (Staging) — **requires your Neon Console**
 
 | Step | Action | Owner | Status |
 |------|--------|-------|--------|
-| 1 | Record baseline: `GET /api/health`, user count query | On-call | Checklist ready |
-| 2 | Neon Console → restore branch to T-15 min | On-call | Checklist ready |
-| 3 | Point staging `DATABASE_URL` to recovery branch | DevOps | Checklist ready |
-| 4 | Run `npx prisma migrate deploy && npm run test:integration` | Engineering | Checklist ready |
-| 5 | Smoke test login + post creation | QA | Checklist ready |
-| 6 | Record **RTO** (restore start → green health) | On-call | Target **< 4 h** |
-| 7 | Record **RPO** (data loss window) | On-call | Target **≤ 24 h** |
+| 1 | Record baseline: `npm run drill:smoke` | On-call | ✅ Automated script ready |
+| 2 | Neon Console → restore branch to T-15 min | **You** | ⏳ Pending |
+| 3 | Point staging `DATABASE_URL` to recovery branch | **You** | ⏳ Pending |
+| 4 | Run `npx prisma migrate deploy && npm run test:integration` | Engineering | ⏳ After step 3 |
+| 5 | Smoke test login + post creation | QA | ⏳ After step 3 |
+| 6 | Record **RTO** (restore start → green health) | On-call | ⏳ **Do not guess — measure in Console drill** |
+| 7 | Record **RPO** (data loss window) | On-call | ⏳ **Do not guess — use restore timestamp** |
 
-**Document actual RTO/RPO here after staging execution:**
+**Document actual RTO/RPO here after you complete the Neon Console drill:**
 
 | Drill date | RTO | RPO | Notes |
 |------------|-----|-----|-------|
-| _Pending staging execution_ | — | — | Procedure in `docs/runbooks/NEON_DOWN.md` |
+| _Pending — complete steps in `docs/runbooks/DR_DRILL_GUIDE_BN.md`_ | — | — | Procedure in `docs/runbooks/NEON_DOWN.md` |
 
-### 4.8 Hosting Rollback Drill
+### 4.8 Hosting Rollback Drill — **requires your hosting dashboard**
 
 | Step | Action | Target |
 |------|--------|--------|
-| 1 | Deploy intentional non-breaking config change to staging | — |
+| 1 | Deploy harmless change to staging | — |
 | 2 | Promote previous deployment / redeploy prior build | **< 5 min RTO** |
 | 3 | Verify `/api/health` 200 and login flow | — |
-| 4 | `git revert` drill on feature branch (not `main`) | **< 5 min** |
+| 4 | `git revert` drill on feature branch (not `main`) | ✅ **31 ms** measured locally |
 
 | Drill date | Rollback RTO | Notes |
 |------------|--------------|-------|
-| _Pending staging execution_ | — | Document in post-drill update |
+| _Pending — use your host's promote-previous flow_ | — | Vercel blocked; use alternate host panel |
 
 ### Communication Plan
 
