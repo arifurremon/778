@@ -1,4 +1,5 @@
 import { logErrorToSentry } from "@/lib/error-handler";
+import { ROLE_VALUES } from "@/lib/rbac";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin, requireAdminMutation } from "@/lib/admin-auth";
@@ -33,7 +34,7 @@ export async function GET(
         mobile: true,
         dob: true,
         joinDate: true,
-        isAdmin: true,
+        role: true,
         isVerified: true,
         isSeller: true,
         isServiceProvider: true,
@@ -103,7 +104,7 @@ export async function GET(
 // PATCH /api/admin/users/[id]  — update user flags
 // ---------------------------------------------------------------------------
 const updateUserSchema = z.object({
-  isAdmin: z.boolean().optional(),
+  role: z.enum(ROLE_VALUES).optional(),
   isVerified: z.boolean().optional(),
   isSeller: z.boolean().optional(),
   isServiceProvider: z.boolean().optional(),
@@ -152,7 +153,7 @@ export async function PATCH(
         id: true,
         name: true,
         email: true,
-        isAdmin: true,
+        role: true,
         isVerified: true,
         isSeller: true,
         isServiceProvider: true,

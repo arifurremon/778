@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { isAdminRole } from "@/lib/rbac";
+import { isAdminRole, isElevatedAdminRole } from "@/lib/rbac";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { validateCsrfRequest } from "@/lib/csrf";
@@ -13,7 +13,6 @@ const MFA_ENFORCED =
 
 type AdminDbUser = {
   id: string;
-  isAdmin: boolean;
   role: Role;
   mfaEnabled: boolean;
   deletedAt: Date | null;
@@ -22,7 +21,7 @@ type AdminDbUser = {
 
 /**
  * Ensures the current request belongs to an active administrator.
- * DB is the source of truth for role/isAdmin — JWT claims are not trusted.
+ * DB role is the source of truth — JWT claims are not trusted.
  */
 export async function requireAdmin(options?: { skipMfaCheck?: boolean }) {
   const session = await auth();
@@ -37,7 +36,6 @@ export async function requireAdmin(options?: { skipMfaCheck?: boolean }) {
     where: { id: session.user.id },
     select: {
       id: true,
-      isAdmin: true,
       role: true,
       mfaEnabled: true,
       deletedAt: true,
@@ -63,7 +61,7 @@ export async function requireAdmin(options?: { skipMfaCheck?: boolean }) {
     };
   }
 
-  if (!isAdminRole(dbUser.role, dbUser.isAdmin)) {
+  if (!isAdminRole(dbUser.role)) {
     return {
       error: NextResponse.json(
         { error: "Forbidden: Admin access required" },
@@ -76,7 +74,7 @@ export async function requireAdmin(options?: { skipMfaCheck?: boolean }) {
     MFA_ENFORCED &&
     !options?.skipMfaCheck &&
     !dbUser.mfaEnabled &&
-    (dbUser.role === "ADMIN" || dbUser.role === "SUPERADMIN" || dbUser.isAdmin)
+    isElevatedAdminRole(dbUser.role)
   ) {
     return {
       error: NextResponse.json(

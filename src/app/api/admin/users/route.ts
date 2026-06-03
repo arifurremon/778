@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { ADMIN_ROLES } from "@/lib/rbac";
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -30,11 +31,11 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    if (role === "admin") where.isAdmin = true;
+    if (role === "admin") where.role = { in: ADMIN_ROLES };
     else if (role === "seller") where.isSeller = true;
     else if (role === "provider") where.isServiceProvider = true;
     else if (role === "user") {
-      where.isAdmin = false;
+      where.role = "USER";
       where.isSeller = false;
       where.isServiceProvider = false;
     }
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
           email: true,
           username: true,
           profileImage: true,
-          isAdmin: true,
+          role: true,
           isSeller: true,
           isServiceProvider: true,
           emailVerified: true,

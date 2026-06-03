@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { isAdminRole } from "@/lib/rbac";
 import { redirect } from "next/navigation";
 
 /**
@@ -14,10 +15,10 @@ export async function requireAdminPage() {
 
   const dbUser = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, isAdmin: true, deletedAt: true, suspendedAt: true },
+    select: { id: true, role: true, deletedAt: true, suspendedAt: true },
   });
 
-  if (!dbUser?.isAdmin || dbUser.deletedAt || dbUser.suspendedAt) {
+  if (!dbUser || !isAdminRole(dbUser.role) || dbUser.deletedAt || dbUser.suspendedAt) {
     redirect("/dashboard?error=unauthorized");
   }
 

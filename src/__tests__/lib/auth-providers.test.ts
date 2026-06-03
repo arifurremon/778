@@ -71,7 +71,6 @@ describe("auth-providers", () => {
           deletedAt: null,
           suspendedAt: null,
           role: "ADMIN",
-          isAdmin: true,
           mfaEnabled: true,
         })
       ).toEqual({

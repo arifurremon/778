@@ -174,7 +174,7 @@ If production secrets were exposed (chat, old Vercel account):
 - [ ] B.5 Critical secrets rotated (if previously exposed)
 - [ ] Mark Phase B done in [`AUDIT_EXECUTION_PLAN.md`](../AUDIT_EXECUTION_PLAN.md)
 
-**Next:** Phase C — `isAdmin` → `role` migration + next-auth stable
+**Next:** Phase D — coverage 60%, DashboardLayout split
 
 ---
 

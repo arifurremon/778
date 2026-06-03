@@ -34,6 +34,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { isAdminRole } from "@/lib/rbac";
+import type { Role } from "@prisma/client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,7 +64,7 @@ interface UserDetail {
   location: string | null;
   dob: string | null;
   joinDate: string | null;
-  isAdmin: boolean;
+  role: Role;
   isVerified: boolean;
   isSeller: boolean;
   isServiceProvider: boolean;
@@ -163,9 +165,32 @@ export default function UserDetailPage() {
     setActing(true);
     try {
       const { adminApi } = await import("@/lib/admin-api");
-      await adminApi.post("/api/admin/users/bulk-action", { userIds: [id], action });
+      if (action === "delete") {
+        await adminApi.del(`/api/admin/users/${id}`);
+      } else {
+        const body: Record<string, unknown> = {};
+        switch (action) {
+          case "makeAdmin":
+            body.role = "ADMIN";
+            break;
+          case "removeAdmin":
+            body.role = "USER";
+            break;
+          case "verify":
+            body.isVerified = true;
+            break;
+          case "unverify":
+            body.isVerified = false;
+            break;
+          case "restore":
+            body.restore = true;
+            break;
+          default:
+            throw new Error(`Unknown action: ${action}`);
+        }
+        await adminApi.patch(`/api/admin/users/${id}`, body);
+      }
       toast({ title: "Success", description: `Action '${action}' applied.` });
-      // Refetch
       const fresh = await fetch(`/api/admin/users/${id}`);
       if (fresh.ok) setUser(await fresh.json() as UserDetail);
     } catch {
@@ -244,10 +269,17 @@ export default function UserDetailPage() {
                     <DropdownMenuContent align="end" className="w-44 rounded-xl">
                       <DropdownMenuItem
                         className="text-xs"
-                        onClick={() => setConfirmAction({ action: user.isAdmin ? "removeAdmin" : "makeAdmin", label: user.isAdmin ? "Remove admin role?" : "Grant admin role?" })}
+                        onClick={() =>
+                          setConfirmAction({
+                            action: isAdminRole(user.role) ? "removeAdmin" : "makeAdmin",
+                            label: isAdminRole(user.role)
+                              ? "Remove admin role?"
+                              : "Grant admin role?",
+                          })
+                        }
                       >
                         <ShieldCheck size={12} className="mr-2" />
-                        {user.isAdmin ? "Remove Admin" : "Make Admin"}
+                        {isAdminRole(user.role) ? "Remove Admin" : "Make Admin"}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -267,7 +299,11 @@ export default function UserDetailPage() {
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <h1 className="text-xl font-black">{user.name ?? "—"}</h1>
             {user.isVerified && <BadgeCheck size={18} className="text-cyan-400" />}
-            {user.isAdmin && <Badge className="text-[9px] bg-rose-500/10 text-rose-400 border-rose-500/20 px-2">Admin</Badge>}
+            {isAdminRole(user.role) && (
+              <Badge className="text-[9px] bg-rose-500/10 text-rose-400 border-rose-500/20 px-2">
+                Admin
+              </Badge>
+            )}
             {user.deletedAt && <Badge variant="destructive" className="text-[9px]">Deleted</Badge>}
           </div>
           <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -277,7 +313,7 @@ export default function UserDetailPage() {
           <div className="flex flex-wrap gap-2 mt-3">
             {user.isSeller && <Badge className="text-[10px] bg-amber-400/10 text-amber-400 border-amber-400/20 px-2.5">🛍️ Seller</Badge>}
             {user.isServiceProvider && <Badge className="text-[10px] bg-cyan-400/10 text-cyan-400 border-cyan-400/20 px-2.5">🧑‍💼 Expert</Badge>}
-            {!user.isSeller && !user.isServiceProvider && !user.isAdmin && (
+            {!user.isSeller && !user.isServiceProvider && !isAdminRole(user.role) && (
               <Badge variant="secondary" className="text-[10px] px-2.5">👤 Regular User</Badge>
             )}
           </div>
@@ -357,8 +393,14 @@ export default function UserDetailPage() {
                 )}
                 <div className="flex items-center justify-between py-2">
                   <span className="text-xs text-muted-foreground font-medium">Admin Privileges</span>
-                  <Badge className={user.isAdmin ? "text-[9px] bg-rose-500/10 text-rose-400" : "text-[9px] bg-muted text-muted-foreground"}>
-                    {user.isAdmin ? "Yes" : "No"}
+                  <Badge
+                    className={
+                      isAdminRole(user.role)
+                        ? "text-[9px] bg-rose-500/10 text-rose-400"
+                        : "text-[9px] bg-muted text-muted-foreground"
+                    }
+                  >
+                    {isAdminRole(user.role) ? "Yes" : "No"}
                   </Badge>
                 </div>
                 {user.deletedAt && (

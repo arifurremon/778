@@ -3,6 +3,7 @@
  * Usage: DATABASE_URL=... npm run seed:staging
  */
 import bcrypt from "bcryptjs";
+import type { Role } from "@prisma/client";
 import { seedDirectoryEntries, seedEmergencyContacts } from "./seed-phase3-content";
 import { db } from "../src/lib/db";
 import { CURRENT_POLICY_VERSION } from "../src/lib/legal/policy";
@@ -14,7 +15,7 @@ async function upsertStagingUser(input: {
   username: string;
   name: string;
   location: string;
-  isAdmin?: boolean;
+  role?: Role;
   isSeller?: boolean;
 }) {
   const passwordHash = await bcrypt.hash(STAGING_PASSWORD, 12);
@@ -34,7 +35,7 @@ async function upsertStagingUser(input: {
       emailVerified: now,
       policyAcceptedAt: now,
       policyVersion: CURRENT_POLICY_VERSION,
-      isAdmin: input.isAdmin ?? false,
+      role: input.role ?? "USER",
       isSeller: input.isSeller ?? false,
     },
     update: {
@@ -43,7 +44,7 @@ async function upsertStagingUser(input: {
       emailVerified: now,
       policyAcceptedAt: now,
       policyVersion: CURRENT_POLICY_VERSION,
-      isAdmin: input.isAdmin ?? false,
+      role: input.role ?? "USER",
       isSeller: input.isSeller ?? false,
     },
   });
@@ -55,7 +56,7 @@ async function seedUsersAndShops() {
     username: "staging_admin",
     name: "Staging Admin",
     location: "Panchlaish",
-    isAdmin: true,
+    role: "ADMIN",
   });
 
   const seller = await upsertStagingUser({

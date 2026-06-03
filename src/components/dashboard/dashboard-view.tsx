@@ -31,6 +31,7 @@ import {
   Package
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { isAdminRole } from "@/lib/rbac";
 import { useMessages } from "@/hooks/use-messages";
 import { useNotifications } from "@/hooks/use-notifications";
 import { formatDistanceToNow } from "date-fns";
@@ -99,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const visibleNavItems = NAV_ITEMS.filter(item => {
     if (item.sellerOnly && !user?.isSeller) return false;
     if (item.expertOnly && !user?.isServiceProvider) return false;
-    if (item.adminOnly && !user?.isAdmin) return false;
+    if (item.adminOnly && !isAdminRole(user?.role)) return false;
     return true;
   });
 
@@ -165,7 +166,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Zone 3: Workspaces */}
-        {(user?.isSeller || user?.isServiceProvider || user?.isAdmin) && (
+        {(user?.isSeller || user?.isServiceProvider || isAdminRole(user?.role)) && (
           <div className="space-y-1">
             <div className="px-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 opacity-70">Workspace</div>
             {visibleNavItems.filter(i => ['Seller Hub', 'Expert Hub', 'Admin Center'].includes(i.label)).map((item) => (

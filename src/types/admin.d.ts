@@ -1,10 +1,12 @@
+import type { Role } from "@prisma/client";
+
 export interface AdminUser {
   id: string;
   name: string | null;
   email: string;
   username: string | null;
   profileImage: string | null;
-  isAdmin: boolean;
+  role: Role;
   isSeller: boolean;
   isServiceProvider: boolean;
   emailVerified: Date | null;

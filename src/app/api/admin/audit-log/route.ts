@@ -44,7 +44,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
               name: true,
               email: true,
               profileImage: true,
-              isAdmin: true,
+              role: true,
             },
           },
         },

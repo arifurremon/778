@@ -29,7 +29,6 @@ model User {
   nameChangeCount Int       @default(0)
   // FIX(P1): Changed from String? to DateTime? for correct temporal queries.
   joinDate        DateTime?
-  isAdmin         Boolean   @default(false)
   role            Role      @default(USER)
   mfaSecret       String?
   mfaEnabled      Boolean   @default(false)

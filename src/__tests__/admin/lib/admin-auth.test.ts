@@ -17,7 +17,6 @@ vi.mock("@/lib/db", () => ({
 
 const adminSelect = {
   id: true,
-  isAdmin: true,
   role: true,
   mfaEnabled: true,
   deletedAt: true,
@@ -61,11 +60,10 @@ describe("requireAdmin() Library Utility", () => {
 
   it("returns 403 if the database user is not an admin even when the JWT says admin", async () => {
     vi.mocked(auth).mockResolvedValue({
-      user: { id: "user-1", isAdmin: true },
+      user: { id: "user-1", role: "ADMIN" },
     } as any);
     vi.mocked(db.user.findUnique).mockResolvedValue({
       id: "user-1",
-      isAdmin: false,
       role: "USER",
       mfaEnabled: false,
       deletedAt: null,
@@ -82,10 +80,9 @@ describe("requireAdmin() Library Utility", () => {
   });
 
   it("returns the session and database user if the live database record is admin", async () => {
-    const mockSession = { user: { id: "admin-1", isAdmin: false, email: "admin@test.com" } };
+    const mockSession = { user: { id: "admin-1", role: "USER", email: "admin@test.com" } };
     const mockDbUser = {
       id: "admin-1",
-      isAdmin: true,
       role: "ADMIN",
       mfaEnabled: true,
       deletedAt: null,

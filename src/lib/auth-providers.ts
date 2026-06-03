@@ -1,5 +1,4 @@
 import { isAdminRole } from "@/lib/rbac";
-import type { Role } from "@prisma/client";
 
 /** Server-side: Google OAuth is registered only when both secrets are present. */
 export function isGoogleOAuthEnabled(): boolean {
@@ -24,8 +23,7 @@ export type GoogleSignInDecision =
 type GoogleSignInUser = {
   deletedAt?: Date | null;
   suspendedAt?: Date | null;
-  role?: Role | null;
-  isAdmin?: boolean;
+  role?: import("@prisma/client").Role | null;
   mfaEnabled?: boolean;
 } | null;
 
@@ -47,10 +45,7 @@ export function evaluateGoogleSignIn(dbUser: GoogleSignInUser): GoogleSignInDeci
     };
   }
 
-  if (
-    dbUser.mfaEnabled &&
-    isAdminRole(dbUser.role, dbUser.isAdmin)
-  ) {
+  if (dbUser.mfaEnabled && isAdminRole(dbUser.role)) {
     return {
       allowed: false,
       redirect: "/login?error=AccessDenied",

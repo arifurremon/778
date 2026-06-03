@@ -41,7 +41,7 @@ export const GET = auth(async (req) => {
           profileImage: true,
           nameChangeCount: true,
           joinDate: true,
-          isAdmin: true,
+          role: true,
           isVerified: true,
           isSeller: true,
           isServiceProvider: true,

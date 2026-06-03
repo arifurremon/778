@@ -1,4 +1,5 @@
 import { logErrorToSentry } from "@/lib/error-handler";
+import { isAdminRole } from "@/lib/rbac";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { NextRequest, NextResponse } from "next/server";
@@ -35,7 +36,7 @@ export async function DELETE(
     }
 
     const isAuthor = post.authorId === session.user.id;
-    const isAdmin = dbUser.isAdmin === true;
+    const isAdmin = isAdminRole(dbUser.role);
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json(

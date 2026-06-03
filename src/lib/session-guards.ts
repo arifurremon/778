@@ -20,7 +20,6 @@ export async function requireActiveSession() {
     where: { id: session.user.id },
         select: {
           id: true,
-          isAdmin: true,
           role: true,
           deletedAt: true,
           suspendedAt: true,

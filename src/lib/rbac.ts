@@ -6,16 +6,24 @@ export const ADMIN_ROLES: Role[] = ["ADMIN", "SUPERADMIN", "MODERATOR"];
 /** Roles with full platform administration (not content-only moderator). */
 export const ELEVATED_ADMIN_ROLES: Role[] = ["ADMIN", "SUPERADMIN"];
 
-export function isAdminRole(role: Role | null | undefined, isAdminFallback = false): boolean {
-  if (role && ADMIN_ROLES.includes(role)) return true;
-  return isAdminFallback;
+export const ROLE_VALUES = [
+  "USER",
+  "SELLER",
+  "EXPERT",
+  "MODERATOR",
+  "ADMIN",
+  "SUPERADMIN",
+] as const satisfies readonly Role[];
+
+export function isAdminRole(role: Role | null | undefined): boolean {
+  return !!role && ADMIN_ROLES.includes(role);
 }
 
-export function isElevatedAdminRole(role: Role | null | undefined, isAdminFallback = false): boolean {
-  if (role && ELEVATED_ADMIN_ROLES.includes(role)) return true;
-  return isAdminFallback;
+export function isElevatedAdminRole(role: Role | null | undefined): boolean {
+  return !!role && ELEVATED_ADMIN_ROLES.includes(role);
 }
 
-export function roleFromLegacyFlags(isAdmin: boolean): Role {
-  return isAdmin ? "ADMIN" : "USER";
+/** Standard community member without elevated privileges. */
+export function isStandardUserRole(role: Role | null | undefined): boolean {
+  return !role || role === "USER";
 }

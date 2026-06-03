@@ -82,7 +82,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           deletedAt: true,
           suspendedAt: true,
           role: true,
-          isAdmin: true,
           mfaEnabled: true,
         },
       });
@@ -116,7 +115,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const dbUser = await db.user.findUnique({
           where: { id: token.id as string },
           select: {
-            isAdmin: true,
+            role: true,
             suspendedAt: true,
             deletedAt: true,
             username: true,
@@ -128,7 +127,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return { ...token, invalid: true };
         }
 
-        token.isAdmin = dbUser.isAdmin;
+        token.role = dbUser.role;
         token.username = dbUser.username ?? token.username;
         token.profileImage = dbUser.profileImage ?? token.profileImage;
       }
@@ -277,7 +276,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (
           user.mfaEnabled &&
           user.mfaSecret &&
-          isAdminRole(user.role, user.isAdmin)
+          isAdminRole(user.role)
         ) {
           const totpCode = (credentials.totpCode as string | undefined)?.trim();
           if (!totpCode) {
@@ -314,7 +313,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.name,
           username: user.username,
-          isAdmin: user.isAdmin,
+          role: user.role,
           profileImage: user.profileImage,
         };
       },

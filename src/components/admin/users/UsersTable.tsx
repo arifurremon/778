@@ -18,8 +18,10 @@ import { StatusBadge } from '@/components/admin/display/StatusBadge';
 import { QuickActionMenu } from '@/components/admin/actions/QuickActionMenu';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { isAdminRole } from "@/lib/rbac";
+import type { Role } from "@prisma/client";
 
 interface AdminUser {
   id: string;
@@ -27,7 +29,7 @@ interface AdminUser {
   email: string;
   username: string | null;
   profileImage: string | null;
-  isAdmin: boolean;
+  role: Role;
   isSeller: boolean;
   isServiceProvider: boolean;
   emailVerified: Date | null;
@@ -182,7 +184,7 @@ export const UsersTable = ({
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {user.isAdmin && (
+                      {isAdminRole(user.role) && (
                         <Badge variant="outline" className="text-[10px] bg-red-500/10 text-red-600 border-red-500/20 px-1.5 py-0">Admin</Badge>
                       )}
                       {user.isSeller && (
@@ -191,7 +193,7 @@ export const UsersTable = ({
                       {user.isServiceProvider && (
                         <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-600 border-purple-500/20 px-1.5 py-0">Provider</Badge>
                       )}
-                      {!user.isAdmin && !user.isSeller && !user.isServiceProvider && (
+                      {!isAdminRole(user.role) && !user.isSeller && !user.isServiceProvider && (
                         <Badge variant="outline" className="text-[10px] bg-muted text-muted-foreground border-border px-1.5 py-0">User</Badge>
                       )}
                     </div>

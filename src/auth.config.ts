@@ -1,4 +1,6 @@
+import type { Role } from "@prisma/client";
 import { NextAuthConfig } from "next-auth";
+import { isAdminRole } from "@/lib/rbac";
 
 /**
  * Shared Auth.js configuration that is Edge-compatible.
@@ -6,8 +8,7 @@ import { NextAuthConfig } from "next-auth";
  *
  * JWT strategy is intentional: CredentialsProvider does not support database sessions.
  * PrismaAdapter is retained for OAuth account linking (Account model) only.
- * JWT callbacks below are used only for enriching the session token
- * with extra fields (id, username, isAdmin, profileImage).
+ * JWT callbacks below enrich the session token with id, username, role, profileImage.
  */
 export const authConfig: NextAuthConfig = {
   providers: [],
@@ -16,14 +17,11 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.id = user.id;
         token.username = user.username;
-        token.isAdmin = user.isAdmin;
-        // Fallback to Google image if profileImage is not set
+        token.role = user.role;
         token.profileImage = user.profileImage || user.image;
       }
 
-      // Support manual session updates
       if (trigger === "update" && session) {
-        // Only merge safe, scalar session fields to prevent JWT size overflow
         const allowed = ["username", "profileImage"] as const;
         for (const key of allowed) {
           if (session[key] !== undefined) token[key] = session[key];
@@ -35,31 +33,23 @@ export const authConfig: NextAuthConfig = {
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id;
-        session.user.username = token.username;
-        session.user.isAdmin = token.isAdmin;
-        session.user.profileImage = token.profileImage;
+        session.user.id = token.id as string;
+        session.user.username = token.username as string | null | undefined;
+        session.user.role = token.role as Role | undefined;
+        session.user.profileImage = token.profileImage as string | null | undefined;
       }
       return session;
     },
     async authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isAdmin = auth?.user?.isAdmin;
+      const isAdmin = isAdminRole(auth?.user?.role);
 
-      // Propagate EmailNotVerified error to the login page with proper context
       if (nextUrl.searchParams.get("error") === "EmailNotVerified") {
         return Response.redirect(
           new URL("/login?error=EmailNotVerified", nextUrl.origin)
         );
       }
 
-      // FIX(P1): Added missing protected routes that were previously accessible
-      // without authentication:
-      //   - /register-service  (service provider registration)
-      //   - /register-shop     (seller shop registration)
-      //   - /employee          (employee-only area)
-      // Unauthenticated access to these routes allowed partial form submissions
-      // and data exposure before login enforcement.
       const isProtectedRoute = [
         "/dashboard",
         "/profile",
@@ -75,7 +65,6 @@ export const authConfig: NextAuthConfig = {
         "/shops",
         "/services",
         "/directory",
-        // --- Previously missing routes (FIX) ---
         "/register-service",
         "/register-shop",
       ].some((path) => nextUrl.pathname.startsWith(path));
@@ -103,6 +92,5 @@ export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
   secret: process.env.AUTH_SECRET,
   trustHost: true,
-  // Auth.js native debug output in development — no manual console.log needed
   debug: process.env.NODE_ENV === "development",
 };

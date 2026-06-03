@@ -60,7 +60,7 @@ describe("Pusher auth API — Integration", () => {
     mockAuth.mockResolvedValue({ user: { id: testUsers.regular.id } });
     prismaMock.user.findUnique.mockResolvedValue({
       id: testUsers.regular.id,
-      isAdmin: false,
+      role: "USER",
       deletedAt: null,
       suspendedAt: null,
     });
@@ -78,7 +78,7 @@ describe("Pusher auth API — Integration", () => {
     mockAuth.mockResolvedValue({ user: { id: testUsers.regular.id } });
     prismaMock.user.findUnique.mockResolvedValue({
       id: testUsers.regular.id,
-      isAdmin: false,
+      role: "USER",
       deletedAt: null,
       suspendedAt: null,
     });

@@ -120,7 +120,7 @@ export interface User {
   verificationReason?: string;
   shopDetails?: ShopDetails;
   serviceDetails?: ServiceDetails;
-  isAdmin?: boolean;
+  role?: import("@prisma/client").Role;
   joinDate?: string;
   nameChangeCount: number;
   showShopBadge?: boolean;

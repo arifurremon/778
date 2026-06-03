@@ -43,7 +43,7 @@ function mockActiveUser(userId: string, name = "Test User", email = "test@exampl
   mockAuth.mockResolvedValue({ user: { id: userId, name, email } });
   prismaMock.user.findUnique.mockResolvedValue({
     id: userId,
-    isAdmin: false,
+    role: "USER",
     deletedAt: null,
     suspendedAt: null,
   });

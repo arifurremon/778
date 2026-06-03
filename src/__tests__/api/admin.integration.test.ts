@@ -41,11 +41,11 @@ describe("GET /api/admin — Integration", () => {
 
   it("returns 403 for non-admin users", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: testUsers.regular.id, isAdmin: false },
+      user: { id: testUsers.regular.id, role: "USER" },
     });
     prismaMock.user.findUnique.mockResolvedValue({
       id: testUsers.regular.id,
-      isAdmin: false,
+      role: "USER",
       deletedAt: null,
       suspendedAt: null,
     });
@@ -56,11 +56,11 @@ describe("GET /api/admin — Integration", () => {
 
   it("returns admin dashboard counts for admin users", async () => {
     mockAuth.mockResolvedValue({
-      user: { id: testUsers.admin.id, isAdmin: true },
+      user: { id: testUsers.admin.id, role: "ADMIN" },
     });
     prismaMock.user.findUnique.mockResolvedValue({
       id: testUsers.admin.id,
-      isAdmin: true,
+      role: "ADMIN",
       deletedAt: null,
       suspendedAt: null,
     });

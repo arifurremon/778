@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
+import { ADMIN_ROLES } from "@/lib/rbac";
 import { endOfDay, startOfDay, subDays } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -62,10 +63,12 @@ export async function GET(req: NextRequest) {
         orderBy: { posts: { _count: 'desc' } }
       }),
       Promise.all([
-        db.user.count({ where: { isAdmin: true } }),
+        db.user.count({ where: { role: { in: ADMIN_ROLES } } }),
         db.user.count({ where: { isSeller: true } }),
         db.user.count({ where: { isServiceProvider: true } }),
-        db.user.count({ where: { isAdmin: false, isSeller: false, isServiceProvider: false } }),
+        db.user.count({
+          where: { role: "USER", isSeller: false, isServiceProvider: false },
+        }),
       ])
     ]);
 

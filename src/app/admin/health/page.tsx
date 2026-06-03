@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { checkDatabaseHealth, checkRedisHealth } from "@/lib/health/checks";
 import { hasPusherConfigs } from "@/lib/pusher";
+import { isAdminRole } from "@/lib/rbac";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -159,7 +160,7 @@ export default async function HealthCheckPage() {
   // Server-side admin guard (belt-and-suspenders on top of middleware)
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (!session.user.isAdmin) redirect("/dashboard?error=unauthorized");
+  if (!isAdminRole(session.user.role)) redirect("/dashboard?error=unauthorized");
 
   const [dbCheck, envCheck, authCheck, emailCheck, redisCheck, pusherCheck] =
     await Promise.all([

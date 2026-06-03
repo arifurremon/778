@@ -24,7 +24,7 @@
 |-------|------|--------|
 | **A** | joinDate, env.ts, doc archive | ✅ Done |
 | **B** | Crons in repo, verify scripts, smoke | ✅ Agent done — ops pending |
-| **C** | isAdmin → role; next-auth stable | After Phase B |
+| **C** | isAdmin → role; next-auth pin | ✅ Agent done — prod migration pending |
 | **D–F** | Coverage, refactor, GO + users | Backlog |
 
 ---

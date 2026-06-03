@@ -88,7 +88,7 @@ async function main() {
           password: hashedPassword,
           name: "System Admin",
           preferredName: "Admin",
-          isAdmin: true,
+          role: "ADMIN",
           isVerified: true,
           registrationStatus: "APPROVED"
         }
@@ -101,11 +101,11 @@ async function main() {
       console.log("⚠️ IMPORTANT: Change this password immediately after login!");
       console.log("-----------------------------------------");
     } else {
-      // Ensure the existing user is an admin
-      if (!existingAdmin.isAdmin) {
+      // Ensure the existing user has admin role
+      if (existingAdmin.role !== "ADMIN" && existingAdmin.role !== "SUPERADMIN") {
         await prisma.user.update({
           where: { email: adminEmail },
-          data: { isAdmin: true }
+          data: { role: "ADMIN" },
         });
         console.log(`✅ Promoted existing user ${adminEmail} to Admin.`);
       } else {

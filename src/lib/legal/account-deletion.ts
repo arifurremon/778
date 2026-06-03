@@ -70,7 +70,6 @@ export async function anonymizeUserAccount({
         policyVersion: null,
         isSeller: false,
         isServiceProvider: false,
-        isAdmin: false,
         role: "USER",
       },
     }),

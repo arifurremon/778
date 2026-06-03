@@ -47,11 +47,25 @@ DEPLOY_URL=https://www.thechattala.com npm run verify:cron-live
 
 ---
 
-## Phase C–F (backlog)
+## Phase C — Role-only RBAC ✅
+
+| Task | Status |
+|------|--------|
+| C.1 Drop `isAdmin` column + backfill `role` | ✅ |
+| C.2 Auth/session/guards use `role` only | ✅ |
+| C.3 Admin API + UI PATCH `{ role }` | ✅ |
+| C.4 Seeds + tests updated | ✅ |
+| C.5 Pin `next-auth@5.0.0-beta.31` | ✅ |
+| C.6 Production migration | ⏳ You — `npx prisma migrate deploy` |
+
+Runbook: [`docs/launch/PHASE_C_OPS.md`](./launch/PHASE_C_OPS.md)
+
+---
+
+## Phase D–F (backlog)
 
 | Phase | Focus |
 |-------|--------|
-| **C** | `isAdmin` → `role` only; next-auth stable |
 | **D** | Coverage 60%; `any` cleanup; DashboardLayout split |
 | **E** | `ExpertService.fee` Decimal; indexes / perf |
 | **F** | GO sign-off + first 10 real users |

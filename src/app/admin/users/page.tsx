@@ -21,7 +21,7 @@ interface AdminUser {
   email: string;
   username: string | null;
   profileImage: string | null;
-  isAdmin: boolean;
+  role: import("@prisma/client").Role;
   isSeller: boolean;
   isServiceProvider: boolean;
   emailVerified: Date | null;
