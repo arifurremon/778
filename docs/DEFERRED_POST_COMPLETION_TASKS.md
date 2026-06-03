@@ -37,13 +37,13 @@
 | Block on feed (partial) | `GET/POST /api/posts` filters `blockedUser` server-side |
 | Enterprise ops docs | Staging/promote workflows, ADRs, on-call, scorecard |
 
-### ❌ Critical — fix before public GO (code)
+### ✅ Critical code fixes (Phase 1 — complete `b5cc5ae`)
 
-| # | Issue | Evidence | Suggested fix |
-|---|-------|----------|---------------|
-| D-C1 | **Server-side block incomplete** | Block works on posts feed; **not** on `/api/messages`, neighbours, notifications | Shared `assertNotBlocked(viewerId, targetId)` in message start/send, neighbour requests, profile APIs |
-| D-C2 | **Password policy inconsistent** | Register API: min **8** + symbol; login/signup UI + OpenAPI: min **6**; reset page `minLength={6}` | Single `passwordSchema` in `src/lib/validation/password.ts`; use everywhere |
-| D-C3 | **`logo-icon.png` = 2.8 MB** | `public/logo-icon.png` | Replace with SVG/WebP; audit references in layout/metadata |
+| # | Issue | Status |
+|---|-------|--------|
+| D-C1 | **Server-side block enforcement** | ✅ `src/lib/user-blocks.ts` — messages, neighbours, profile; bidirectional feed filter |
+| D-C2 | **Password policy unified** | ✅ `src/lib/validation/password.ts` — 8 chars + symbol across API, UI, OpenAPI |
+| D-C3 | **Logo asset optimized** | ✅ `logo-icon.png` 2.8MB → 512×512 (~45KB) |
 
 ### ⚠️ High — strongly recommended pre-launch
 
@@ -86,7 +86,7 @@
 | DevOps | 7.0/10 | **~8.0/10** | ZAP, Lighthouse, staging/promote, migrate split |
 | Security | 8.0/10 | **~8.0/10** | Block gap + password + CSP unchanged |
 | Performance | 6.5/10 | **~6.5/10** | k6 script added; asset + query issues remain |
-| **Overall** | 7.6/10 | **~7.8/10** | Code mature; **GO blocked by deploy + D-C1–C3** |
+| **Overall** | 7.6/10 | **~8.0/10** | Phase 1 critical fixes done; **GO blocked by deploy + Phase 2 high items** |
 
 ---
 
