@@ -3,6 +3,8 @@
 > **Purpose:** Operational tasks that require production/staging console access, secrets, or hosting config.  
 > **Status (2026-03-13):** **Phases 0–9 code complete** on `main`. **Public GO blocked** until new Vercel account deploy + checklist below.
 
+> **Step-by-step launch guide:** [`docs/launch/README.md`](./launch/README.md) — **Step 1 in progress**
+
 ---
 
 ## সংক্ষিপ্ত সারাংশ (BN)
@@ -107,8 +109,8 @@
 | Step | When | Task block | Done |
 |------|------|------------|------|
 | **0** | Pre-deploy (optional) | ~~D-C1–C3 code fixes~~ ✅ Phase 1 complete — proceed to deploy | [x] |
-| **1** | Day 1 | [A — New Vercel account cutover](#a--new-vercel-account-cutover-primary-blocker) | [ ] |
-| **2** | Day 1 | [A.8 Post-deploy smoke on live URL](#a8--first-deploy-verification) | [ ] |
+| **1** | Day 1 | [A — New Vercel account cutover](./launch/STEP_01_VERCEL_CUTOVER.md) | [ ] **in progress** |
+| **2** | Day 1 | [A.8 Post-deploy smoke](./launch/STEP_02_POST_DEPLOY_SMOKE.md) | [ ] |
 | **3** | Day 2 | [B — Staging environment on new account](#b--staging-environment-new-vercel-account) | [ ] |
 | **4** | Day 2–3 | [C.6 — GitHub secrets refresh](#c6--github-secrets-refresh) | [ ] |
 | **5** | Day 3 | [Phase 6 ops — CRON_SECRET + webhook cron](#phase-6--api-platform-stagingproduction-ops) | [ ] |
