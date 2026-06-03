@@ -52,11 +52,10 @@ export default function AuthPageShell({ defaultTab }: AuthPageShellProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
-        style={{ background: "#137ece" }}
+        className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden bg-auth-bg"
       >
         <CityBackground />
-        <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-600/5 via-transparent to-blue-700/5 pointer-events-none" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-br from-auth-brand/5 via-transparent to-auth-brand-deep/5 pointer-events-none" />
         <div className="absolute inset-0 z-5 pointer-events-none overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
           <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 rounded-full blur-3xl" />

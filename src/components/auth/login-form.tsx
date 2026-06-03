@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { authStyles } from "@/lib/design/auth-styles";
 import * as z from "zod";
 
 const loginSchema = z.object({
@@ -142,12 +143,12 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
         )}
         
         <div className="space-y-3">
-          <Label htmlFor="email" className="text-sm font-bold text-slate-800 tracking-wide uppercase">Email Address</Label>
+          <Label htmlFor="email" className={authStyles.label}>Email Address</Label>
           <Input
             id="email"
             type="email"
             placeholder="you@example.com"
-            className="h-13 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+            className={authStyles.input}
             {...register("email")}
           />
           {errors.email && (
@@ -157,8 +158,8 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-sm font-bold text-slate-800 tracking-wide uppercase">Password</Label>
-            <Link href="/forgot-password" className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors hover:underline uppercase tracking-wider">
+            <Label htmlFor="password" className={authStyles.label}>Password</Label>
+            <Link href="/forgot-password" className={authStyles.linkSmall}>
               Forgot it?
             </Link>
           </div>
@@ -167,13 +168,14 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-              className="h-13 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80 pr-12"
+              className={authStyles.inputWithToggle}
               {...register("password")}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+              className={authStyles.passwordToggle}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -186,7 +188,7 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-13 mt-8 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 hover:from-blue-700 hover:via-blue-700 hover:to-blue-800 text-white font-bold text-base shadow-lg hover:shadow-2xl transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed tracking-wide uppercase"
+          className={authStyles.buttonPrimary}
         >
           {isSubmitting ? (
             <div className="flex items-center gap-2">
@@ -207,7 +209,7 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
           New to The Chattala?{" "}
           <button
             onClick={onSwitch}
-            className="text-blue-600 font-bold hover:text-blue-700 transition-all hover:underline"
+            className={authStyles.link}
           >
             Create account
           </button>

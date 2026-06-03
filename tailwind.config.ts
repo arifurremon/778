@@ -50,6 +50,13 @@ export default withUt({
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        auth: {
+          bg: 'hsl(var(--auth-bg))',
+          brand: 'hsl(var(--auth-brand))',
+          'brand-deep': 'hsl(var(--auth-brand-deep))',
+          'brand-darker': 'hsl(var(--auth-brand-darker))',
+          foreground: 'hsl(var(--auth-foreground))',
+        },
         chart: {
           '1': 'hsl(var(--chart-1))',
           '2': 'hsl(var(--chart-2))',

@@ -18,6 +18,7 @@ import { AlertCircle, AtSign, Calendar, CheckCircle, Lock, Mail, MapPin, Phone, 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { authStyles } from "@/lib/design/auth-styles";
 import * as z from "zod";
 
 const CHITTAGONG_AREAS = [
@@ -101,10 +102,10 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
           <CheckCircle className="w-10 h-10 text-green-600" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-bold text-slate-800">Account Created Successfully!</h2>
+          <h2 className="text-2xl font-bold text-auth-foreground">Account Created Successfully!</h2>
           <p className="text-sm text-slate-600 max-w-sm leading-relaxed">
             We&apos;ve sent a verification email to{" "}
-            <span className="font-bold text-slate-800">{registeredEmail}</span>. Please check your inbox and click the verification link to activate your account.
+            <span className="font-bold text-auth-foreground">{registeredEmail}</span>. Please check your inbox and click the verification link to activate your account.
           </p>
         </div>
         <p className="text-xs text-slate-400">
@@ -113,7 +114,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         <Button
           type="button"
           onClick={onSwitch}
-          className="w-full h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all duration-300 uppercase tracking-wide"
+          className={authStyles.buttonSecondary}
         >
           Back to Sign In
         </Button>
@@ -136,14 +137,14 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         )}
         {/* Full Name */}
         <div className="space-y-2 text-left">
-          <Label htmlFor="name" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
-            <User className="w-4 h-4 text-blue-600" /> Full Name *
+          <Label htmlFor="name" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
+            <User className="w-4 h-4 text-auth-brand" /> Full Name *
           </Label>
           <Input
             id="name"
             type="text"
             placeholder="Your full name"
-            className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+            className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
             {...register("name")}
           />
           {errors.name && (
@@ -154,14 +155,14 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         {/* Username & Phone Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2 text-left">
-            <Label htmlFor="username" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
-              <AtSign className="w-4 h-4 text-blue-600" /> Username *
+            <Label htmlFor="username" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
+              <AtSign className="w-4 h-4 text-auth-brand" /> Username *
             </Label>
             <Input
               id="username"
               type="text"
               placeholder="username"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
               {...register("username")}
             />
             {errors.username && (
@@ -169,14 +170,14 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             )}
           </div>
           <div className="space-y-2 text-left">
-            <Label htmlFor="mobile" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
-              <Phone className="w-4 h-4 text-blue-600" /> Phone *
+            <Label htmlFor="mobile" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
+              <Phone className="w-4 h-4 text-auth-brand" /> Phone *
             </Label>
             <Input
               id="mobile"
               type="tel"
               placeholder="01XXXXXXXXX"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
               {...register("mobile")}
             />
             {errors.mobile && (
@@ -188,14 +189,14 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         {/* Email & DOB Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2 text-left">
-            <Label htmlFor="email" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
-              <Mail className="w-4 h-4 text-blue-600" /> Email *
+            <Label htmlFor="email" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
+              <Mail className="w-4 h-4 text-auth-brand" /> Email *
             </Label>
             <Input
               id="email"
               type="email"
               placeholder="you@example.com"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
               {...register("email")}
             />
             {errors.email && (
@@ -203,13 +204,13 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             )}
           </div>
           <div className="space-y-2 text-left">
-            <Label htmlFor="dob" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
-              <Calendar className="w-4 h-4 text-blue-600" /> Date of Birth *
+            <Label htmlFor="dob" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
+              <Calendar className="w-4 h-4 text-auth-brand" /> Date of Birth *
             </Label>
             <Input
               id="dob"
               type="date"
-              className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 block w-full font-medium shadow-sm hover:border-slate-300/80"
+              className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground block w-full font-medium shadow-sm hover:border-border"
               {...register("dob")}
             />
             {errors.dob && (
@@ -220,15 +221,15 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
         {/* Location Dropdown */}
         <div className="space-y-2 text-left">
-          <Label htmlFor="location" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
-            <MapPin className="w-4 h-4 text-blue-600" /> Select Your Thana (Area) *
+          <Label htmlFor="location" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
+            <MapPin className="w-4 h-4 text-auth-brand" /> Select Your Thana (Area) *
           </Label>
           <Controller
             name="location"
             control={control}
             render={({ field }) => (
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger className="h-13 px-5 rounded-2xl bg-white/70 border-2 border-slate-200/80 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 w-full text-left font-bold shadow-md hover:border-slate-300/80 text-base">
+                <SelectTrigger className={authStyles.selectTrigger}>
                   <SelectValue placeholder="Choose your Thana from the list below" />
                 </SelectTrigger>
                 <SelectContent className="bg-white border border-slate-200/80 shadow-xl max-h-[400px]">
@@ -248,14 +249,14 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
 
         {/* Profession - Optional */}
         <div className="space-y-2 text-left">
-          <Label htmlFor="profession" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
+          <Label htmlFor="profession" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
             <UserPlus className="w-4 h-4 text-green-600" /> Profession (Optional)
           </Label>
           <Input
             id="profession"
             type="text"
             placeholder="e.g., Engineer, Doctor, Student, Business Owner"
-            className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80"
+            className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border"
             {...register("profession")}
           />
         </div>
@@ -263,21 +264,22 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         {/* Password & Confirm Password Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2 text-left">
-            <Label htmlFor="password" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
-              <Lock className="w-4 h-4 text-blue-600" /> Password *
+            <Label htmlFor="password" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
+              <Lock className="w-4 h-4 text-auth-brand" /> Password *
             </Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Min 6 characters"
-                className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80 pr-12"
+                className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border pr-12"
                 {...register("password")}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                className={authStyles.passwordToggle}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -287,21 +289,22 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             )}
           </div>
           <div className="space-y-2 text-left">
-            <Label htmlFor="confirmPassword" className="flex items-center gap-2 font-bold text-sm text-slate-800 uppercase tracking-wide">
-              <Lock className="w-4 h-4 text-blue-600" /> Confirm Password *
+            <Label htmlFor="confirmPassword" className="flex items-center gap-2 font-bold text-sm text-auth-foreground uppercase tracking-wide">
+              <Lock className="w-4 h-4 text-auth-brand" /> Confirm Password *
             </Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Re-enter your password"
-                className="h-12 px-5 rounded-2xl bg-white/70 border border-slate-200/60 focus:border-blue-500 focus:ring-2 focus:ring-blue-600/25 transition-all text-slate-900 placeholder:text-slate-400 font-medium shadow-sm hover:border-slate-300/80 pr-12"
+                className="h-12 px-5 rounded-2xl bg-white/70 border border-border/60 focus:border-auth-brand focus:ring-2 focus:ring-auth-brand/25 transition-all text-foreground placeholder:text-muted-foreground font-medium shadow-sm hover:border-border pr-12"
                 {...register("confirmPassword")}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors"
+                className={authStyles.passwordToggle}
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
               >
                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -315,7 +318,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full h-13 mt-8 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-600 to-blue-700 hover:from-blue-700 hover:via-blue-700 hover:to-blue-800 text-white font-bold text-base shadow-lg hover:shadow-2xl transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed tracking-wide uppercase"
+          className={authStyles.buttonPrimary}
         >
           {isSubmitting ? (
             <div className="flex items-center gap-2">
@@ -335,7 +338,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
           Already a member?{" "}
           <button
             onClick={onSwitch}
-            className="text-blue-600 font-bold hover:text-blue-700 transition-all hover:underline"
+            className="text-auth-brand font-bold hover:text-auth-brand-deep transition-all hover:underline"
           >
             Sign in
           </button>
