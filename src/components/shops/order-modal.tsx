@@ -15,13 +15,13 @@ import { useAuth } from "@/hooks/use-auth";
 import { useBusiness } from "@/hooks/use-business";
 import { toast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
-import type { MockProduct } from "@/lib/mock-data";
+import type { ShopOrderProduct } from "@/lib/shop-utils";
 import { CheckCircle2, MapPin, Phone as PhoneIcon, ShoppingCart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface OrderModalProps {
-  product: MockProduct & { shopName?: string };
+  product: ShopOrderProduct;
   shopId: string;
   isOpen: boolean;
   onClose: () => void;
