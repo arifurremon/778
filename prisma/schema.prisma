@@ -284,6 +284,7 @@ model Shop {
   rejectedAt      DateTime?
   rejectionReason String?
   payoutMethod    PayoutMethod?
+  registrationDetails Json?
   products        Product[]
   orders          Order[]
   createdAt       DateTime      @default(now())

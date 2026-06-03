@@ -8,8 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import type { ShopDetails } from "@/hooks/use-auth";
+import type { ShopRegistrationFormInput } from "@/lib/shop-registration";
+import { mapShopRegistrationToApiPayload } from "@/lib/shop-registration";
 import { useAuth } from "@/hooks/use-auth";
+import { api } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/page-header";
 import { CHITTAGONG_AREAS } from "@/lib/mock-data";
@@ -77,9 +79,10 @@ const steps = [
 ];
 
 export default function RegisterShopPage() {
-  const { user, updateUser } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, control, watch, setValue, trigger, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -124,16 +127,26 @@ export default function RegisterShopPage() {
     setValue(fieldName, newList);
   };
 
-  const onSubmit = (data: RegisterFormValues) => {
-    updateUser({
-      registrationStatus: 'Pending',
-      shopDetails: data as ShopDetails
-    });
-    toast({
-      title: "Application Under Review",
-      description: "We will verify your documents within 24-48 hours.",
-    });
-    router.push('/profile');
+  const onSubmit = async (data: RegisterFormValues) => {
+    setIsSubmitting(true);
+    try {
+      const payload = mapShopRegistrationToApiPayload(data as ShopRegistrationFormInput);
+      await api.post("/api/shops", payload);
+      await refreshProfile();
+      toast({
+        title: "Application Under Review",
+        description: "We will verify your documents within 24-48 hours.",
+      });
+      router.push("/profile");
+    } catch (error) {
+      toast({
+        title: "Registration Failed",
+        description: error instanceof Error ? error.message : "Could not submit your shop application.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -446,8 +459,8 @@ export default function RegisterShopPage() {
                     Continue <ChevronRight size={14} className="ml-2" />
                   </Button>
                 ) : (
-                  <Button type="submit" className="flex-[2] bg-accent text-accent-foreground h-12 rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-accent/20">
-                    Submit Application <FileCheck size={16} className="ml-2" />
+                  <Button type="submit" disabled={isSubmitting} className="flex-[2] bg-accent text-accent-foreground h-12 rounded-xl font-bold uppercase tracking-widest text-[10px] shadow-lg shadow-accent/20">
+                    {isSubmitting ? "Submitting..." : "Submit Application"} <FileCheck size={16} className="ml-2" />
                   </Button>
                 )}
               </div>

@@ -99,6 +99,8 @@ const createShopSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters."),
   category:    z.string().min(1, "Category is required."),
   location:    z.string().min(1, "Location is required."),
+  payoutMethod: z.enum(["BKASH", "NAGAD", "BANK"]).optional(),
+  registrationDetails: z.record(z.unknown()).optional(),
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -129,7 +131,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    let { name, description, category, location } = parsed.data;
+    let { name, description, category, location, payoutMethod, registrationDetails } = parsed.data;
     
     name = sanitizeUserInput(name);
     description = sanitizeUserInput(description);
@@ -143,6 +145,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         description,
         category,
         location,
+        ...(payoutMethod ? { payoutMethod } : {}),
+        ...(registrationDetails ? { registrationDetails } : {}),
       },
       select: shopSelect,
     });

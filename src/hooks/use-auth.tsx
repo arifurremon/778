@@ -9,10 +9,45 @@ export type RegistrationStatus = 'None' | 'Pending' | 'Approved' | 'Rejected';
 export type PrivacyLevel = 'Public' | 'Neighbours' | 'Only Me';
 
 function mapPrivacyFromDB(s: string): PrivacyLevel {
-  if (s === 'PUBLIC') return 'Public';
-  if (s === 'NEIGHBOURS') return 'Neighbours';
-  if (s === 'PRIVATE') return 'Only Me';
-  return 'Public'; // safe default
+  if (s === "PUBLIC") return "Public";
+  if (s === "NEIGHBOURS") return "Neighbours";
+  if (s === "PRIVATE") return "Only Me";
+  return "Public";
+}
+
+function mapRegStatus(s: string): RegistrationStatus {
+  if (s === "PENDING") return "Pending";
+  if (s === "APPROVED") return "Approved";
+  if (s === "REJECTED") return "Rejected";
+  return "None";
+}
+
+function mapProfileFromApi(data: Record<string, unknown>): User {
+  const privacySettings = data.privacySettings as
+    | { mobile: string; email: string; dob: string }
+    | undefined;
+
+  return {
+    ...(data as unknown as User),
+    registrationStatus: mapRegStatus(String(data.registrationStatus ?? "NONE")),
+    serviceRegistrationStatus: mapRegStatus(String(data.serviceRegistrationStatus ?? "NONE")),
+    verificationRequestStatus: mapRegStatus(String(data.verificationRequestStatus ?? "NONE")),
+    privacySettings: privacySettings
+      ? {
+          mobile: mapPrivacyFromDB(privacySettings.mobile),
+          email: mapPrivacyFromDB(privacySettings.email),
+          dob: mapPrivacyFromDB(privacySettings.dob),
+        }
+      : {
+          mobile: "Only Me",
+          email: "Neighbours",
+          dob: "Neighbours",
+        },
+    neighbours: [],
+    neighbourRequestsSent: [],
+    neighbourRequestsReceived: [],
+    neighboursCount: (data.neighboursCount as number | undefined) || 0,
+  };
 }
 
 export interface ShopDetails {
@@ -108,6 +143,7 @@ interface AuthContextType {
   signup: (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string }) => Promise<any>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -143,35 +179,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserProfile(null);
       setIsProfileLoading(false);
     } else if (status === 'authenticated' && session?.user) {
-      api.get<any>('/api/user/profile')
-        .then(data => {
-          
-          const mapRegStatus = (s: string) => {
-            if (s === 'PENDING') return 'Pending';
-            if (s === 'APPROVED') return 'Approved';
-            if (s === 'REJECTED') return 'Rejected';
-            return 'None';
-          };
-          
-          setUserProfile({
-            ...data,
-            registrationStatus: mapRegStatus(data.registrationStatus),
-            serviceRegistrationStatus: mapRegStatus(data.serviceRegistrationStatus),
-            verificationRequestStatus: mapRegStatus(data.verificationRequestStatus),
-            privacySettings: data.privacySettings ? {
-              mobile: mapPrivacyFromDB(data.privacySettings.mobile),
-              email: mapPrivacyFromDB(data.privacySettings.email),
-              dob: mapPrivacyFromDB(data.privacySettings.dob),
-            } : {
-              mobile: 'Only Me',
-              email: 'Neighbours',
-              dob: 'Neighbours'
-            },
-            neighbours: [],
-            neighbourRequestsSent: [],
-            neighbourRequestsReceived: [],
-            neighboursCount: data.neighboursCount || 0,
-          });
+      api.get<Record<string, unknown>>('/api/user/profile')
+        .then((data) => {
+          setUserProfile(mapProfileFromApi(data));
           setIsProfileLoading(false);
         })
         .catch(err => {
@@ -180,6 +190,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     }
   }, [session, status]);
+
+  const refreshProfile = async () => {
+    if (status !== "authenticated" || !session?.user) return;
+    const data = await api.get<Record<string, unknown>>("/api/user/profile");
+    setUserProfile(mapProfileFromApi(data));
+    await update();
+  };
 
   const login = async (email: string, pass: string) => {
     const result = await Promise.race([
@@ -235,7 +252,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login, 
       signup, 
       logout, 
-      updateUser 
+      updateUser,
+      refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>
