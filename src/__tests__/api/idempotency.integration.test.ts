@@ -24,26 +24,40 @@ vi.mock("@/lib/webhooks/delivery", () => ({
   emitWebhookEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
-const mockAuth = vi.fn();
-vi.mock("@/lib/auth", () => ({
-  auth: () => mockAuth(),
+vi.mock("@/lib/rate-limit", () => ({
+  hasRedisConfigs: vi.fn(() => false),
+  runRateLimit: vi.fn(async () => ({ success: true, limit: 5, remaining: 4, reset: Date.now() + 3600_000 })),
+  rateLimiters: {
+    orders: { limit: vi.fn().mockResolvedValue({ success: true }) },
+  },
+}));
+
+const mockRequireActiveMutation = vi.fn();
+vi.mock("@/lib/session-guards", () => ({
+  requireActiveMutation: (req: NextRequest) => mockRequireActiveMutation(req),
 }));
 
 import { POST } from "@/app/api/orders/route";
 
+const SHOP_ID = "00000000-0000-4000-8000-000000000001";
+const PRODUCT_ID = "00000000-0000-4000-8000-000000000002";
+
 describe("Orders idempotency", () => {
   beforeEach(() => {
     resetPrismaMock();
-    mockAuth.mockResolvedValue({ user: { id: "buyer-1", name: "Buyer" } });
+    mockRequireActiveMutation.mockResolvedValue({
+      error: null,
+      session: { user: { id: "buyer-1", name: "Buyer" } },
+    });
     prismaMock.user.findUnique.mockResolvedValue({
       id: "buyer-1",
       deletedAt: null,
       suspendedAt: null,
     });
-    prismaMock.shop.findUnique.mockResolvedValue({ id: "shop-1", userId: "seller-1" });
+    prismaMock.shop.findUnique.mockResolvedValue({ id: SHOP_ID, userId: "seller-1" });
     prismaMock.product.findUnique.mockResolvedValue({
-      id: "product-1",
-      shopId: "shop-1",
+      id: PRODUCT_ID,
+      shopId: SHOP_ID,
       name: "Rice",
       price: { toNumber: () => 100 },
       inStock: true,
@@ -59,8 +73,8 @@ describe("Orders idempotency", () => {
 
   it("replays stored response for duplicate Idempotency-Key", async () => {
     const payload = {
-      shopId: "00000000-0000-4000-8000-000000000001",
-      productId: "00000000-0000-4000-8000-000000000002",
+      shopId: SHOP_ID,
+      productId: PRODUCT_ID,
       phone: "01712345678",
       address: "Chattogram",
       quantity: 1,

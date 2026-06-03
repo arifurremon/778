@@ -11,6 +11,20 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   exit 1
 fi
 
+strip_quotes() {
+  local value="$1"
+  value="${value#\"}"
+  value="${value%\"}"
+  value="${value#\'}"
+  value="${value%\'}"
+  printf '%s' "$value"
+}
+
+DATABASE_URL="$(strip_quotes "${DATABASE_URL}")"
+if [[ -n "${DIRECT_URL:-}" ]]; then
+  DIRECT_URL="$(strip_quotes "${DIRECT_URL}")"
+fi
+
 # Neon: migrations should use the direct (non-pooler) connection when available.
 MIGRATE_URL="${DATABASE_URL}"
 if [[ -n "${DIRECT_URL:-}" ]]; then
