@@ -1,20 +1,33 @@
 /**
- * Integration Tests — GET /api/shops/[shopId]
+ * Integration Tests — GET/PATCH /api/shops/[shopId]
  */
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { testUsers } from "../fixtures/seed";
 import { prismaMock, resetPrismaMock } from "../helpers/prisma-mock";
 
 vi.mock("@/lib/error-handler", () => ({
   logErrorToSentry: vi.fn(),
 }));
 
+vi.mock("@/lib/rate-limit", () => ({
+  hasRedisConfigs: vi.fn(() => true),
+  runRateLimit: vi.fn(
+    (limiter: { limit: (key: string) => Promise<{ success: boolean }> }, key: string) =>
+      limiter.limit(key)
+  ),
+  rateLimiters: {
+    shopRegistration: { limit: vi.fn().mockResolvedValue({ success: true }) },
+  },
+}));
+
+const mockAuth = vi.fn().mockResolvedValue(null);
 vi.mock("@/lib/auth", () => ({
-  auth: vi.fn().mockResolvedValue(null),
+  auth: () => mockAuth(),
 }));
 
 // Import AFTER mocks
-import { GET } from "@/app/api/shops/[shopId]/route";
+import { GET, PATCH } from "@/app/api/shops/[shopId]/route";
 
 function makeGetRequest(shopId: string): NextRequest {
   return new NextRequest(`http://localhost:3000/api/shops/${shopId}`, {
@@ -88,5 +101,68 @@ describe("GET /api/shops/[shopId] — Integration", () => {
         where: { id: "shop-1" },
       })
     );
+  });
+});
+
+describe("PATCH /api/shops/[shopId] — Integration", () => {
+  beforeEach(() => {
+    resetPrismaMock();
+    mockAuth.mockResolvedValue(null);
+  });
+
+  function mockOwnerSession(userId = testUsers.regular.id) {
+    mockAuth.mockResolvedValue({ user: { id: userId } });
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: userId,
+      role: "USER",
+      deletedAt: null,
+      suspendedAt: null,
+    });
+  }
+
+  function makePatchRequest(body: Record<string, unknown>): NextRequest {
+    return new NextRequest("http://localhost:3000/api/shops/shop-1", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        origin: "http://localhost:3000",
+        "x-csrf-token": "test-csrf-token",
+      },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("returns 403 when user does not own the shop", async () => {
+    mockOwnerSession("other-user");
+    prismaMock.shop.findUnique.mockResolvedValue({ id: "shop-1", userId: testUsers.regular.id });
+
+    const res = await PATCH(makePatchRequest({ name: "Updated Shop Name" }), {
+      params: Promise.resolve({ shopId: "shop-1" }),
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it("updates shop details for owner", async () => {
+    mockOwnerSession();
+    prismaMock.shop.findUnique.mockResolvedValue({ id: "shop-1", userId: testUsers.regular.id });
+    prismaMock.shop.update.mockResolvedValue({
+      id: "shop-1",
+      name: "Updated Shop Name",
+      description: sampleShop.description,
+      category: sampleShop.category,
+      location: sampleShop.location,
+      trustScore: 100,
+      rating: 5,
+      isVerified: true,
+      updatedAt: new Date(),
+    });
+
+    const res = await PATCH(makePatchRequest({ name: "Updated Shop Name" }), {
+      params: Promise.resolve({ shopId: "shop-1" }),
+    });
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.name).toBe("Updated Shop Name");
   });
 });

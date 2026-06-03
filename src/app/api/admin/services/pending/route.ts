@@ -34,12 +34,12 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const mappedServices = pendingServices.map(s => ({
-      ...s,
-      title: (s as any).title || s.profession,
-      description: (s as any).description || s.bio,
-      provider: s.user,
-      user: undefined
+    const mappedServices = pendingServices.map((service) => ({
+      ...service,
+      title: service.profession,
+      description: service.bio,
+      provider: service.user,
+      user: undefined,
     }));
 
     return NextResponse.json({ success: true, services: mappedServices });

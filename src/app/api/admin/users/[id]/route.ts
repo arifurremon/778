@@ -143,7 +143,12 @@ export async function PATCH(
     const updateData: Prisma.UserUpdateInput = { ...rest };
     if (restore === true) updateData.deletedAt = null;
     if (emailVerified !== undefined) {
-      updateData.emailVerified = emailVerified ? new Date(emailVerified as any) : null;
+      updateData.emailVerified =
+        emailVerified === null
+          ? null
+          : emailVerified instanceof Date
+            ? emailVerified
+            : new Date(emailVerified);
     }
 
     const user = await db.user.update({

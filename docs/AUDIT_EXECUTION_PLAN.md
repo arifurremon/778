@@ -62,11 +62,23 @@ Runbook: [`docs/launch/PHASE_C_OPS.md`](./launch/PHASE_C_OPS.md)
 
 ---
 
-## Phase D–F (backlog)
+## Phase D — Coverage + layout split ✅
+
+| Task | Status |
+|------|--------|
+| D.1 API integration tests → 60%+ coverage | ✅ |
+| D.2 Coverage gate raised in `vitest.config.ts` | ✅ |
+| D.3 `DashboardLayout` split into modules | ✅ |
+| D.4 Admin route `any` cleanup (priority paths) | ✅ |
+
+Runbook: [`docs/launch/PHASE_D_OPS.md`](./launch/PHASE_D_OPS.md)
+
+---
+
+## Phase E–F (backlog)
 
 | Phase | Focus |
 |-------|--------|
-| **D** | Coverage 60%; `any` cleanup; DashboardLayout split |
 | **E** | `ExpertService.fee` Decimal; indexes / perf |
 | **F** | GO sign-off + first 10 real users |
 

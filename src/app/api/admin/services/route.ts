@@ -78,11 +78,11 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Map fields for frontend consistency
-    const mappedServices = services.map(s => ({
-      ...s,
-      title: (s as any).title || s.profession,
-      description: (s as any).description || s.bio,
-      provider: s,
+    const mappedServices = services.map((service) => ({
+      ...service,
+      title: service.profession,
+      description: service.bio,
+      provider: service,
     }));
 
     return NextResponse.json({

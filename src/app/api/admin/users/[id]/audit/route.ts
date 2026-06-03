@@ -1,6 +1,21 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
+
+type AuditLogWithAdmin = Prisma.AuditLogGetPayload<{
+  include: { admin: { select: { name: true; email: true } } };
+}>;
+
+type ActivityLogWithUser = Prisma.ActivityLogGetPayload<{
+  select: {
+    id: true;
+    type: true;
+    description: true;
+    createdAt: true;
+    user: { select: { name: true } };
+  };
+}>;
 
 /**
  * GET /api/admin/users/[id]/audit
@@ -13,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
 
-    let logs: any[] = [];
+    let logs: AuditLogWithAdmin[] | ActivityLogWithUser[] = [];
 
     // [cite_start]Wrap that specific query in try/catch. [cite: 263]
     // SCHEMA-FALLBACK: 'AuditLog' model may not exist — verify schema

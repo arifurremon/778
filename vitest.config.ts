@@ -33,10 +33,10 @@ export default defineConfig({
         "src/lib/validation/password.ts",
       ],
       thresholds: {
-        lines: 47,
-        statements: 44,
-        functions: 45,
-        branches: 34,
+        lines: 60,
+        statements: 60,
+        functions: 55,
+        branches: 45,
       },
     },
     alias: {
