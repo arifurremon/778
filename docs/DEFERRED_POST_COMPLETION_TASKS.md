@@ -45,16 +45,23 @@
 | D-C2 | **Password policy unified** | ✅ `src/lib/validation/password.ts` — 8 chars + symbol across API, UI, OpenAPI |
 | D-C3 | **Logo asset optimized** | ✅ `logo-icon.png` 2.8MB → 512×512 (~45KB) |
 
-### ⚠️ High — strongly recommended pre-launch
+### ✅ Phase 2 quality hardening (complete `feat/phase2`)
 
-| # | Issue | Evidence | Suggested fix |
-|---|-------|----------|---------------|
-| D-H1 | **Coverage gate still low** | Vitest thresholds **40% lines / 28% branches**; measured ~**45% lines** on scoped API routes | Raise thresholds gradually (50→60%); add tests for messages, orders, admin |
-| D-H2 | **Messages API — no integration tests** | No `src/__tests__/api/messages*.test.ts` | Add integration tests + block-enforcement cases |
-| D-H3 | **Cache invalidation unit test missing** | No dedicated test; only mocks in shop/posts tests | `src/__tests__/lib/cache.test.ts` for namespace version bump |
-| D-H4 | **`any` types widespread** | ~**110** occurrences in **43** files (audit cited 24 in narrower scan) | Replace with `unknown` + narrowing; priority: API routes + hooks |
-| D-H5 | **Google OAuth not wired** | `src/lib/auth.ts` = Credentials only; `DEPLOYMENT_ENV.md` says "not wired yet" | Add Google provider OR remove OAuth env/docs until implemented |
-| D-H6 | **CSP `style-src 'unsafe-inline'`** | `src/lib/csp.ts` | Nonce/hash for critical styles or document accepted risk in `SECURITY.md` |
+| # | Issue | Status |
+|---|-------|--------|
+| D-H1 | **Coverage gate raised** | ✅ Thresholds **47% lines / 44% stmts / 34% branches** (was 40/28); **244 tests** |
+| D-H2 | **Messages API integration tests** | ✅ `messages.integration.test.ts` + block test |
+| D-H3 | **Cache invalidation unit tests** | ✅ `src/__tests__/lib/cache.test.ts` (hit/miss/invalidate/ping) |
+| D-H4 | **`any` cleanup (priority paths)** | ✅ Partial — orders routes, block route, `use-community`, `use-auth` |
+
+### ⚠️ High — remaining pre-launch
+
+| # | Issue | Notes |
+|---|-------|-------|
+| D-H1b | Coverage → **60%+** | Next increment after more admin/shop route tests |
+| D-H4b | **`any` cleanup (rest)** | Admin routes, remaining hooks — ~90 occurrences left |
+| D-H5 | **Google OAuth not wired** | Implement OR remove from docs/env |
+| D-H6 | **CSP `style-src 'unsafe-inline'`** | Document risk or tighten |
 
 ### 💡 Medium — next sprint / post-launch
 
@@ -86,7 +93,7 @@
 | DevOps | 7.0/10 | **~8.0/10** | ZAP, Lighthouse, staging/promote, migrate split |
 | Security | 8.0/10 | **~8.0/10** | Block gap + password + CSP unchanged |
 | Performance | 6.5/10 | **~6.5/10** | k6 script added; asset + query issues remain |
-| **Overall** | 7.6/10 | **~8.0/10** | Phase 1 critical fixes done; **GO blocked by deploy + Phase 2 high items** |
+| **Overall** | 7.6/10 | **~8.2/10** | Phase 1–2 code hardening done; **GO blocked by deploy + D-H5/H6** |
 
 ---
 

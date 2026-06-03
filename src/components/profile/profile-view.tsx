@@ -20,7 +20,7 @@ import type { User } from "@/hooks/use-auth";
 import { PrivacyLevel, useAuth } from "@/hooks/use-auth";
 
 type UserBooleanKeys = 'showShopBadge' | 'showExpertBadge' | 'showFullAge' | 'showBirthdayOnly';
-import { useCommunity, mapApiPost, type Post } from "@/hooks/use-community";
+import { useCommunity, mapApiPost, type Post, type PostApiResponse } from "@/hooks/use-community";
 import { api } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { validateFileUpload } from "@/lib/sanitize";
@@ -66,7 +66,7 @@ export default function ProfileView() {
   }, [fetchPosts]);
 
   useEffect(() => {
-    api.get<{ posts: unknown[] }>("/api/user/saved-posts?limit=50")
+    api.get<{ posts: PostApiResponse[] }>("/api/user/saved-posts?limit=50")
       .then((response) => setSavedPosts(response.posts.map(mapApiPost)))
       .catch(() => setSavedPosts([]));
   }, []);

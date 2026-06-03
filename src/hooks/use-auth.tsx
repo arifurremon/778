@@ -138,11 +138,36 @@ export interface User {
   neighboursCount?: number;
 }
 
+interface RegisterResponse {
+  success?: boolean;
+  message?: string;
+  userId?: string;
+  emailSent?: boolean;
+  emailError?: string;
+}
+
+interface SignInResult {
+  error?: string;
+  ok?: boolean;
+  status?: number;
+  url?: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<void>;
-  signup: (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string, acceptTermsAndPrivacy?: boolean }) => Promise<any>;
+  signup: (data: {
+    email: string;
+    pass: string;
+    name: string;
+    username: string;
+    mobile: string;
+    location: string;
+    dob: string;
+    profession?: string;
+    acceptTermsAndPrivacy?: boolean;
+  }) => Promise<RegisterResponse>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -203,8 +228,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, pass: string) => {
     const result = await Promise.race([
       signIn('credentials', { email, password: pass, redirect: false }),
-      new Promise<any>((_, reject) => setTimeout(() => reject(new Error("Server is waking up or busy. Please try again.")), 15000))
-    ]);
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Server is waking up or busy. Please try again.")), 15000)
+      ),
+    ]) as SignInResult | undefined;
 
     if (result === undefined || result === null) {
       throw new Error(AUTH_ERROR_MESSAGES["Default"]);
@@ -217,7 +244,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = async (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string, acceptTermsAndPrivacy?: boolean }) => {
-    const res = await api.post<any>('/api/auth/register', { ...data, password: data.pass, acceptTermsAndPrivacy: data.acceptTermsAndPrivacy ?? true });
+    const res = await api.post<RegisterResponse>("/api/auth/register", {
+      ...data,
+      password: data.pass,
+      acceptTermsAndPrivacy: data.acceptTermsAndPrivacy ?? true,
+    });
     return res;
   };
 

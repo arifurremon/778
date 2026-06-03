@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
@@ -34,12 +35,11 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    // Ignore error if record doesn't exist
-    if (error?.code === 'P2025') {
+  } catch (error: unknown) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
       return NextResponse.json({ success: true });
     }
-    
+
     logErrorToSentry(error, { route: "DELETE /api/user/block/[blockedId]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

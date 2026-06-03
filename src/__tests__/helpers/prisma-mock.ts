@@ -50,6 +50,7 @@ export const prismaMock = {
   webhookDelivery: createMockModel(),
   apiKey: createMockModel(),
   message: createMockModel(),
+  conversation: createMockModel(),
   blockedUser: createMockModel(),
   userPostReaction: createMockModel(),
   userCommentReaction: createMockModel(),

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { OrderStatus, Prisma } from "@prisma/client";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { requireActiveSession } from "@/lib/session-guards";
@@ -21,12 +23,21 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = Math.min(parseInt(searchParams.get("limit") || "10", 10), 50);
-    const status = searchParams.get("status") as any;
+    const statusRaw = searchParams.get("status");
 
-    const whereClause: any = { shopId: shop.id };
-    if (status) {
-      whereClause.status = status;
+    let statusFilter: OrderStatus | undefined;
+    if (statusRaw) {
+      const parsedStatus = z.nativeEnum(OrderStatus).safeParse(statusRaw);
+      if (!parsedStatus.success) {
+        return NextResponse.json({ error: "Invalid order status." }, { status: 400 });
+      }
+      statusFilter = parsedStatus.data;
     }
+
+    const whereClause: Prisma.OrderWhereInput = {
+      shopId: shop.id,
+      ...(statusFilter ? { status: statusFilter } : {}),
+    };
 
     const skip = (Math.max(page, 1) - 1) * limit;
 

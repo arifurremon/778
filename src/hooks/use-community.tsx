@@ -67,7 +67,7 @@ interface CommunityContextType {
   repost: (postId: string, caption: string, user: Post['author']) => Promise<void>;
 }
 
-interface PostApiResponse {
+export interface PostApiResponse {
   id: string;
   content: string;
   images: string[];
@@ -76,11 +76,15 @@ interface PostApiResponse {
   createdAt: string;
   helpfulCount?: number;
   notHelpfulCount?: number;
+  userReaction?: "helpful" | "notHelpful" | null;
+  isSaved?: boolean;
+  isFollowing?: boolean;
   author: {
     id: string;
     name: string;
     username: string;
     profileImage: string;
+    location?: string;
     isVerified?: boolean;
     isSeller?: boolean;
     isServiceProvider?: boolean;
@@ -92,12 +96,21 @@ interface CommentApiResponse {
   id: string;
   text: string;
   createdAt: string;
+  likes?: number;
+  unlikes?: number;
+  likedByMe?: boolean;
+  unlikedByMe?: boolean;
   author: {
     id: string;
     name: string;
     username: string;
     profileImage: string;
   };
+}
+
+interface PostsFeedResponse {
+  posts: PostApiResponse[];
+  nextPage: number | null;
 }
 
 function mapVisibilityFromAPI(v: string): PrivacyLevel {
@@ -107,13 +120,13 @@ function mapVisibilityFromAPI(v: string): PrivacyLevel {
   return 'Public';
 }
 
-export function mapApiPost(p: any): Post {
+export function mapApiPost(p: PostApiResponse): Post {
   const reaction = p.userReaction ?? null;
   return {
     ...p,
     timestamp: p.createdAt,
-    author: { ...p.author, id: p.author.id, avatar: p.author.profileImage },
-    comments: (p.comments || []).map((c: any) => ({
+    author: { ...p.author, id: p.author.id, avatar: p.author.profileImage, location: p.author.location ?? "" },
+    comments: (p.comments || []).map((c: CommentApiResponse) => ({
       ...c,
       timestamp: c.createdAt,
       author: { ...c.author, avatar: c.author.profileImage },
@@ -162,7 +175,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.get<{ posts: any[]; nextPage: number | null }>(
+      const data = await api.get<PostsFeedResponse>(
         `/api/posts?page=1&limit=${LIMIT}`
       );
       setPosts(data.posts.map(mapApiPost));
@@ -184,7 +197,7 @@ export function CommunityProvider({ children }: { children: React.ReactNode }) {
     setLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
-      const data = await api.get<{ posts: any[]; nextPage: number | null }>(
+      const data = await api.get<PostsFeedResponse>(
         `/api/posts?page=${nextPage}&limit=${LIMIT}`
       );
       setPosts(prev => [...prev, ...data.posts.map(mapApiPost)]);
