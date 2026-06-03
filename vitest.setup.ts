@@ -18,6 +18,17 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
+class ResizeObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+
+Object.defineProperty(window, "ResizeObserver", {
+  writable: true,
+  value: ResizeObserverMock,
+});
+
 // Mock Next.js router
 vi.mock('next/navigation', () => ({
   useRouter: () => ({

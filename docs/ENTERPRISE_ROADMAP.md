@@ -94,17 +94,17 @@
 **Goal:** GDPR-minimum + Bangladesh data protection alignment.
 
 ### Tasks
-- [ ] **3.1** Create `/privacy` and `/terms` pages (versioned content, last updated date).
-- [ ] **3.2** Store policy acceptance: `User.policyAcceptedAt`, `User.policyVersion` on register + re-consent flow.
-- [ ] **3.3** Cookie consent banner (essential vs analytics); gate GA4 behind consent.
-- [ ] **3.4** `GET /api/user/export` — JSON export of all user data (GDPR portability).
-- [ ] **3.5** Harden `DELETE /api/user/delete-account` — cascade anonymize PII, retain legal minimum.
-- [ ] **3.6** Data retention cron jobs:
+- [x] **3.1** Create `/privacy` and `/terms` pages (versioned content, last updated date).
+- [x] **3.2** Store policy acceptance: `User.policyAcceptedAt`, `User.policyVersion` on register + re-consent flow.
+- [x] **3.3** Cookie consent banner (essential vs analytics); gate GA4 behind consent.
+- [x] **3.4** `GET /api/user/export` — JSON export of all user data (GDPR portability).
+- [x] **3.5** Harden `DELETE /api/user/delete-account` — cascade anonymize PII, retain legal minimum.
+- [x] **3.6** Data retention cron jobs:
   - ActivityLog > 12 months → archive/delete
   - AuditLog > 24 months → archive
   - Soft-deleted users > 30 days → hard purge
-- [ ] **3.7** Consent ledger table: `ConsentRecord(userId, type, granted, ip, timestamp)`.
-- [ ] **3.8** DPA template doc for B2B merchants (`docs/legal/DPA_TEMPLATE.md`).
+- [x] **3.7** Consent ledger table: `ConsentRecord(userId, type, granted, ip, timestamp)`.
+- [x] **3.8** DPA template doc for B2B merchants (`docs/legal/DPA_TEMPLATE.md`).
 
 ### Exit Criteria
 - Privacy policy live + linked from footer/register.

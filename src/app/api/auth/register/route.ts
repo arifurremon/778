@@ -1,3 +1,5 @@
+import { recordPolicyAcceptance } from "@/lib/legal/consent";
+import { CURRENT_POLICY_VERSION } from "@/lib/legal/policy";
 import { validateCsrfRequest } from "@/lib/csrf";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
@@ -33,6 +35,9 @@ const registerSchema = z.object({
     .min(1, "Date of birth is required.")
     .refine((value) => !Number.isNaN(Date.parse(value)), "Invalid date of birth."),
   profession: z.string().optional(),
+  acceptTermsAndPrivacy: z
+    .boolean()
+    .refine((v) => v === true, "You must accept the Terms of Service and Privacy Policy."),
 });
 
 function buildVerificationUrl(req: NextRequest, token: string): string {
@@ -61,7 +66,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const csrfError = validateCsrfRequest(req);
   if (csrfError) return csrfError;
 
-try {
+  try {
     const headersList = await headers();
     const rawForwarded = headersList.get("x-forwarded-for") ?? "";
     const ip = rawForwarded.split(",")[0]?.trim() || "unknown";
@@ -88,7 +93,7 @@ try {
       );
     }
 
-    const { password, ...registrationFields } = parsed.data;
+    const { password, acceptTermsAndPrivacy, ...registrationFields } = parsed.data;
     let { email, username, name, mobile, location, dob, profession } =
       registrationFields;
 
@@ -137,6 +142,8 @@ try {
           emailToken,
           emailTokenExp,
           emailVerified: null,
+          policyAcceptedAt: new Date(),
+          policyVersion: CURRENT_POLICY_VERSION,
         },
         select: {
           id: true,
@@ -157,6 +164,13 @@ try {
       }
       throw err;
     }
+
+    await recordPolicyAcceptance(
+      user.id,
+      ip,
+      headersList.get("user-agent"),
+      CURRENT_POLICY_VERSION
+    );
 
     let emailSent = true;
     let emailError: string | undefined;

@@ -61,11 +61,16 @@ model User {
   showBirthdayOnly Boolean @default(true)
   privacySettings  Json? // Stores { mobile: 'Private', email: 'Neighbours', ... }
 
+  // Legal / compliance (Phase 3)
+  policyAcceptedAt DateTime?
+  policyVersion    String?
+
   // Relationships
   posts            Post[]
   comments         Comment[]
   activityLogs     ActivityLog[]
   auditLogs        AuditLog[]
+  consentRecords   ConsentRecord[]
   shop             Shop?
   expertService    ExpertService?
   postReactions    UserPostReaction[]
@@ -382,6 +387,13 @@ model ExpertService {
   @@index([category, isVerified])
 }
 
+enum ConsentType {
+  TERMS
+  PRIVACY
+  COOKIES_ANALYTICS
+  MARKETING
+}
+
 enum Role {
   USER
   SELLER
@@ -502,6 +514,21 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([adminId])
+  @@index([createdAt])
+}
+
+model ConsentRecord {
+  id        String      @id @default(uuid())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      ConsentType
+  granted   Boolean
+  version   String?
+  ipAddress String
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  @@index([userId, type, createdAt])
   @@index([createdAt])
 }
 

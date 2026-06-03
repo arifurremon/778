@@ -24,7 +24,10 @@ describe('SignupForm Component', () => {
     expect(container.querySelector('#email')).toBeInTheDocument();
     expect(container.querySelector('#username')).toBeInTheDocument();
     expect(container.querySelector('#password')).toBeInTheDocument();
+    expect(container.querySelector('#acceptTermsAndPrivacy')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Create Account/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Terms of Service/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Privacy Policy/i })).toBeInTheDocument();
   });
 
   it('should allow typing in fields', () => {

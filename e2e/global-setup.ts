@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import fs from "fs";
 import path from "path";
 import { createE2ePrismaClient } from "./helpers/prisma";
+import { CURRENT_POLICY_VERSION } from "../src/lib/legal/policy";
 
 const RUNTIME_CONFIG_PATH = path.join(__dirname, ".runtime-config.json");
 
@@ -35,6 +36,8 @@ export default async function globalSetup() {
         deletedAt: null,
         suspendedAt: null,
         name: "E2E Test User",
+        policyAcceptedAt: new Date(),
+        policyVersion: CURRENT_POLICY_VERSION,
       },
       create: {
         email: E2E_USER_EMAIL,
@@ -46,6 +49,8 @@ export default async function globalSetup() {
         location: "Panchlaish",
         dob: new Date("1995-06-15"),
         profession: "Not specified",
+        policyAcceptedAt: new Date(),
+        policyVersion: CURRENT_POLICY_VERSION,
       },
     });
 

@@ -18,6 +18,8 @@ import { AlertCircle, AtSign, Calendar, CheckCircle, Lock, Mail, MapPin, Phone, 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import Link from "next/link";
+import { Checkbox } from "@/components/ui/checkbox";
 import { authStyles } from "@/lib/design/auth-styles";
 import * as z from "zod";
 
@@ -35,6 +37,9 @@ const signupSchema = z.object({
   dob: z.string().min(1, "Date of birth is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Please confirm your password"),
+  acceptTermsAndPrivacy: z
+    .boolean()
+    .refine((v) => v === true, "You must accept the Terms and Privacy Policy"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -53,6 +58,7 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
     formState: { errors, isSubmitting },
   } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
+    defaultValues: { acceptTermsAndPrivacy: false },
   });
 
   const [signupError, setSignupError] = useState<string | null>(null);
@@ -72,7 +78,8 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
         mobile: data.mobile,
         location: data.location,
         dob: data.dob,
-        profession: data.profession || "Not specified"
+        profession: data.profession || "Not specified",
+        acceptTermsAndPrivacy: data.acceptTermsAndPrivacy,
       });
       if (res && res.emailSent === false) {
         toast({ title: "Email Delivery Failed", description: res.emailError, variant: "destructive" });
@@ -309,6 +316,34 @@ export default function SignupForm({ onSwitch }: { onSwitch: () => void }) {
             )}
           </div>
         </div>
+
+        <div className="flex items-start gap-3 text-left">
+          <Controller
+            name="acceptTermsAndPrivacy"
+            control={control}
+            render={({ field }) => (
+              <Checkbox
+                id="acceptTermsAndPrivacy"
+                checked={field.value}
+                onCheckedChange={(checked) => field.onChange(checked === true)}
+              />
+            )}
+          />
+          <Label htmlFor="acceptTermsAndPrivacy" className="text-sm font-normal leading-snug text-gray-600">
+            I agree to the{" "}
+            <Link href="/terms" className="text-auth-brand underline" target="_blank">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-auth-brand underline" target="_blank">
+              Privacy Policy
+            </Link>
+            .
+          </Label>
+        </div>
+        {errors.acceptTermsAndPrivacy && (
+          <p className="text-xs text-red-600 font-medium">{errors.acceptTermsAndPrivacy.message}</p>
+        )}
 
         <Button
           type="submit"

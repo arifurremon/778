@@ -155,6 +155,7 @@ export const validRegistrationPayload = {
   mobile: "01812345678",
   location: "Chandgaon",
   dob: "2001-05-15",
+  acceptTermsAndPrivacy: true,
 };
 
 export const validPostPayload = {

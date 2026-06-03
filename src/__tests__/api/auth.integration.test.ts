@@ -95,6 +95,16 @@ describe("POST /api/auth/register — Integration", () => {
     expect(json.success).toBe(false);
   });
 
+  it("rejects registration without policy acceptance", async () => {
+    const res = await POST(
+      makeRequest({ ...validRegistrationPayload, acceptTermsAndPrivacy: false })
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(json.message).toContain("Terms of Service and Privacy Policy");
+  });
+
   it("rejects invalid username characters", async () => {
     const res = await POST(
       makeRequest({ ...validRegistrationPayload, username: "bad user!@#" })
@@ -139,6 +149,7 @@ describe("POST /api/auth/register — Integration", () => {
       name: validRegistrationPayload.name,
       emailToken: "verify-token",
     });
+    prismaMock.consentRecord.create.mockResolvedValue({ id: "consent-1" });
 
     const res = await POST(makeRequest(validRegistrationPayload));
     const json = await res.json();
@@ -151,6 +162,7 @@ describe("POST /api/auth/register — Integration", () => {
       validRegistrationPayload.email,
       "http://localhost:3000/api/auth/verify-email/verify-token"
     );
+    expect(prismaMock.consentRecord.create).toHaveBeenCalled();
   });
 
   it("stores hashed password (not plaintext)", async () => {
@@ -161,6 +173,7 @@ describe("POST /api/auth/register — Integration", () => {
       name: validRegistrationPayload.name,
       emailToken: "verify-token",
     });
+    prismaMock.consentRecord.create.mockResolvedValue({ id: "consent-1" });
 
     await POST(makeRequest(validRegistrationPayload));
 
@@ -173,6 +186,8 @@ describe("POST /api/auth/register — Integration", () => {
     expect(createCall?.data.emailToken).toMatch(/^[a-f0-9]{64}$/);
     expect(createCall?.data.emailTokenExp).toBeInstanceOf(Date);
     expect(createCall?.data.emailVerified).toBeNull();
+    expect(createCall?.data.policyVersion).toBe("1.0.0");
+    expect(createCall?.data.policyAcceptedAt).toBeInstanceOf(Date);
   });
 
   // ----- Rate limiting -----------------------------------------------------

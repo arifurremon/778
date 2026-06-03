@@ -1,8 +1,9 @@
-import { db } from "@/lib/db";
+import { anonymizeUserAccount } from "@/lib/legal/account-deletion";
 import { requireActiveMutation } from "@/lib/session-guards";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
+import { getClientIp } from "@/lib/security-audit";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(req: NextRequest) {
@@ -17,34 +18,21 @@ export async function DELETE(req: NextRequest) {
     );
     if (rateLimitResponse) return rateLimitResponse;
 
-    const userId = session.user.id;
-
-    await db.session.deleteMany({ where: { userId } });
-
-    // Soft delete: set deletedAt and clear sensitive information
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        deletedAt: new Date(),
-        password: null,
-        mobile: null,
-        location: null,
-        dob: null,
-        email: `deleted_${userId}@example.com`,
-        username: `deleted_${userId}`,
-        name: "Deleted User",
-      },
+    await anonymizeUserAccount({
+      userId: session.user.id,
+      ipAddress: getClientIp(req.headers),
+      userAgent: req.headers.get("user-agent"),
     });
 
-    return NextResponse.json({ success: true, message: "Account deleted successfully" });
+    return NextResponse.json({
+      success: true,
+      message: "Account deleted and personal data anonymized.",
+    });
   } catch (error) {
     logErrorToSentry(error, {
       endpoint: "/api/user/delete-account",
-      method: "DELETE"
+      method: "DELETE",
     });
-    return NextResponse.json(
-      formatAPIError(error),
-      { status: 500 }
-    );
+    return NextResponse.json(formatAPIError(error), { status: 500 });
   }
 }

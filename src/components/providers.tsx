@@ -18,6 +18,9 @@
  *   Toaster          → global toast notifications (leaf node)
  */
 
+import { CookieConsentBanner } from "@/components/legal/cookie-consent-banner";
+import { GoogleAnalytics } from "@/components/legal/google-analytics";
+import { PolicyConsentGate } from "@/components/legal/policy-consent-gate";
 import { GlobalErrorBoundary } from "@/components/error-boundary";
 import SplashProvider from "@/components/splash/splash-provider";
 import { Toaster } from "@/components/ui/toaster";
@@ -47,8 +50,9 @@ export function Providers({ children }: ProvidersProps) {
                     <GlobalErrorBoundary>
                       {children}
                     </GlobalErrorBoundary>
-                    {/* Toaster is intentionally outside children so toasts
-                        render above all page content without layout shifts. */}
+                    <PolicyConsentGate />
+                    <CookieConsentBanner />
+                    <GoogleAnalytics />
                     <Toaster />
                   </SplashProvider>
                 </CommunityProvider>

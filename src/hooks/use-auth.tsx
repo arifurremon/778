@@ -109,6 +109,8 @@ export interface User {
   location?: string;
   dob?: string;
   profileImage?: string;
+  policyVersion?: string | null;
+  policyAcceptedAt?: string | null;
   isVerified?: boolean;
   isSeller?: boolean;
   isServiceProvider?: boolean;
@@ -140,7 +142,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<void>;
-  signup: (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string }) => Promise<any>;
+  signup: (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string, acceptTermsAndPrivacy?: boolean }) => Promise<any>;
   logout: () => void;
   updateUser: (updates: Partial<User>) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -214,8 +216,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signup = async (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string }) => {
-    const res = await api.post<any>('/api/auth/register', { ...data, password: data.pass });
+  const signup = async (data: { email: string, pass: string, name: string, username: string, mobile: string, location: string, dob: string, profession?: string, acceptTermsAndPrivacy?: boolean }) => {
+    const res = await api.post<any>('/api/auth/register', { ...data, password: data.pass, acceptTermsAndPrivacy: data.acceptTermsAndPrivacy ?? true });
     return res;
   };
 

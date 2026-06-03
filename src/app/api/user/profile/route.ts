@@ -53,6 +53,8 @@ export const GET = auth(async (req) => {
           showFullAge: true,
           showBirthdayOnly: true,
           privacySettings: true,
+          policyAcceptedAt: true,
+          policyVersion: true,
           createdAt: true,
           updatedAt: true,
         },

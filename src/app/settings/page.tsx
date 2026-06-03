@@ -16,6 +16,7 @@ import {
 import { api } from "@/lib/api";
 import {
   Bell,
+  Download,
   Loader2,
   Monitor,
   Moon,
@@ -25,6 +26,7 @@ import {
   Sun,
   Trash2,
 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 type ProfileResponse = {
@@ -37,6 +39,7 @@ export default function SettingsPage() {
   const [privacyBase, setPrivacyBase] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -81,13 +84,34 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeleteAccount = () => {
-    toast({
-      variant: "destructive",
-      title: "Action restricted",
-      description:
-        "Please contact support to initiate account deletion for security verification.",
-    });
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/user/export");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Export failed");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "thechattala-export.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast({
+        title: "Export ready",
+        description: "Your data download has started.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Export failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -235,6 +259,42 @@ export default function SettingsPage() {
               aria-label="Hyperlocal tracking"
             />
           </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2 border-t border-border/30">
+            <div className="space-y-0.5">
+              <Label className="text-base font-bold">Download Your Data</Label>
+              <p className="text-xs text-muted-foreground font-bold">
+                JSON export of your profile, posts, and activity (GDPR portability)
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleExportData}
+              disabled={exporting}
+              className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-11 px-6"
+            >
+              {exporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Download size={14} className="mr-2" />
+                  Export JSON
+                </>
+              )}
+            </Button>
+          </div>
+
+          <p className="text-xs text-muted-foreground font-medium">
+            See our{" "}
+            <Link href="/privacy" className="underline">
+              Privacy Policy
+            </Link>{" "}
+            and{" "}
+            <Link href="/terms" className="underline">
+              Terms of Service
+            </Link>
+            .
+          </p>
         </section>
 
         <section className="bg-destructive/5 border border-destructive/20 rounded-3xl p-8 space-y-6">
@@ -249,13 +309,15 @@ export default function SettingsPage() {
             </p>
             <Button
               variant="ghost"
-              onClick={handleDeleteAccount}
+              asChild
               className="text-destructive hover:bg-destructive/10 h-12 w-full justify-between px-6 rounded-xl border border-destructive/20"
             >
-              <span className="font-bold uppercase tracking-widest text-[10px]">
-                Delete My Permanent Residency
-              </span>
-              <Trash2 size={16} />
+              <Link href="/settings/delete-account">
+                <span className="font-bold uppercase tracking-widest text-[10px]">
+                  Delete My Permanent Residency
+                </span>
+                <Trash2 size={16} />
+              </Link>
             </Button>
           </div>
         </section>

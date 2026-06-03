@@ -37,6 +37,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Logo from "@/components/brand/logo";
+import { SiteFooter } from "@/components/legal/site-footer";
 import { BottomNav } from "./bottom-nav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -483,6 +484,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {children}
                 </motion.div>
               </AnimatePresence>
+              <SiteFooter />
             </div>
           </div>
         </div>

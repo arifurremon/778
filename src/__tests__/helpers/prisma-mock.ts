@@ -44,6 +44,11 @@ export const prismaMock = {
   serviceBooking: createMockModel(),
   notification: createMockModel(),
   auditLog: createMockModel(),
+  consentRecord: createMockModel(),
+  message: createMockModel(),
+  blockedUser: createMockModel(),
+  userPostReaction: createMockModel(),
+  userCommentReaction: createMockModel(),
   $transaction: vi.fn((arg: unknown) => {
     if (typeof arg === "function") {
       return (arg as (client: typeof prismaMock) => Promise<unknown>)(prismaMock);
