@@ -1,7 +1,10 @@
 import { z } from "zod";
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+const nodeEnvSchema = z.enum(["development", "test", "production"]).default("development");
+
+/** Parsed at runtime in all environments (optional fields allowed outside production). */
+const runtimeEnvSchema = z.object({
+  NODE_ENV: nodeEnvSchema,
   DATABASE_URL: z.string().min(1).optional(),
   AUTH_SECRET: z.string().min(32).optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
@@ -9,17 +12,35 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
 });
 
-export type ServerEnv = z.infer<typeof envSchema>;
+/** Required when NODE_ENV=production at runtime (not during `next build`). */
+export const productionRequiredEnvSchema = z.object({
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
+  NEXT_PUBLIC_APP_URL: z.string().url("NEXT_PUBLIC_APP_URL must be a valid URL"),
+  UPSTASH_REDIS_REST_URL: z.string().url("UPSTASH_REDIS_REST_URL must be a valid URL"),
+  UPSTASH_REDIS_REST_TOKEN: z
+    .string()
+    .min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
+});
 
-function parseEnv(): ServerEnv {
-  return envSchema.parse({
+export type ServerEnv = z.infer<typeof runtimeEnvSchema>;
+
+function readProcessEnv() {
+  return {
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
     AUTH_SECRET: process.env.AUTH_SECRET,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
-  });
+  };
+}
+
+function formatProductionEnvError(error: z.ZodError): string {
+  const fields = [
+    ...new Set(error.errors.map((issue) => issue.path[0]).filter(Boolean)),
+  ] as string[];
+  return `Missing required production environment variables: ${fields.join(", ")}`;
 }
 
 /**
@@ -27,24 +48,15 @@ function parseEnv(): ServerEnv {
  * Skips strict checks during `next build` when DATABASE_URL may be absent.
  */
 export function validateServerEnv(): void {
-  const env = parseEnv();
   const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+  const nodeEnv = process.env.NODE_ENV ?? "development";
 
-  if (env.NODE_ENV !== "production" || isBuild) {
+  if (nodeEnv !== "production" || isBuild) {
     return;
   }
 
-  const missing: string[] = [];
-  if (!env.DATABASE_URL) missing.push("DATABASE_URL");
-  if (!env.AUTH_SECRET) missing.push("AUTH_SECRET");
-  if (!env.NEXT_PUBLIC_APP_URL) missing.push("NEXT_PUBLIC_APP_URL");
-  if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
-    missing.push("UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN");
-  }
-
-  if (missing.length > 0) {
-    throw new Error(
-      `Missing required production environment variables: ${[...new Set(missing)].join(", ")}`
-    );
+  const productionCheck = productionRequiredEnvSchema.safeParse(readProcessEnv());
+  if (!productionCheck.success) {
+    throw new Error(formatProductionEnvError(productionCheck.error));
   }
 }

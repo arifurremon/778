@@ -186,6 +186,7 @@ describe("POST /api/auth/register — Integration", () => {
     expect(createCall?.data.emailToken).toMatch(/^[a-f0-9]{64}$/);
     expect(createCall?.data.emailTokenExp).toBeInstanceOf(Date);
     expect(createCall?.data.emailVerified).toBeNull();
+    expect(createCall?.data.joinDate).toBeInstanceOf(Date);
     expect(createCall?.data.policyVersion).toBe("1.0.0");
     expect(createCall?.data.policyAcceptedAt).toBeInstanceOf(Date);
   });

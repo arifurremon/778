@@ -1,9 +1,10 @@
 # Deferred Tasks — Run After All Phases Complete
 
 > **Purpose:** Operational tasks that require production/staging console access, secrets, or hosting config.  
-> **Status (2026-03-13):** **Phases 0–9 code complete** on `main`. **Public GO blocked** until new Vercel account deploy + checklist below.
+> **Status (2026-06-03):** **Production live** at `https://www.thechattala.com`. **Phase A code done** — smoke + staging + GO checklist remain.
 
-> **Step-by-step launch guide:** [`docs/launch/README.md`](./launch/README.md) — **Step 1 in progress**
+> **Step-by-step launch guide:** [`docs/launch/README.md`](./launch/README.md) — **Step 2 (smoke) in progress**  
+> **Audit plan:** [`docs/AUDIT_EXECUTION_PLAN.md`](./AUDIT_EXECUTION_PLAN.md)
 
 ---
 
@@ -11,9 +12,9 @@
 
 | অবস্থা | বিবরণ |
 |--------|--------|
-| ✅ **কোড** | Phases 0–9 merged; CI green (218 tests); `npm run build` / `build:ci` / `migrate:deploy` verified |
-| ⏸️ **পুরনো Vercel** | আর ব্যবহার হবে না — **নতুন Vercel account-এ fresh deploy** |
-| 🔜 **পরবর্তী কাজ** | নিচের **Section A → B → C** ক্রমে (নতুন Vercel → smoke → staging → crons/Inngest → GO) |
+| ✅ **কোড** | Phases 0–9 merged; CI green (**259 tests**); Phase A (joinDate, env, doc archive) shipped |
+| ✅ **Production** | `www.thechattala.com` live — health OK; register mail lazy-load fix deployed |
+| 🔜 **পরবর্তী কাজ** | **Step 2 smoke** → staging → crons/Inngest → GO ([`AUDIT_EXECUTION_PLAN.md`](./AUDIT_EXECUTION_PLAN.md)) |
 
 **পরবর্তী কাজ কী হওয়া উচিত?** → [Recommended execution order](#recommended-execution-order-new-vercel--go-live)
 
@@ -85,7 +86,6 @@
 
 ### ⏸️ Ops-only (not code — see sections A–C above)
 
-- New Vercel account deploy + DNS
 - Staging environment live
 - k6 run **on staging URL** (script exists)
 - Manual pentest sign-off
@@ -109,8 +109,8 @@
 | Step | When | Task block | Done |
 |------|------|------------|------|
 | **0** | Pre-deploy (optional) | ~~D-C1–C3 code fixes~~ ✅ Phase 1 complete — proceed to deploy | [x] |
-| **1** | Day 1 | [A — New Vercel account cutover](./launch/STEP_01_VERCEL_CUTOVER.md) | [ ] **in progress** |
-| **2** | Day 1 | [A.8 Post-deploy smoke](./launch/STEP_02_POST_DEPLOY_SMOKE.md) | [ ] |
+| **1** | Day 1 | [A — New Vercel account cutover](./launch/STEP_01_VERCEL_CUTOVER.md) | [x] |
+| **2** | Day 1 | [A.8 Post-deploy smoke](./launch/STEP_02_POST_DEPLOY_SMOKE.md) | [ ] **in progress** |
 | **3** | Day 2 | [B — Staging environment on new account](#b--staging-environment-new-vercel-account) | [ ] |
 | **4** | Day 2–3 | [C.6 — GitHub secrets refresh](#c6--github-secrets-refresh) | [ ] |
 | **5** | Day 3 | [Phase 6 ops — CRON_SECRET + webhook cron](#phase-6--api-platform-stagingproduction-ops) | [ ] |
@@ -121,9 +121,9 @@
 
 ---
 
-## A — New Vercel account cutover (PRIMARY BLOCKER)
+## A — New Vercel account cutover ✅ (complete)
 
-> **Context:** পুরনো Vercel account/project disconnect করবেন। Neon, Upstash, UploadThing, Sentry **reuse** করা যায় — শুধু Vercel + DNS + GitHub secrets refresh।
+> **Context:** Production live at `https://www.thechattala.com`. Neon, Upstash, UploadThing, Sentry reused on new Vercel account.
 
 ### A.1 — New Vercel team / account
 
@@ -319,8 +319,8 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 
 | # | Task | Guide |
 |---|------|-------|
-| 4-A | Neon PITR restore drill → staging branch | `docs/runbooks/DR_DRILL_GUIDE_BN.md` |
-| 4-B | Hosting rollback drill on **new** Vercel (Promote previous deployment) | `docs/runbooks/DR_DRILL_GUIDE_BN.md` |
+| 4-A | Neon PITR restore drill → staging branch | `docs/archive/pre-launch/runbooks/DR_DRILL_GUIDE_BN.md` |
+| 4-B | Hosting rollback drill on **new** Vercel (Promote previous deployment) | `docs/archive/pre-launch/runbooks/DR_DRILL_GUIDE_BN.md` |
 | 4-C | Fill `LAUNCH_READINESS_REPORT.md` RTO/RPO tables | After drills complete |
 | 4-D | External uptime monitor on `/api/health` | UptimeRobot / Better Stack |
 
@@ -347,7 +347,7 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 - [ ] Create `staging` git branch + Vercel staging project on **new account** — `docs/STAGING_ENVIRONMENT.md`
 - [ ] GitHub secrets refreshed (see [C.6](#c6--github-secrets-refresh))
 - [ ] GitHub `production` environment with required reviewers
-- [ ] Fill secondary on-call name in `docs/ON_CALL_ROTATION.md`
+- [ ] Fill secondary on-call name in `docs/archive/pre-launch/ON_CALL_ROTATION.md`
 - [ ] Two-person runbook training sign-off in `LAUNCH_READINESS_REPORT.md`
 - [ ] Optional: `terraform apply` when Neon/Upstash API keys ready — `infra/terraform/`
 
@@ -361,7 +361,7 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 | 9-B | Manual pentest review — zero Critical/High open | Template in `docs/security/PENTEST_REPORT.md` |
 | 9-C | Lighthouse CI ≥ 90 on `/`, `/dashboard`, `/shops` | `.github/workflows/lighthouse.yml` — run on PR |
 | 9-D | Playwright E2E against staging before prod promote | `PLAYWRIGHT_BASE_URL=https://staging... npm run test:e2e` |
-| 9-E | SOC2 Type I readiness walkthrough | `docs/compliance/SOC2_TYPE1_READINESS.md` |
+| 9-E | SOC2 Type I readiness walkthrough | `docs/archive/pre-launch/compliance/SOC2_TYPE1_READINESS.md` (post-100 users) |
 
 ---
 
@@ -389,7 +389,7 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 - [ ] Phase 4 DR drill + uptime monitor
 - [ ] Phase 9 manual pentest + k6 recorded
 - [ ] `LAUNCH_READINESS_REPORT.md` updated → **GO**
-- [ ] `docs/ENTERPRISE_SCORECARD.md` sign-off row filled
+- [ ] `docs/archive/pre-launch/ENTERPRISE_SCORECARD.md` sign-off row filled (post-100 users)
 - [ ] On-call backup contact filled in runbooks
 
 ---
@@ -402,7 +402,7 @@ curl -s -H "Authorization: Bearer $CRON_SECRET" \
 | `docs/DEPLOYMENT_ENV.md` | Full env var list |
 | `docs/STAGING_ENVIRONMENT.md` | Staging project setup |
 | `docs/PROMOTION_WORKFLOW.md` | staging → prod promotion |
-| `docs/ENTERPRISE_SCORECARD.md` | Internal GO/NO-GO criteria |
+| `docs/archive/pre-launch/ENTERPRISE_SCORECARD.md` | Internal GO/NO-GO criteria (archived template) |
 | `LAUNCH_READINESS_REPORT.md` | Executive launch decision |
 
 **Last updated:** 2026-03-13 — audit cross-check (Jun 2026 report) + new Vercel cutover plan.

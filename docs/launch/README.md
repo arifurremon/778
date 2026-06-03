@@ -2,7 +2,8 @@
 
 > **Purpose:** June 2026 audit-এর বাকি ops + validation কাজ **ধাপে ধাপে** শেষ করা।  
 > **Master checklist:** `docs/DEFERRED_POST_COMPLETION_TASKS.md`  
-> **Status:** Step 1 in progress
+> **Audit plan:** `docs/AUDIT_EXECUTION_PLAN.md`  
+> **Status:** Step 1 ✅ done — **Step 2 (smoke) in progress**
 
 ---
 
@@ -10,7 +11,7 @@
 
 | Step | Block | Owner | Agent prep | Your action | Done |
 |------|-------|-------|------------|-------------|------|
-| **1** | [Vercel cutover (A.1–A.7)](./STEP_01_VERCEL_CUTOVER.md) | You + Vercel | ✅ Scripts + runbook | Console + DNS | [ ] |
+| **1** | [Vercel cutover (A.1–A.7)](./STEP_01_VERCEL_CUTOVER.md) | You + Vercel | ✅ Scripts + runbook | Console + DNS | [x] |
 | **2** | Post-deploy smoke (A.8) | You | ✅ `npm run smoke:production` | Run on live URL | [ ] |
 | **3** | Staging environment (B) | You | — (Step 3 runbook next) | Neon branch + Vercel staging | [ ] |
 | **4** | GitHub secrets (C.6) | You | — | Update `VERCEL_*` secrets | [ ] |
@@ -24,9 +25,10 @@
 
 | Phase | Item | When |
 |-------|------|------|
-| 4 | D-H1b — coverage 60%+ | After staging live |
-| 5 | D-H4b — remaining `any` cleanup | After staging live |
-| 6 | D-M1–M8 — medium items | Post-launch sprints |
+| **A** | joinDate, env.ts, doc archive | ✅ Done |
+| **C** | isAdmin → role; next-auth stable | After smoke |
+| **D** | D-H1b coverage 60%+; D-H4b `any` cleanup | After staging |
+| **E** | D-M1–M8 medium items | Post-launch sprints |
 
 ---
 
@@ -47,8 +49,11 @@ STAGING_URL=https://www.thechattala.com npm run smoke:staging
 
 ## Related docs
 
+- `docs/AUDIT_EXECUTION_PLAN.md` — phased audit response
 - `docs/DEFERRED_POST_COMPLETION_TASKS.md` — full audit backlog
 - `docs/DEPLOYMENT_ENV.md` — env var reference
 - `docs/STAGING_ENVIRONMENT.md` — Step 3 guide
-- `docs/runbooks/DR_DRILL_GUIDE_BN.md` — Step 7
+- `docs/archive/pre-launch/runbooks/DR_DRILL_GUIDE_BN.md` — Step 7 (archived template)
 - `LAUNCH_READINESS_REPORT.md` — final GO/NO-GO
+
+> **Note:** SOC2, scorecard, on-call, capacity, incident playbooks are **archived templates** in `docs/archive/pre-launch/` until 100+ active users.

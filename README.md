@@ -1,5 +1,7 @@
 
 
+> **Documentation note:** Enterprise templates (SOC2, scorecard, on-call, capacity, incident playbooks) are in [`docs/archive/pre-launch/`](docs/archive/pre-launch/) — not active runbooks until 100+ active users. Launch: [`docs/launch/README.md`](docs/launch/README.md).
+
 <p align="center">
   <sub>An initiative by</sub><br/><br/>
   <img

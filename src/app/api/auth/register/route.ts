@@ -146,6 +146,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           emailToken,
           emailTokenExp,
           emailVerified: null,
+          joinDate: new Date(),
           policyAcceptedAt: new Date(),
           policyVersion: CURRENT_POLICY_VERSION,
         },
