@@ -6,6 +6,7 @@ import { Phone, MapPin, ShieldAlert, Siren, Truck, Building2, Search, ExternalLi
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
 import { EMERGENCY_CONTACTS, EmergencyCategory } from "@/lib/emergency-data";
 
 const CATEGORIES = [
@@ -34,17 +35,19 @@ export default function EmergencyPage() {
   return (
       <div className="max-w-5xl mx-auto py-8 px-6 space-y-8">
         <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-destructive font-bold uppercase tracking-[0.2em] text-[10px]">
-              <ShieldAlert size={12} className="animate-pulse" /> Emergency Response Network
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Essential <span className="text-accent">Contacts</span>
-            </h1>
-            <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest opacity-60">
-              Verified local services for Chittagong Division
-            </p>
-          </div>
+          <PageHeader
+            eyebrow="Emergency Response Network"
+            eyebrowIcon={ShieldAlert}
+            eyebrowTone="destructive"
+            eyebrowClassName="animate-pulse"
+            title={
+              <>
+                Essential <span className="text-accent">Contacts</span>
+              </>
+            }
+            subtitle="Verified local services for Chittagong Division"
+            subtitleClassName="text-xs font-bold uppercase tracking-widest opacity-60"
+          />
 
           <div className="relative w-full md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />

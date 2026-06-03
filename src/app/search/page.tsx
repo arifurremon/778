@@ -5,6 +5,8 @@ import { realProviderToProvider } from "@/components/services/service-view";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AppEmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Select,
@@ -173,20 +175,25 @@ function SearchResults() {
     <div className="max-w-6xl mx-auto py-8 px-6 space-y-8">
       <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <div className="space-y-1">
-            <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
-              The Chattala | 2026
-            </p>
-            <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
-              <Search size={12} /> Universal Search Engine
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Results for <span className="text-accent">&quot;{query}&quot;</span>
-          </h1>
           <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
-            {isLoading ? "Searching..." : `Found ${totalResultsCount} items across Chattala`}
+            The Chattala | 2026
           </p>
+          <PageHeader
+            className="space-y-1"
+            eyebrow="Universal Search Engine"
+            eyebrowIcon={Search}
+            title={
+              <>
+                Results for <span className="text-accent">&quot;{query}&quot;</span>
+              </>
+            }
+            subtitle={
+              isLoading
+                ? "Searching..."
+                : `Found ${totalResultsCount} items across Chattala`
+            }
+            subtitleClassName="text-[10px] font-bold uppercase tracking-widest opacity-60"
+          />
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -254,9 +261,9 @@ function SearchResults() {
             >
               <TabsContent value="all" className="space-y-12 mt-0">
                 {!query.trim() ? (
-                  <EmptyState area={filterArea} message="Enter a search term to find shops, services, and posts." />
+                  <SearchEmptyState area={filterArea} message="Enter a search term to find shops, services, and posts." />
                 ) : totalResultsCount === 0 ? (
-                  <EmptyState area={filterArea} />
+                  <SearchEmptyState area={filterArea} />
                 ) : (
                   <>
                     {results.shops.length > 0 && (
@@ -300,7 +307,7 @@ function SearchResults() {
                   {results.shops.map((shop) => (
                     <ShopCard key={shop.id} shop={shop} />
                   ))}
-                  {results.shops.length === 0 && <EmptyState area={filterArea} category="Shops" />}
+                  {results.shops.length === 0 && <SearchEmptyState area={filterArea} category="Shops" />}
                 </div>
               </TabsContent>
 
@@ -309,7 +316,7 @@ function SearchResults() {
                   {results.services.map((provider) => (
                     <ProviderMiniCard key={provider.id} provider={provider} />
                   ))}
-                  {results.services.length === 0 && <EmptyState area={filterArea} category="Services" />}
+                  {results.services.length === 0 && <SearchEmptyState area={filterArea} category="Services" />}
                 </div>
               </TabsContent>
 
@@ -318,7 +325,7 @@ function SearchResults() {
                   {results.community.map((post) => (
                     <PostCard key={post.id} post={post} />
                   ))}
-                  {results.community.length === 0 && <EmptyState area={filterArea} category="Posts" />}
+                  {results.community.length === 0 && <SearchEmptyState area={filterArea} category="Posts" />}
                 </div>
               </TabsContent>
             </motion.div>
@@ -414,31 +421,46 @@ function ProviderMiniCard({ provider }: { provider: Provider }) {
   );
 }
 
-function EmptyState({ area, category, message }: { area?: string; category?: string; message?: string }) {
+function SearchEmptyState({
+  area,
+  category,
+  message,
+}: {
+  area?: string;
+  category?: string;
+  message?: string;
+}) {
+  const areaLabel = area === "All Areas" ? "Chittagong" : area;
+  const description = message ?? (
+    <>
+      We couldn&apos;t find any {category ? category.toLowerCase() : "matching items"} in{" "}
+      <span className="text-accent font-bold">{areaLabel}</span>.
+    </>
+  );
+
   return (
-    <div className="text-center py-20 border-2 border-dashed border-border/30 rounded-3xl bg-card/5 col-span-full">
-      <AlertCircle className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-      <h3 className="text-xl font-bold">No results found</h3>
-      <p className="text-muted-foreground text-sm mt-1 max-w-sm mx-auto leading-relaxed font-bold">
-        {message ??
-          `We couldn't find any ${category ? category.toLowerCase() : "matching items"} in `}
-        {!message && (
-          <span className="text-accent font-bold">{area === "All Areas" ? "Chittagong" : area}</span>
-        )}
-        {!message && "."}
-      </p>
-      <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-        <Link href="/community">
-          <Button className="bg-primary rounded-full px-8 text-xs font-bold uppercase tracking-widest">
-            Ask the Community
-          </Button>
-        </Link>
-        <Link href="/dashboard">
-          <Button variant="outline" className="rounded-full px-8 text-xs font-bold uppercase tracking-widest border-border/50">
-            Back to Home
-          </Button>
-        </Link>
-      </div>
-    </div>
+    <AppEmptyState
+      icon={AlertCircle}
+      title="No results found"
+      description={description}
+      className="col-span-full"
+      footer={
+        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+          <Link href="/community">
+            <Button className="bg-primary rounded-full px-8 text-xs font-bold uppercase tracking-widest">
+              Ask the Community
+            </Button>
+          </Link>
+          <Link href="/dashboard">
+            <Button
+              variant="outline"
+              className="rounded-full px-8 text-xs font-bold uppercase tracking-widest border-border/50"
+            >
+              Back to Home
+            </Button>
+          </Link>
+        </div>
+      }
+    />
   );
 }

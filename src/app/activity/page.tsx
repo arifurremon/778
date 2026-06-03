@@ -17,6 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
+import { AppEmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { cn } from "@/lib/utils";
 
 type ActivityType = 'all' | 'likes' | 'comments' | 'saved' | 'system';
@@ -47,17 +49,17 @@ export default function ActivityPage() {
 
   return (
       <div className="max-w-4xl mx-auto py-8 px-6 space-y-8">
-        <section className="space-y-2">
-          <div className="flex items-center gap-2 text-accent font-bold uppercase tracking-[0.2em] text-[10px]">
-             <History size={12} /> Audit Trail
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Activity <span className="text-accent">History</span>
-          </h1>
-          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest opacity-60">
-            Review your past interactions within the Chattala ecosystem
-          </p>
-        </section>
+        <PageHeader
+          eyebrow="Audit Trail"
+          eyebrowIcon={History}
+          title={
+            <>
+              Activity <span className="text-accent">History</span>
+            </>
+          }
+          subtitle="Review your past interactions within the Chattala ecosystem"
+          subtitleClassName="text-[10px] font-bold uppercase tracking-widest opacity-60"
+        />
 
         <Tabs defaultValue="all" onValueChange={(v) => setActiveTab(v as ActivityType)} className="space-y-8">
           <TabsList className="bg-card/20 border border-border/50 p-1 rounded-full w-full max-w-2xl overflow-x-auto scrollbar-hide flex">
@@ -82,13 +84,13 @@ export default function ActivityPage() {
             >
               <TabsContent value={activeTab} className="mt-0 space-y-4">
                 {filteredActivities.length === 0 ? (
-                  <div className="text-center py-24 border-2 border-dashed border-border/30 rounded-3xl bg-card/5">
-                    <Search className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                    <h3 className="text-lg font-bold">No activities found</h3>
-                    <p className="text-muted-foreground text-xs mt-1 font-bold uppercase tracking-widest opacity-60">
-                      Start engaging with the community to fill your log.
-                    </p>
-                  </div>
+                  <AppEmptyState
+                    icon={Search}
+                    title="No activities found"
+                    description="Start engaging with the community to fill your log."
+                    action={{ label: "Explore Community", href: "/community" }}
+                    className="py-16"
+                  />
                 ) : (
                   filteredActivities.map((act) => (
                     <ActivityCard key={act.id} item={act} />
