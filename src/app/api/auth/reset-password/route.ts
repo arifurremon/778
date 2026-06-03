@@ -8,11 +8,12 @@ import { hash } from "bcryptjs";
 import crypto from "crypto";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { passwordSchema } from "@/lib/validation/password";
 import { z } from "zod";
 
 const resetPasswordSchema = z.object({
   token: z.string().regex(/^[a-f0-9]{64}$/i, "Invalid or expired token"),
-  password: z.string().min(8, "Password must be at least 8 characters."),
+  password: passwordSchema,
 });
 
 function hashResetToken(token: string): string {

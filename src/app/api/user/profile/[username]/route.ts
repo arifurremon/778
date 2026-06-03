@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { requireActiveSession } from "@/lib/session-guards";
+import { blockedProfileResponse, isBlockedBetween } from "@/lib/user-blocks";
 import { ConnectionStatus } from "@prisma/client";
 
 type RouteContext = { params: Promise<{ username: string }> };
@@ -82,6 +83,10 @@ export async function GET(
       currentUserId && currentUserId !== targetUser.id;
 
     if (viewingOther && currentUserId) {
+      if (await isBlockedBetween(currentUserId, targetUser.id)) {
+        return blockedProfileResponse();
+      }
+
       const viewerId = currentUserId;
       const [pairConnection, acceptedEdges] = await Promise.all([
         db.neighbourConnection.findFirst({

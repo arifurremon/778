@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description:
     "The hyperlocal community platform for Chittagong — discover local shops, services, neighbours, and emergency contacts.",
   icons: {
-    icon: "/logo-icon.png?v=2",
+    icon: "/logo-icon.png?v=3",
   },
 };
 

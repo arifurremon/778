@@ -4,6 +4,12 @@ import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
+import {
+  assertCanInteract,
+  blockForbiddenResponse,
+  getInteractionBlockedUserIds,
+  UserBlockError,
+} from "@/lib/user-blocks";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -14,6 +20,8 @@ export async function GET(): Promise<NextResponse> {
     const { session } = active;
 
     const userId = session.user.id;
+    const blockedIds = await getInteractionBlockedUserIds(userId);
+    const blockedSet = new Set(blockedIds);
 
     const conversations = await db.conversation.findMany({
       where: {
@@ -43,7 +51,8 @@ export async function GET(): Promise<NextResponse> {
     });
 
     // Shape each conversation so the client always sees "participant" = the OTHER person
-    const shaped = conversations.map((conv) => {
+    const shaped = conversations
+      .map((conv) => {
       const participant =
         conv.participantA === userId ? conv.userB : conv.userA;
       const lastMessage = conv.messages[0] ?? null;
@@ -58,7 +67,8 @@ export async function GET(): Promise<NextResponse> {
         lastMessageAt: lastMessage?.createdAt ?? conv.createdAt,
         unreadCount: conv._count.messages,
       };
-    });
+    })
+      .filter((conv) => !blockedSet.has(conv.participantId));
 
     return NextResponse.json({ conversations: shaped });
   } catch (error) {
@@ -109,6 +119,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
     if (!recipient) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
+
+    try {
+      await assertCanInteract(userId, recipientId, "You cannot message this user.");
+    } catch (error) {
+      if (error instanceof UserBlockError) {
+        return blockForbiddenResponse(error.message);
+      }
+      throw error;
     }
 
     // Normalise participant order so [A,B] and [B,A] map to the same row

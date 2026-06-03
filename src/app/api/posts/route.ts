@@ -6,6 +6,7 @@ import { logErrorToSentry } from "@/lib/error-handler";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizePostContent } from "@/lib/sanitize";
+import { getInteractionBlockedUserIds } from "@/lib/user-blocks";
 import { ConnectionStatus, PrivacyLevel, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -61,11 +62,7 @@ async function resolveNeighborIds(userId: string): Promise<string[]> {
 }
 
 async function resolveBlockedIds(userId: string): Promise<string[]> {
-  const blocks = await db.blockedUser.findMany({
-    where: { blockerId: userId },
-    select: { blockedId: true },
-  });
-  return blocks.map((b) => b.blockedId);
+  return getInteractionBlockedUserIds(userId);
 }
 
 async function enrichPostsForUser<T extends { id: string }>(

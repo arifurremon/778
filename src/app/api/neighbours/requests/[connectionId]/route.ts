@@ -4,6 +4,7 @@ import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { requireActiveMutation } from "@/lib/session-guards";
+import { assertCanInteract, blockForbiddenResponse, UserBlockError } from "@/lib/user-blocks";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -66,6 +67,15 @@ export async function PATCH(
         { error: "Request is no longer pending." },
         { status: 400 }
       );
+    }
+
+    try {
+      await assertCanInteract(session.user.id, connection.senderId);
+    } catch (error) {
+      if (error instanceof UserBlockError) {
+        return blockForbiddenResponse();
+      }
+      throw error;
     }
 
     const receiverName = connection.receiver.preferredName || connection.receiver.name || "A user";

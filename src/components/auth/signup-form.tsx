@@ -21,6 +21,12 @@ import { Controller, useForm } from "react-hook-form";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 import { authStyles } from "@/lib/design/auth-styles";
+import {
+  loginPasswordSchema,
+  PASSWORDS_MISMATCH_MESSAGE,
+  passwordSchema,
+  passwordsMatchRefine,
+} from "@/lib/validation/password";
 import * as z from "zod";
 
 import { CHITTAGONG_AREAS } from "@/lib/constants/chittagong-areas";
@@ -35,13 +41,13 @@ const signupSchema = z.object({
   }),
   profession: z.string().optional(),
   dob: z.string().min(1, "Date of birth is required"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Please confirm your password"),
+  password: passwordSchema,
+  confirmPassword: z.string().min(1, "Please confirm your password"),
   acceptTermsAndPrivacy: z
     .boolean()
     .refine((v) => v === true, "You must accept the Terms and Privacy Policy"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+}).refine(passwordsMatchRefine, {
+  message: PASSWORDS_MISMATCH_MESSAGE,
   path: ["confirmPassword"],
 });
 

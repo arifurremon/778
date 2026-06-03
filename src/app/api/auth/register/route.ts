@@ -13,6 +13,7 @@ import crypto from "crypto";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { passwordSchema } from "@/lib/validation/password";
 
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -21,7 +22,7 @@ const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 // ---------------------------------------------------------------------------
 const registerSchema = z.object({
   email: z.string().email("Invalid email address."),
-  password: z.string().min(8, "Password must be at least 8 characters.").regex(/[0-9!@#$%^&*(),.?":{}|<>_]/, "Password must contain at least one number or symbol."),
+  password: passwordSchema,
   username: z
     .string()
     .min(3, "Username must be at least 3 characters.")

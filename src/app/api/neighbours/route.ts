@@ -2,6 +2,7 @@ import { logErrorToSentry } from "@/lib/error-handler";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireActiveSession } from "@/lib/session-guards";
+import { getInteractionBlockedUserIds } from "@/lib/user-blocks";
 
 // ---------------------------------------------------------------------------
 // GET /api/neighbours  — current user's accepted neighbours
@@ -13,6 +14,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     const { session } = active;
 
     const userId = session.user.id;
+    const blockedIds = new Set(await getInteractionBlockedUserIds(userId));
 
     // Fetch accepted connections where the user is either sender or receiver
     const connections = await db.neighbourConnection.findMany({
@@ -47,7 +49,8 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     });
 
     // Map connections to a flat list of neighbour profiles
-    const neighbours = connections.map((conn) => {
+    const neighbours = connections
+      .map((conn) => {
       if (conn.senderId === userId) {
         return {
           connectionId: conn.id,
@@ -61,7 +64,8 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
           ...conn.sender,
         };
       }
-    });
+    })
+      .filter((neighbour) => !blockedIds.has(neighbour.id));
 
     return NextResponse.json({ neighbours });
   } catch (error) {

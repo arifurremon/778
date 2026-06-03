@@ -4,6 +4,12 @@ import { sendNotification, NotificationType } from "@/lib/notification-service";
 import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { requireActiveMutation, requireActiveUser } from "@/lib/session-guards";
+import {
+  assertCanInteract,
+  blockForbiddenResponse,
+  getInteractionBlockedUserIds,
+  UserBlockError,
+} from "@/lib/user-blocks";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -16,6 +22,8 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     const active = await requireActiveUser();
     if (active.error) return active.error;
     const { session } = active;
+
+    const blockedIds = new Set(await getInteractionBlockedUserIds(session.user.id));
 
     const requests = await db.neighbourConnection.findMany({
       where: {
@@ -37,7 +45,9 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ requests });
+    return NextResponse.json({
+      requests: requests.filter((request) => !blockedIds.has(request.senderId)),
+    });
   } catch (error) {
     logErrorToSentry(error, { route: "[GET /api/neighbours/requests]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -89,6 +99,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
     if (!receiverExists) {
       return NextResponse.json({ error: "Receiver not found." }, { status: 404 });
+    }
+
+    try {
+      await assertCanInteract(senderId, receiverId, "You cannot send a neighbour request to this user.");
+    } catch (error) {
+      if (error instanceof UserBlockError) {
+        return blockForbiddenResponse(error.message);
+      }
+      throw error;
     }
 
     // Check for existing connection (any direction)

@@ -29,7 +29,7 @@ export function GlobalLoader() {
           className="relative w-12 h-12 drop-shadow-[0_0_15px_rgba(var(--primary),0.5)]"
         >
           <img 
-            src="/logo-icon.png?v=2" 
+            src="/logo-icon.png?v=3" 
             alt="The Chattala Logo" 
             className="w-full h-full object-contain" 
           />

@@ -94,7 +94,7 @@
 
 | Step | When | Task block | Done |
 |------|------|------------|------|
-| **0** | Pre-deploy (optional) | [D-C1–C3 code fixes](#-critical--fix-before-public-go-code) — block enforcement, password unify, logo asset | [ ] |
+| **0** | Pre-deploy (optional) | ~~D-C1–C3 code fixes~~ ✅ Phase 1 complete — proceed to deploy | [x] |
 | **1** | Day 1 | [A — New Vercel account cutover](#a--new-vercel-account-cutover-primary-blocker) | [ ] |
 | **2** | Day 1 | [A.8 Post-deploy smoke on live URL](#a8--first-deploy-verification) | [ ] |
 | **3** | Day 2 | [B — Staging environment on new account](#b--staging-environment-new-vercel-account) | [ ] |

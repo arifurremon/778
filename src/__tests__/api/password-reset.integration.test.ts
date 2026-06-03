@@ -132,7 +132,7 @@ describe("password reset flow", () => {
     const res = await resetPassword(
       makeRequest("http://localhost:3000/api/auth/reset-password", {
         token: rawToken,
-        password: "new-secure-password",
+        password: "new-secure1!",
       })
     );
     const json = await res.json();

@@ -13,11 +13,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { authStyles } from "@/lib/design/auth-styles";
+import { loginPasswordSchema } from "@/lib/validation/password";
 import * as z from "zod";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: loginPasswordSchema,
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;

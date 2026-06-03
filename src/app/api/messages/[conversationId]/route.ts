@@ -5,6 +5,11 @@ import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { enforceRateLimit } from "@/lib/rate-limit-request";
 import { sanitizeUserInput } from "@/lib/sanitize";
 import { requireActiveMutation, requireActiveSession } from "@/lib/session-guards";
+import {
+  assertCanInteract,
+  blockForbiddenResponse,
+  UserBlockError,
+} from "@/lib/user-blocks";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -33,11 +38,25 @@ export async function GET(
           { participantB: session.user.id },
         ],
       },
-      select: { id: true },
+      select: { id: true, participantA: true, participantB: true },
     });
 
     if (!conversation) {
       return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
+    }
+
+    const otherParticipantId =
+      conversation.participantA === session.user.id
+        ? conversation.participantB
+        : conversation.participantA;
+
+    try {
+      await assertCanInteract(session.user.id, otherParticipantId);
+    } catch (error) {
+      if (error instanceof UserBlockError) {
+        return blockForbiddenResponse();
+      }
+      throw error;
     }
 
     const messages = await db.message.findMany({
@@ -111,6 +130,20 @@ export async function POST(
       return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
     }
 
+    const recipientId =
+      conversation.participantA === session.user.id
+        ? conversation.participantB
+        : conversation.participantA;
+
+    try {
+      await assertCanInteract(session.user.id, recipientId, "You cannot message this user.");
+    } catch (error) {
+      if (error instanceof UserBlockError) {
+        return blockForbiddenResponse(error.message);
+      }
+      throw error;
+    }
+
     const body: unknown = await req.json();
     const parsed = sendMessageSchema.safeParse(body);
     if (!parsed.success) {
@@ -121,12 +154,6 @@ export async function POST(
     }
 
     const cleanText = sanitizeUserInput(parsed.data.text);
-
-    // Determine recipient
-    const recipientId =
-      conversation.participantA === session.user.id
-        ? conversation.participantB
-        : conversation.participantA;
 
     const [message] = await db.$transaction([
       db.message.create({

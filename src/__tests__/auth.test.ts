@@ -22,20 +22,28 @@ vi.mock('@/lib/rate-limit', () => ({
   },
 }));
 
-// We'll test standard validation rules mimicking our route schema
-const validateRegistration = (data: any) => {
+// We'll test standard validation rules aligned with passwordSchema
+import { passwordSchema, loginPasswordSchema } from "@/lib/validation/password";
+
+const validateRegistration = (data: { email?: string; password?: string; username?: string }) => {
   const errors: string[] = [];
-  if (!data.email || !data.email.includes('@')) errors.push("Invalid email address.");
-  if (!data.password || data.password.length < 6) errors.push("Password must be at least 6 characters.");
+  if (!data.email || !data.email.includes("@")) errors.push("Invalid email address.");
+  const passwordResult = passwordSchema.safeParse(data.password ?? "");
+  if (!passwordResult.success) {
+    errors.push(passwordResult.error.errors[0]?.message ?? "Invalid password.");
+  }
   if (!data.username || data.username.length < 3) errors.push("Username must be at least 3 characters.");
   if (data.username && !/^\w+$/.test(data.username)) errors.push("Username may only contain letters, numbers, and underscores.");
   return errors;
 };
 
-const validateLogin = (data: any) => {
+const validateLogin = (data: { email?: string; password?: string }) => {
   const errors: string[] = [];
-  if (!data.email || !data.email.includes('@')) errors.push("Invalid email address.");
-  if (!data.password || data.password.length < 6) errors.push("Password must be at least 6 characters.");
+  if (!data.email || !data.email.includes("@")) errors.push("Invalid email address.");
+  const passwordResult = loginPasswordSchema.safeParse(data.password ?? "");
+  if (!passwordResult.success) {
+    errors.push(passwordResult.error.errors[0]?.message ?? "Password is required.");
+  }
   return errors;
 };
 
@@ -61,10 +69,10 @@ describe('Authentication Flow Tests', () => {
       expect(errors).toContain('Invalid email address.');
     });
 
-    it('should fail if password is too short', () => {
-      const data = { email: 'test@test.com', password: '123', username: 'user1' };
+    it("should fail if password is too short", () => {
+      const data = { email: "test@test.com", password: "123", username: "user1" };
       const errors = validateRegistration(data);
-      expect(errors).toContain('Password must be at least 6 characters.');
+      expect(errors.some((e) => e.includes("8 characters"))).toBe(true);
     });
 
     it('should fail if username is too short', () => {
@@ -99,10 +107,10 @@ describe('Authentication Flow Tests', () => {
       expect(errors).toContain('Invalid email address.');
     });
 
-    it('should fail login if password is too short', () => {
-      const data = { email: 'valid@example.com', password: '123' };
+    it("should fail login if password is empty", () => {
+      const data = { email: "valid@example.com", password: "" };
       const errors = validateLogin(data);
-      expect(errors).toContain('Password must be at least 6 characters.');
+      expect(errors).toContain("Password is required.");
     });
   });
 

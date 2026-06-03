@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { passwordSchema } from "@/lib/validation/password";
 import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { use, useState } from "react";
@@ -18,6 +19,16 @@ export default function ResetPasswordPage({ params }: { params: Promise<{ token:
     e.preventDefault();
     if (password !== confirmPassword) {
       toast({ title: "Passwords don't match", variant: "destructive" });
+      return;
+    }
+
+    const parsed = passwordSchema.safeParse(password);
+    if (!parsed.success) {
+      toast({
+        title: "Invalid password",
+        description: parsed.error.errors[0]?.message ?? "Password does not meet requirements.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -78,7 +89,7 @@ export default function ResetPasswordPage({ params }: { params: Promise<{ token:
                 placeholder="••••••••"
                 className="h-12 rounded-xl bg-background/50"
                 required
-                minLength={6}
+                minLength={8}
               />
             </div>
             <div className="space-y-2">
@@ -90,7 +101,7 @@ export default function ResetPasswordPage({ params }: { params: Promise<{ token:
                 placeholder="••••••••"
                 className="h-12 rounded-xl bg-background/50"
                 required
-                minLength={6}
+                minLength={8}
               />
             </div>
           </div>

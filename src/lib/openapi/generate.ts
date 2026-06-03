@@ -1,4 +1,5 @@
 import { extendZodWithOpenApi, OpenAPIRegistry, OpenApiGeneratorV31 } from "@asteasolutions/zod-to-openapi";
+import { passwordSchema } from "@/lib/validation/password";
 import { z } from "zod";
 
 extendZodWithOpenApi(z);
@@ -21,7 +22,7 @@ export const RegisterBodySchema = z
     name: z.string().min(2).max(100),
     email: z.string().email(),
     username: z.string().min(3).max(30),
-    password: z.string().min(6),
+    password: passwordSchema,
   })
   .openapi("RegisterBody");
 
