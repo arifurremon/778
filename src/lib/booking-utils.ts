@@ -1,4 +1,5 @@
 import type { Booking, BookingStatus, OngoingSubStatus } from "@/hooks/use-services";
+import { decimalToNumber, formatFeeBdt } from "@/lib/money/fee";
 
 export type ApiBookingStatus =
   | "PENDING"
@@ -17,7 +18,7 @@ export interface ApiServiceBooking {
   scheduledDate: string | null;
   address: string | null;
   notes: string | null;
-  fee: string;
+  fee: number;
   status: ApiBookingStatus;
   subStatus: ApiBookingSubStatus | null;
   createdAt: string;
@@ -98,7 +99,7 @@ export function mapApiServiceBooking(booking: ApiServiceBooking): Booking {
     clientName,
     clientAvatar: booking.client?.profileImage ?? "/city_background.png",
     serviceType: booking.expertService?.profession ?? "Service",
-    price: booking.fee,
+    price: formatFeeBdt(booking.fee),
     status: mapApiBookingStatusToUi(booking.status),
     subStatus: mapApiBookingSubStatusToUi(booking.subStatus),
     timestamp: new Date(booking.createdAt).toLocaleString(),
@@ -142,9 +143,11 @@ export function serializeServiceBooking<T extends {
   scheduledDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  fee: { toNumber(): number } | number | string;
 }>(booking: T) {
   return {
     ...booking,
+    fee: decimalToNumber(booking.fee),
     scheduledDate: booking.scheduledDate?.toISOString() ?? null,
     createdAt: booking.createdAt.toISOString(),
     updatedAt: booking.updatedAt.toISOString(),

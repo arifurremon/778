@@ -36,7 +36,7 @@ describe("GET /api/services/me — Integration", () => {
       profession: "Electrician",
       category: "Home Services",
       location: "Panchlaish",
-      fee: "500",
+      fee: { toNumber: () => 500 },
       bio: "Licensed electrician.",
       rating: 4.8,
       isVerified: true,
@@ -48,6 +48,7 @@ describe("GET /api/services/me — Integration", () => {
 
     expect(res.status).toBe(200);
     expect(json.profession).toBe("Electrician");
+    expect(json.fee).toBe(500);
   });
 
   it("returns 401 when session guard fails", async () => {

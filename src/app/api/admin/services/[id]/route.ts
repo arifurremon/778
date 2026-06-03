@@ -1,4 +1,5 @@
 import { requireAdmin, requireAdminMutation } from "@/lib/admin-auth";
+import { decimalToNumber } from "@/lib/money/fee";
 import { logAdminAction } from "@/lib/audit-log";
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
@@ -66,6 +67,7 @@ export async function GET(
     // Enrich with fallback fields for UI compatibility
     const enrichedService = {
       ...service,
+      fee: decimalToNumber(service.fee),
       title: service.profession,
       description: service.bio,
       provider: service.user,

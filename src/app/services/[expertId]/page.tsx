@@ -9,6 +9,7 @@ import { GlobalLoader } from "@/components/ui/global-loader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GlobalUserBadges } from "@/components/user/global-user-badges";
 import { useMessages } from "@/hooks/use-messages";
+import { formatFeeBdt } from "@/lib/money/fee";
 import type { Provider } from "@/types/index";
 import {
     ArrowLeft,
@@ -32,7 +33,7 @@ type ExpertApiResponse = {
   category: string;
   location: string;
   experienceYears: number;
-  fee: string | null;
+  fee: number | null;
   bio: string | null;
   qualifications: string[] | null;
   rating: number;
@@ -51,7 +52,7 @@ type ExpertApiResponse = {
 function apiToProvider(data: ExpertApiResponse): Provider {
   return realProviderToProvider({
     ...data,
-    fee: data.fee as number | null,
+    fee: data.fee,
     qualifications: data.qualifications,
   });
 }
@@ -237,7 +238,7 @@ export default function ExpertPublicProfile() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center px-1">
                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Consultation Fee</span>
-                  <span className="text-2xl font-black text-accent">{expert.fee}</span>
+                  <span className="text-2xl font-black text-accent">{formatFeeBdt(expert.fee)}</span>
                 </div>
                 <div className="h-px bg-border/10" />
                 <div className="space-y-3">

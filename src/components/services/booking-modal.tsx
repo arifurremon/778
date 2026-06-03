@@ -19,6 +19,7 @@ import { useState } from "react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Calendar, CheckCircle2, Clock, MapPin } from "lucide-react";
 
+import { formatFeeBdt } from "@/lib/money/fee";
 import { Provider } from "@/types/index";
 
 interface BookingModalProps {
@@ -162,7 +163,7 @@ export function BookingModal({ provider, isOpen, onClose }: BookingModalProps) {
                  </div>
                  <div>
                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Consultation/Fee</p>
-                   <p className="text-sm font-bold text-accent">{provider.fee}</p>
+                   <p className="text-sm font-bold text-accent">{formatFeeBdt(provider.fee)}</p>
                  </div>
                  <div className="col-span-2">
                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Timeframe</p>

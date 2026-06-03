@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { logErrorToSentry } from "@/lib/error-handler";
 import { requireActiveSession } from "@/lib/session-guards";
+import { serializeExpertService } from "@/lib/service-serializer";
 import { NextResponse } from "next/server";
 
 const expertServiceSelect = {
@@ -31,7 +32,7 @@ export async function GET(): Promise<NextResponse> {
       return NextResponse.json({ error: "You don't have an expert service yet." }, { status: 404 });
     }
 
-    return NextResponse.json(service);
+    return NextResponse.json(serializeExpertService(service));
   } catch (error) {
     logErrorToSentry(error, { route: "[GET /api/services/me]" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

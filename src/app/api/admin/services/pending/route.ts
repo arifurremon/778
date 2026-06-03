@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/admin-auth";
+import { decimalToNumber } from "@/lib/money/fee";
 import { db } from "@/lib/db";
 import { formatAPIError, logErrorToSentry } from "@/lib/error-handler";
 import { Prisma } from "@prisma/client";
@@ -36,6 +37,7 @@ export async function GET(req: NextRequest) {
 
     const mappedServices = pendingServices.map((service) => ({
       ...service,
+      fee: decimalToNumber(service.fee),
       title: service.profession,
       description: service.bio,
       provider: service.user,

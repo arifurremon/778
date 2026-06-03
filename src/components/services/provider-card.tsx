@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 import { Provider } from "@/types";
+import { formatFeeBdt } from "@/lib/money/fee";
 import { BookingModal } from "./booking-modal";
 import Link from "next/link";
 
@@ -61,7 +62,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
           </div>
           <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-bold uppercase tracking-wider">
             {provider.type === 'appointment' ? <Clock size={14} className="text-primary" /> : <Zap size={14} className="text-primary" />}
-            <span>Consultation: <span className="text-accent">{provider.fee}</span></span>
+            <span>Consultation: <span className="text-accent">{formatFeeBdt(provider.fee)}</span></span>
           </div>
         </div>
 

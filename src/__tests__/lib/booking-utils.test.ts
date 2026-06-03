@@ -26,7 +26,7 @@ describe("booking-utils", () => {
       scheduledDate: null,
       address: "Panchlaish",
       notes: "Need consultation",
-      fee: "৳1,500",
+      fee: 1500,
       status: "PENDING",
       subStatus: null,
       createdAt: "2026-01-01T10:00:00.000Z",
@@ -48,6 +48,6 @@ describe("booking-utils", () => {
     expect(mapped.clientName).toBe("Rahim");
     expect(mapped.serviceType).toBe("Heart Specialist");
     expect(mapped.status).toBe("Pending");
-    expect(mapped.address).toBe("Panchlaish");
+    expect(mapped.price).toBe("৳1,500");
   });
 });

@@ -62,7 +62,7 @@ export const ServiceRegistrationBodySchema = z
     category: z.string().min(1),
     location: z.string().min(1),
     experienceYears: z.number().int().min(0),
-    fee: z.string().min(1),
+    fee: z.union([z.number().positive(), z.string().min(1)]),
     bio: z.string().min(20),
     qualifications: z.array(z.string()).min(1),
     payoutMethod: z.enum(["BKASH", "NAGAD", "BANK"]).optional(),

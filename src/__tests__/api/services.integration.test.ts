@@ -78,7 +78,7 @@ const createdService = {
   category: validServicePayload.category,
   location: validServicePayload.location,
   experienceYears: validServicePayload.experienceYears,
-  fee: validServicePayload.fee,
+  fee: { toNumber: () => 1500 },
   bio: validServicePayload.bio,
   qualifications: validServicePayload.qualifications,
   rating: 5,

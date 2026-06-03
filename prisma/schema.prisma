@@ -367,7 +367,7 @@ model ExpertService {
   category        String
   location        String
   experienceYears Int           @default(0)
-  fee             String
+  fee             Decimal       @db.Decimal(10, 2)
   bio             String
   qualifications  String[]
   rating          Float         @default(5.0)
@@ -563,6 +563,7 @@ model Message {
   sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
+  @@index([conversationId, createdAt])
 }
 
 enum OrderStatus {
@@ -599,7 +600,7 @@ model ServiceBooking {
   scheduledDate   DateTime?
   address         String?
   notes           String?
-  fee             String
+  fee             Decimal       @db.Decimal(10, 2)
   status          ServiceBookingStatus     @default(PENDING)
   subStatus       ServiceBookingSubStatus?
   createdAt       DateTime                 @default(now())
@@ -630,6 +631,7 @@ model Order {
 
   @@index([shopId])
   @@index([buyerId])
+  @@index([status, createdAt])
 }
 
 model BlockedUser {

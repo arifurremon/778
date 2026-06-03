@@ -20,7 +20,7 @@
 | User registrations trend | Admin analytics | `User(createdAt)` + partial `deletedAt IS NULL` | ✅ |
 | Shop by owner | `/api/shops/me` | `Shop.userId` unique | ✅ |
 | Products by shop | Marketplace | FK `Product.shopId` | ✅ |
-| Orders by buyer / shop | Orders API | `Order(buyerId)`, `Order(shopId)` | ✅ |
+| Seller orders | Orders API | `Order(buyerId)`, `Order(shopId)`, `Order(status, createdAt)` | ✅ |
 | Service bookings by client/expert | Bookings | `ServiceBooking(clientId)`, `(expertServiceId)` | ✅ |
 | Notifications unread | Header bell | `Notification(userId, createdAt)`, `(userId, isRead)` | ✅ |
 | Neighbour graph | Neighbours | `NeighbourConnection(senderId, status)`, `(receiverId, status)` | ✅ |
@@ -28,7 +28,7 @@
 | Audit log retention | Cron | `AuditLog(createdAt)` | ✅ |
 | Consent ledger | Compliance | `ConsentRecord(userId, type, createdAt)` | ✅ |
 | Password / email tokens | Auth flows | `User(emailToken, emailTokenExp)`, `(resetToken, resetTokenExp)` | ✅ |
-| Messaging threads | Messages | `Conversation(participantA, updatedAt)`, `Message(conversationId)` | ✅ |
+| Messaging threads | Messages | `Conversation(participantA, updatedAt)`, `Message(conversationId, createdAt)` | ✅ |
 
 ## Recommended staging checks
 

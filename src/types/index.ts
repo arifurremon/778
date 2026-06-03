@@ -23,7 +23,7 @@ export interface Provider {
   location: string;
   experience: number;
   type: 'appointment' | 'request';
-  fee: string;
+  fee: number;
 }
 
 export interface Post {

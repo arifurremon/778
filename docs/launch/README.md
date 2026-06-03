@@ -26,7 +26,8 @@
 | **B** | Crons in repo, verify scripts, smoke | ✅ Agent done — ops pending |
 | **C** | isAdmin → role; next-auth pin | ✅ Agent done — prod migration pending |
 | **D** | Coverage 60%, DashboardLayout split | ✅ Agent done |
-| **E–F** | Decimal fee, GO + users | Backlog |
+| **E** | Fee Decimal + perf indexes | ✅ Agent done — prod migration pending |
+| **F** | GO sign-off + first 10 real users | Backlog |
 
 ---
 

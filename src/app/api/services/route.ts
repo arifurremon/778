@@ -7,6 +7,8 @@ import { rateLimiters, runRateLimit } from "@/lib/rate-limit";
 import { checkRateLimit, jsonWithRateLimitHeaders } from "@/lib/rate-limit-request";
 import { withIdempotency, idempotentError } from "@/lib/idempotency";
 import { emitWebhookEvent } from "@/lib/webhooks/delivery";
+import { feeZodField } from "@/lib/money/fee";
+import { serializeExpertService, serializeExpertServices } from "@/lib/service-serializer";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -86,7 +88,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
 
     return NextResponse.json({
-      services,
+      services: serializeExpertServices(services),
       nextPage: skip + limit < total ? page + 1 : null,
       total,
     });
@@ -104,7 +106,7 @@ const createServiceSchema = z.object({
   category:        z.string().min(1, "Category is required."),
   location:        z.string().min(1, "Location is required."),
   experienceYears: z.number().int().min(0, "Experience years must be non-negative."),
-  fee:             z.string().min(1, "Fee is required."),
+  fee:             feeZodField,
   bio:             z.string().min(20, "Bio must be at least 20 characters."),
   qualifications:  z.array(z.string()).min(1, "At least one qualification is required."),
   payoutMethod: z.enum(["BKASH", "NAGAD", "BANK"]).optional(),
@@ -204,5 +206,5 @@ async function registerService(userId: string, data: z.infer<typeof createServic
     profession: service.profession,
   });
 
-  return { service };
+  return { service: serializeExpertService(service) };
 }

@@ -88,14 +88,9 @@ function parseQualifications(raw: string[] | string | null): string[] {
   return [raw];
 }
 
-function formatFee(fee: number | string | null): string {
-  if (fee == null || fee === "") return "Contact for quote";
-  if (typeof fee === "number") return `৳${fee}`;
-  return String(fee).startsWith("৳") ? String(fee) : `৳${fee}`;
-}
+import { decimalToNumber } from "@/lib/money/fee";
 
 export function realProviderToProvider(p: RealProvider): Provider {
-  const feeRaw = p.fee as number | string | null;
   return {
     id: p.id,
     name: p.user.preferredName || p.user.name || "Expert",
@@ -109,7 +104,7 @@ export function realProviderToProvider(p: RealProvider): Provider {
     location: p.location,
     experience: p.experienceYears,
     type: "appointment",
-    fee: formatFee(feeRaw),
+    fee: decimalToNumber(p.fee),
   };
 }
 

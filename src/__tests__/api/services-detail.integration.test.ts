@@ -31,7 +31,7 @@ describe("GET /api/services/[expertId] — Integration", () => {
       profession: "Plumber",
       category: "Home Services",
       location: "Halishahar",
-      fee: "800",
+      fee: { toNumber: () => 800 },
       bio: "Emergency plumbing support.",
       rating: 4.5,
       isVerified: true,
@@ -52,5 +52,6 @@ describe("GET /api/services/[expertId] — Integration", () => {
 
     expect(res.status).toBe(200);
     expect(json.profession).toBe("Plumber");
+    expect(json.fee).toBe(800);
   });
 });

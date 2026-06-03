@@ -75,11 +75,24 @@ Runbook: [`docs/launch/PHASE_D_OPS.md`](./launch/PHASE_D_OPS.md)
 
 ---
 
-## Phase E–F (backlog)
+## Phase E — Fee Decimal + indexes ✅
+
+| Task | Status |
+|------|--------|
+| E.1 `ExpertService.fee` + `ServiceBooking.fee` → Decimal | ✅ |
+| E.2 Fee parse/serialize utilities + API updates | ✅ |
+| E.3 `Message(conversationId, createdAt)` index | ✅ |
+| E.4 `Order(status, createdAt)` index | ✅ |
+| E.5 Production migration | ⏳ You — `npx prisma migrate deploy` |
+
+Runbook: [`docs/launch/PHASE_E_OPS.md`](./launch/PHASE_E_OPS.md)
+
+---
+
+## Phase F (backlog)
 
 | Phase | Focus |
 |-------|--------|
-| **E** | `ExpertService.fee` Decimal; indexes / perf |
 | **F** | GO sign-off + first 10 real users |
 
 See [`DEFERRED_POST_COMPLETION_TASKS.md`](./DEFERRED_POST_COMPLETION_TASKS.md).

@@ -65,7 +65,7 @@ const sampleService = {
   id: "service-1",
   userId: "expert-1",
   profession: "Heart Specialist",
-  fee: "৳1,500",
+  fee: { toNumber: () => 1500 },
   isVerified: true,
 };
 
@@ -76,7 +76,7 @@ const sampleBooking = {
   scheduledDate: null,
   address: "Panchlaish",
   notes: "Need help",
-  fee: "৳1,500",
+  fee: { toNumber: () => 1500 },
   status: "PENDING",
   subStatus: null,
   createdAt: new Date(),
