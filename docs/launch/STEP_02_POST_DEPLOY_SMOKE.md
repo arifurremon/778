@@ -1,7 +1,23 @@
 # Step 2 — Post-Deploy Smoke (Section A.8)
 
 > **Prerequisite:** Step 1 complete — live deployment URL available  
-> **Estimated time:** 15–30 minutes
+> **Estimated time:** 15–30 minutes  
+> **Latest `main` deploy:** `6425f63` (env hardening + joinDate backfill) — wait for Vercel build green before smoke.
+
+---
+
+## Migrations (run once per deploy with schema changes)
+
+If this deploy includes Phase C + E migrations not yet on production Neon:
+
+```bash
+vercel env pull .env.production.local --environment=production
+set -a && source .env.production.local && set +a   # bash; on Windows use dotenv in shell
+npx prisma migrate deploy
+npx prisma migrate status
+```
+
+Pending migrations to confirm: `20260610100003_phase_c_drop_is_admin`, `20260610100004_phase_e_fee_decimal_indexes`.
 
 ---
 

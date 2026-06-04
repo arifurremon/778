@@ -4,7 +4,7 @@
 > **Master checklist:** `docs/DEFERRED_POST_COMPLETION_TASKS.md`  
 > **Audit plan:** `docs/AUDIT_EXECUTION_PLAN.md`  
 > **Phase F runbook:** [`PHASE_F_OPS.md`](./PHASE_F_OPS.md)  
-> **Status:** Phase F — GO sign-off + first 10 users (ops pending)
+> **Status:** Step 2 post-deploy smoke + prod migrations (after `6425f63` on Vercel)
 
 ---
 
@@ -13,7 +13,7 @@
 | Step | Block | Owner | Done |
 |------|-------|-------|------|
 | **1** | [Vercel cutover (A.1–A.7)](./STEP_01_VERCEL_CUTOVER.md) | You + Vercel | [x] |
-| **2** | [Post-deploy smoke (A.8)](./STEP_02_POST_DEPLOY_SMOKE.md) | You | [ ] |
+| **2** | [Post-deploy smoke (A.8)](./STEP_02_POST_DEPLOY_SMOKE.md) | You | [ ] **current** |
 | **3** | [Phase B — Staging + crons + Inngest](./PHASE_B_OPS.md) | You + Agent | [ ] **in progress** |
 | **4** | GitHub secrets (B.1) | You | [ ] |
 | **5** | [GO sign-off + first 10 users](./PHASE_F_OPS.md) | Leads | [ ] **current** |

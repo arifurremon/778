@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { validateServerEnv } from "@/env";
+import { productionRuntimeEnvSchema, validateServerEnv } from "@/env";
 
 describe("validateServerEnv", () => {
   afterEach(() => {
@@ -46,5 +46,17 @@ describe("validateServerEnv", () => {
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "");
 
     expect(() => validateServerEnv()).not.toThrow();
+  });
+
+  it("accepts a complete production env via productionRuntimeEnvSchema", () => {
+    const result = productionRuntimeEnvSchema.safeParse({
+      NODE_ENV: "production",
+      DATABASE_URL: "postgresql://localhost:5432/db",
+      AUTH_SECRET: "a".repeat(32),
+      NEXT_PUBLIC_APP_URL: "https://www.thechattala.com",
+      UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "token",
+    });
+    expect(result.success).toBe(true);
   });
 });

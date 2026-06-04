@@ -26,24 +26,30 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { PageHeader } from "@/components/ui/page-header";
 import { GlobalUserBadges } from "@/components/user/global-user-badges";
+import type {
+  NeighbourConnectionUser,
+  NeighbourRequestRow,
+  NeighbourRequestsResponse,
+  NeighboursListResponse,
+} from "@/types/neighbours";
 
 export default function NeighboursPage() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   
-  const [neighbours, setNeighbours] = useState<any[]>([]);
-  const [requests, setRequests] = useState<any[]>([]);
+  const [neighbours, setNeighbours] = useState<NeighbourConnectionUser[]>([]);
+  const [requests, setRequests] = useState<NeighbourRequestRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch from API
   const fetchConnections = async () => {
     try {
       const [nRes, rRes] = await Promise.all([
-        api.get<any>("/api/neighbours"),
-        api.get<any>("/api/neighbours/requests")
+        api.get<NeighboursListResponse>("/api/neighbours"),
+        api.get<NeighbourRequestsResponse>("/api/neighbours/requests"),
       ]);
-      setNeighbours(nRes.data?.neighbours || nRes.neighbours || []);
-      setRequests(rRes.data?.requests || rRes.requests || []);
+      setNeighbours(nRes.data?.neighbours ?? nRes.neighbours ?? []);
+      setRequests(rRes.data?.requests ?? rRes.requests ?? []);
     } catch (error) {
       console.error("Error fetching connections:", error);
     } finally {
@@ -85,7 +91,11 @@ export default function NeighboursPage() {
     }
   };
 
-  const filteredNeighbours = neighbours.filter(n => n.username.toLowerCase().includes(searchQuery.toLowerCase()) || n.name?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredNeighbours = neighbours.filter(
+    (n) =>
+      (n.username ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (n.name ?? "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
       <div className="max-w-4xl mx-auto py-8 px-6 space-y-8">
@@ -175,7 +185,13 @@ export default function NeighboursPage() {
   );
 }
 
-function NeighbourCard({ user, onRemove }: { user: any, onRemove: () => void }) {
+function NeighbourCard({
+  user,
+  onRemove,
+}: {
+  user: NeighbourConnectionUser;
+  onRemove: () => void;
+}) {
   const username = user.username;
   return (
     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-card/20 border border-border/50 rounded-[2rem] p-5 flex items-center justify-between group hover:border-accent/40 transition-all">
@@ -210,7 +226,15 @@ function NeighbourCard({ user, onRemove }: { user: any, onRemove: () => void }) 
   );
 }
 
-function RequestCard({ sender, onAccept, onDecline }: { sender: any, onAccept: () => void, onDecline: () => void }) {
+function RequestCard({
+  sender,
+  onAccept,
+  onDecline,
+}: {
+  sender: NeighbourRequestRow["sender"];
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
   const username = sender.username;
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card/30 border border-border/50 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 group hover:border-accent/40 transition-all">
