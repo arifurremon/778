@@ -2,18 +2,8 @@ import { z } from "zod";
 
 const nodeEnvSchema = z.enum(["development", "test", "production"]).default("development");
 
-/** Parsed at runtime in all environments (optional fields allowed outside production). */
-const runtimeEnvSchema = z.object({
-  NODE_ENV: nodeEnvSchema,
-  DATABASE_URL: z.string().min(1).optional(),
-  AUTH_SECRET: z.string().min(32).optional(),
-  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
-  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
-});
-
-/** Required when NODE_ENV=production at runtime (not during `next build`). */
-export const productionRequiredEnvSchema = z.object({
+/** Required keys when NODE_ENV=production at runtime (not during `next build`). */
+const productionEnvFields = {
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters"),
   NEXT_PUBLIC_APP_URL: z.string().url("NEXT_PUBLIC_APP_URL must be a valid URL"),
@@ -21,9 +11,33 @@ export const productionRequiredEnvSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z
     .string()
     .min(1, "UPSTASH_REDIS_REST_TOKEN is required"),
+} as const;
+
+/** Optional outside production so local dev and Vitest can boot without full secrets. */
+const nonProductionEnvFields = {
+  DATABASE_URL: z.string().min(1).optional(),
+  AUTH_SECRET: z.string().min(32).optional(),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+} as const;
+
+export const productionRuntimeEnvSchema = z.object({
+  NODE_ENV: z.literal("production"),
+  ...productionEnvFields,
 });
 
-export type ServerEnv = z.infer<typeof runtimeEnvSchema>;
+export const nonProductionRuntimeEnvSchema = z.object({
+  NODE_ENV: z.enum(["development", "test"]),
+  ...nonProductionEnvFields,
+});
+
+/** @deprecated Use productionRuntimeEnvSchema — kept for scripts that import the shape. */
+export const productionRequiredEnvSchema = z.object(productionEnvFields);
+
+export type ProductionRuntimeEnv = z.infer<typeof productionRuntimeEnvSchema>;
+export type NonProductionRuntimeEnv = z.infer<typeof nonProductionRuntimeEnvSchema>;
+export type ServerEnv = ProductionRuntimeEnv | NonProductionRuntimeEnv;
 
 function readProcessEnv() {
   return {
@@ -55,7 +69,10 @@ export function validateServerEnv(): void {
     return;
   }
 
-  const productionCheck = productionRequiredEnvSchema.safeParse(readProcessEnv());
+  const productionCheck = productionRuntimeEnvSchema.safeParse({
+    ...readProcessEnv(),
+    NODE_ENV: "production",
+  });
   if (!productionCheck.success) {
     throw new Error(formatProductionEnvError(productionCheck.error));
   }

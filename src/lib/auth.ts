@@ -300,6 +300,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
         }
 
+        if (!user.joinDate) {
+          await db.user.update({
+            where: { id: user.id },
+            data: { joinDate: new Date() },
+          });
+        }
+
         await persistSecurityAuditEvent({
           action: "USER_LOGIN_SUCCESS",
           userId: user.id,

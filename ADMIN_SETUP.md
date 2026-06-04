@@ -49,5 +49,5 @@ Open `/login` and sign in with `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
 ## Security notes
 
 - Rotate `ADMIN_PASSWORD` after first login if it was shared during setup.
-- Grant `isAdmin` only to trusted accounts in the database.
-- Admin API routes use live DB checks for the `isAdmin` flag.
+- Grant `role` of `ADMIN` or `SUPERADMIN` only to trusted accounts (see `npx tsx prisma/seed-admin.ts`).
+- Admin API routes use live DB `role` checks via `requireAdmin()` — JWT role is not trusted alone.
