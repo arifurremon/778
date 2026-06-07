@@ -48,8 +48,8 @@ export default function NeighboursPage() {
         api.get<NeighboursListResponse>("/api/neighbours"),
         api.get<NeighbourRequestsResponse>("/api/neighbours/requests"),
       ]);
-      setNeighbours(nRes.data?.neighbours ?? nRes.neighbours ?? []);
-      setRequests(rRes.data?.requests ?? rRes.requests ?? []);
+      setNeighbours(nRes.neighbours ?? []);
+      setRequests(rRes.requests ?? []);
     } catch (error) {
       console.error("Error fetching connections:", error);
     } finally {
@@ -173,7 +173,7 @@ export default function NeighboursPage() {
                     <RequestCard 
                       key={req.id} 
                       sender={req.sender} 
-                      onAccept={() => handleAcceptRequest(req.id, req.sender.username)}
+                      onAccept={() => handleAcceptRequest(req.id, req.sender.username ?? "")}
                       onDecline={() => handleDeclineRequest(req.id)}
                     />
                   ))}
@@ -235,7 +235,7 @@ function RequestCard({
   onAccept: () => void;
   onDecline: () => void;
 }) {
-  const username = sender.username;
+  const username = sender.username ?? "unknown";
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-card/30 border border-border/50 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 group hover:border-accent/40 transition-all">
        <div className="flex items-center gap-4 text-left w-full sm:w-auto">

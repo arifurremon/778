@@ -33,8 +33,14 @@ const getPrismaClient = (): PrismaClient => {
 
   if (!connectionString) {
     // No DATABASE_URL — typically during build-time static analysis.
-    // Return a baseline client; queries will fail at runtime without the URL.
+    // Prisma v7 requires an adapter or accelerateUrl even when the client is
+    // not actually used. Provide a no-op Neon adapter so imports succeed.
+    const adapter = new PrismaNeon({
+      connectionString: "postgresql://localhost:5432/invalid?sslmode=disable",
+    });
+
     return new PrismaClient({
+      adapter,
       log:
         process.env.NODE_ENV === "development"
           ? ["query", "error", "warn"]
