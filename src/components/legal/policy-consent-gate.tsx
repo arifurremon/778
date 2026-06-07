@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 export function PolicyConsentGate() {
   const { user, isLoading, refreshProfile } = useAuth();
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -27,8 +28,8 @@ export function PolicyConsentGate() {
     }
 
     const version = (user as { policyVersion?: string | null }).policyVersion;
-    setOpen(userNeedsPolicyReconsent(version));
-  }, [user, isLoading]);
+    setOpen(userNeedsPolicyReconsent(version) && !dismissed);
+  }, [user, isLoading, dismissed]);
 
   const acceptPolicies = async () => {
     setSubmitting(true);
@@ -44,7 +45,13 @@ export function PolicyConsentGate() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => undefined}>
+    <Dialog
+      open={open}
+      onOpenChange={(value) => {
+        if (!value) setDismissed(true);
+        setOpen(value);
+      }}
+    >
       <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Updated policies</DialogTitle>

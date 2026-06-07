@@ -76,7 +76,7 @@ async function main() {
   
   try {
     const existingAdmin = await prisma.user.findUnique({
-      where: { email: adminEmail }
+      where: { email: adminEmail },
     });
 
     if (!existingAdmin) {
@@ -90,6 +90,7 @@ async function main() {
           preferredName: "Admin",
           role: "ADMIN",
           isVerified: true,
+          emailVerified: new Date(),
           registrationStatus: "APPROVED"
         }
       });
@@ -101,13 +102,23 @@ async function main() {
       console.log("⚠️ IMPORTANT: Change this password immediately after login!");
       console.log("-----------------------------------------");
     } else {
-      // Ensure the existing user has admin role
+      const updates: Record<string, unknown> = {};
       if (existingAdmin.role !== "ADMIN" && existingAdmin.role !== "SUPERADMIN") {
+        updates.role = "ADMIN";
+      }
+      if (!existingAdmin.emailVerified) {
+        updates.emailVerified = new Date();
+      }
+      if (!existingAdmin.isVerified) {
+        updates.isVerified = true;
+      }
+
+      if (Object.keys(updates).length > 0) {
         await prisma.user.update({
           where: { email: adminEmail },
-          data: { role: "ADMIN" },
+          data: updates,
         });
-        console.log(`✅ Promoted existing user ${adminEmail} to Admin.`);
+        console.log(`✅ Updated existing admin ${adminEmail} with missing verification/admin fields.`);
       } else {
         console.log("⏭️ Super Admin already exists. Skipping.");
       }
